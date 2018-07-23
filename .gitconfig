@@ -2,7 +2,7 @@
 	name = Martim Lobao
 	email = 6430786+martimlobao@users.noreply.github.com
 
-	[alias]
+[alias]
 	co = checkout
 	ci = commit
 	st = status
