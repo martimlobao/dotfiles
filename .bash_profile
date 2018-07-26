@@ -1,11 +1,10 @@
-# Add `~/bin` to the `$PATH`
-export PATH=$PATH:~/.android-sdk-macosx/platform-tools/
+# Add `/usr/local/android-sdk-macos/platform-tools/` to the `$PATH`
+# added by Anaconda3 5.2.0 installer
+export PATH="/anaconda3/bin:$PATH"
+export PATH="$PATH:/usr/local/android-sdk-macos/platform-tools"
 export CHROMEDRIVER=~/chromedriver
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
-
-# added by Anaconda3 5.2.0 installer
-export PATH="/anaconda3/bin:$PATH"
 
 
 # Load the shell dotfiles, and then some:

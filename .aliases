@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Use pip3 as default and python3 for python 3.7
+alias python3=/usr/local/bin/python3
+alias pip=pip3
+
 # Easier navigation: .., ..., ...., ....., ~ and -
 alias ..="cd .."
 alias ...="cd ../.."
@@ -13,7 +17,7 @@ alias d="cd ~/Dropbox"
 alias dl="cd ~/Downloads"
 alias dt="cd ~/Desktop"
 alias g="cd ~/Dropbox/Me/dev/git"
-alias wo="cd ~/Dropbox/Work/Elios/dev"
+alias wo="cd ~/Dropbox/Work"
 
 # Detect which `ls` flavor is in use
 if ls --color > /dev/null 2>&1; then # GNU `ls`
@@ -47,9 +51,6 @@ alias sudo='sudo '
 
 # Get week number
 alias week='date +%V'
-
-# Get macOS Software Updates, and update installed Ruby gems, Homebrew, npm, and their installed packages
-alias update='sudo softwareupdate -i -a; brew update; brew upgrade; brew cleanup; npm install npm -g; npm update -g; sudo gem update --system; sudo gem update; sudo gem cleanup'
 
 # Google Chrome
 alias chrome='/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome'
