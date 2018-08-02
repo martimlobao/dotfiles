@@ -4,6 +4,10 @@
 alias python3=/usr/local/bin/python3
 alias pip=pip3
 
+# pip update and list outdated commands
+alias pipupdateall="pip freeze — local | grep -v ‘^\-e’ | cut -d = -f 1 | xargs -n1 pip install -U"
+alias pipoutdated="pip|pip3 list --outdated --format=columns"
+
 # Easier navigation: .., ..., ...., ....., ~ and -
 alias ..="cd .."
 alias ...="cd ../.."
