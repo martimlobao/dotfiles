@@ -26,7 +26,7 @@ prompt_git() {
 
 			# Check for unpushed commits.
 			if [ -n "$(git log --branches --not --remotes)" ]; then
-				s+='^';
+				s+='▲';
 			fi;
 
 			# Check for uncommitted changes in the index.
