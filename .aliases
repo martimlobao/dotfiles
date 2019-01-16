@@ -22,7 +22,7 @@ alias d="cd ~/Dropbox"
 alias dl="cd ~/Downloads"
 alias dt="cd ~/Desktop"
 alias g="cd ~/Dropbox/Me/dev/git"
-alias wg="cd ~/Dropbox/Work/School/General\ Assembly/git"
+alias wg="cd ~/Dropbox/Work/Elios/dev"
 alias wo="cd ~/Dropbox/Work"
 
 # Detect which `ls` flavor is in use
