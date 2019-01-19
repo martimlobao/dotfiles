@@ -1,3 +1,16 @@
+[include]
+	# For credentials and tokens and private info
+	# In ~/.gitconfig.local store with the following format:
+	# [github]
+		# token = 0123456789abcdef0123456789abcdef01234567
+	#
+	# [credential]
+		# helper = osxkeychain
+	path = ~/.gitconfig.local
+
+[github]
+	user = martimlobao
+
 [user]
 	name = Martim Lobao
 	email = 6430786+martimlobao@users.noreply.github.com
@@ -10,6 +23,9 @@
 	hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
 	type = cat-file -t
 	dump = cat-file -p
+	# copy2personal creates a private repo on github and copies the current
+	# repo to it under the remote 'personal'
+	copy2personal = "!REPO=$(basename ${PWD##*/}) GHUSER=$(git config --get github.user) GHTOKEN=$(git config --get github.token); curl -u $GHUSER:$GHTOKEN https://api.github.com/user/repos -d {\\\"name\\\":\\\"$REPO\\\", \\\"private\\\":\\\"true\\\"} --fail; git remote add personal git@github.com:$GHUSER/$REPO.git; git push personal master"
 
 [color]
 	# Use colors in Git commands that are capable of colored output when
@@ -35,3 +51,5 @@
 [diff]
 	# Detect copies as well as renames
 	renames = copies
+[credential]
+	helper = manager
