@@ -1,8 +1,8 @@
 # Add `/usr/local/android-sdk-macos/platform-tools/` to the `$PATH`
 # added by Anaconda3 5.2.0 installer
 export PATH="$PATH:/usr/local/sbin"
-export PATH="/anaconda3/bin:$PATH"
-export PATH="$PATH:/usr/local/android-sdk-macos/platform-tools"
+# export PATH="/anaconda3/bin:$PATH"
+# export PATH="$PATH:/usr/local/android-sdk-macos/platform-tools"
 export CHROMEDRIVER=~/chromedriver
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
