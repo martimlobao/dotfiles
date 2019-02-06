@@ -92,6 +92,9 @@ brew cask install qlstephen
 
 # work
 brew install rabbitmq
+brew install mysql
+# sudo chown -R _mysql:mysql /usr/local/var/mysql << maybe not this one?
+sudo mysql.server start
 
 
 ###############################################################################
@@ -376,7 +379,7 @@ defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 
 # Use list view in all Finder windows by default
 # Four-letter codes for the other view modes: `icnv`, `clmv`, `Flwv`
-defaults read com.apple.finder FXPreferredViewStyle -string "Nlsv"
+defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
 
 # Enable AirDrop over Ethernet and on unsupported Macs running Lion
 defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
@@ -416,7 +419,7 @@ sudo chflags nohidden /Volumes
 # Wipe all (default) app icons from the Dock
 # This is only really useful when setting up a new Mac, or if you don’t use
 # the Dock to launch apps.
-defaults read com.apple.dock persistent-apps -array
+defaults write com.apple.dock persistent-apps -array
 
 # Show only open applications in the Dock
 #defaults write com.apple.dock static-only -bool true
@@ -449,7 +452,7 @@ defaults write com.apple.dock autohide -bool true
 # defaults write com.apple.dock showhidden -bool true
 
 # Don’t show recent applications in Dock
-defaults read com.apple.dock show-recents -bool false
+defaults write com.apple.dock show-recents -bool false
 
 # Disable the Launchpad gesture (pinch with thumb and three fingers)
 #defaults write com.apple.dock showLaunchpadGestureEnabled -int 0
@@ -471,7 +474,7 @@ defaults read com.apple.dock show-recents -bool false
 # 12: Notification Center
 # Top left screen corner → Start screen saver
 defaults write com.apple.dock wvous-tl-corner -int 5
-defaults read com.apple.dock wvous-tl-modifier -int 0
+defaults write com.apple.dock wvous-tl-modifier -int 0
 # Top right screen corner → Mission Control
 defaults write com.apple.dock wvous-tr-corner -int 2
 defaults write com.apple.dock wvous-tr-modifier -int 0

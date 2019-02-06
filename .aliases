@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Use python3 for python 3.7
-alias python3=/usr/local/bin/python3
+# alias python3=/usr/local/bin/python3
 # Use pip3 as default
 # alias pip=pip3
 
