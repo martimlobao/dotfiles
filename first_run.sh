@@ -34,6 +34,8 @@ brew cask install spotify
 echo "Installing LICEcap"
 brew cask install licecap
 
+brew cask install aerial
+
 # ALL
 # Install Aerial
 # Slack.app
@@ -85,11 +87,13 @@ brew install mongodb
 sudo sudo mkdir -p /data/db
 sudo sudo chown -R $(whoami) /data/db
 brew cask install mongodb-compass
+brew install mysql
+brew cask install mysqlworkbench
 brew install bash
 brew install bash-completion2
 brew install git
 brew install exiftool
-brew cask install aerial
+# brew cask install aerial
 brew cask install android-platform-tools
 brew cask install webpquicklook
 brew cask install qlmarkdown
@@ -133,6 +137,71 @@ rm -rf /tmp/goog-fonts
 ###############################################################################
 # PREFERENCES
 ###############################################################################
+# Atom
+
+# download
+apm install sync-settings
+# GITHUB_TOKEN=aaaaaaa GIST_ID=aaaaa atom
+# keep package tokens
+
+# add downloads to dock (display as folder)
+# add apps to dock
+# add app store, chrome, atom, preferences to dock
+
+# finder list view larger
+# calculate all sizes
+# add date created
+# show Library (didn't work)
+# use as defaults
+
+# remove siri from menu bar
+# change date time 24
+# make desktop icons larger
+# show space in drives
+# do not launch itunes when connecting phone
+# change desktop to dynamic
+# tap to click is not setting
+# use 3 fingers swipe between pages
+# use 4 fingers mission control
+# use gesture app expose
+# set screensaver to aerial
+# ask to keep changes when closing documents
+# set default browser to Chrome
+# click scrollbar to jump to the spot thats clicked
+# don't show notifications on lock screen
+# turn display off after 15 min on battery power
+# disable show finder search window shortcut
+# add "Emoji & Symbols" shortcut to alt+cmd+,
+# disable dictation shortcut (Fn twice)
+# Date & Time
+# Date options show date
+# flash time separators
+# use 24-hour clock
+# Language & Region
+# 24-hour time
+# use celsius
+# measurement units to metric
+# date short DD/MM/YY
+# don't show siri in menu bar
+
+# ssh-keygen
+# copy keygen
+# change git ID based on work/personal
+
+# Terminal
+# profile to PRO
+# font is source code pro 13pt
+# antialias text
+# change background color
+# set default to Pro
+
+# FINDER
+# change window size
+# hide tags
+
+# start screensaver after 5 mins
+# request password after 5 seconds
+# turn on filevault
 
 ###############################################################################
 # Trackpad, mouse, keyboard, Bluetooth accessories, and input                 #
@@ -223,7 +292,7 @@ defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
 defaults write com.apple.LaunchServices LSQuarantine -bool false
 
 # Remove duplicates in the “Open With” menu (also see `lscleanup` alias)
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user
+# /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user
 
 # Reveal IP address, hostname, OS version, etc. when clicking the clock
 # in the login window
@@ -267,10 +336,10 @@ defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 
 # Use scroll gesture with the Ctrl (^) modifier key to zoom
-defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true
-defaults write com.apple.universalaccess HIDScrollZoomModifierMask -int 262144
+# defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true
+# defaults write com.apple.universalaccess HIDScrollZoomModifierMask -int 262144
 # Follow the keyboard focus while zoomed in
-defaults write com.apple.universalaccess closeViewZoomFollowsFocus -bool true
+# defaults write com.apple.universalaccess closeViewZoomFollowsFocus -bool true
 
 # Disable press-and-hold for keys in favor of key repeat
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
@@ -392,6 +461,7 @@ defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 # Use list view in all Finder windows by default
 # Four-letter codes for the other view modes: `icnv`, `clmv`, `Flwv`
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
+# TODO: large icons in list view
 
 # Enable AirDrop over Ethernet and on unsupported Macs running Lion
 defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
