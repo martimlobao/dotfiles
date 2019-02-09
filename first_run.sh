@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# PREFERENCES: swipe left/right with two fingers
+# Install updates from the app store automatically
+# show battey percentage
+
 ###############################################################################
 # INSTALLS
 ###############################################################################
@@ -23,6 +27,8 @@ echo "Installing Google Chrome"
 brew cask install google-chrome
 echo "Installing Sublime Text"
 brew cask install sublime-text
+echo "Installing Spotify"
+brew cask install spotify
 
 
 echo "Installing LICEcap"
@@ -90,6 +96,12 @@ brew cask install qlmarkdown
 brew cask install quicklook-json
 brew cask install qlstephen
 
+
+brew install python
+pip install virtualenv
+# brew install --ignore-dependencies https://raw.githubusercontent.com/Homebrew/homebrew-core/f2a764ef944b1080be64bd88dca9a1d80130c558/Formula/python.rb
+# ^^ install python 3.6.5_1
+brew cask install xquartz
 # work
 brew install rabbitmq
 brew install mysql
