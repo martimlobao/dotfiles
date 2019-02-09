@@ -3,6 +3,8 @@
 # PREFERENCES: swipe left/right with two fingers
 # Install updates from the app store automatically
 # show battey percentage
+# change screensaver start time to 5 minutes
+# change Aerial display options to show location in bottom right
 
 ###############################################################################
 # INSTALLS
