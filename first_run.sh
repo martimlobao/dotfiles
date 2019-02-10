@@ -105,6 +105,7 @@ brew cask install qlstephen
 
 brew install python
 pip install virtualenv
+pip install black
 # brew install --ignore-dependencies https://raw.githubusercontent.com/Homebrew/homebrew-core/f2a764ef944b1080be64bd88dca9a1d80130c558/Formula/python.rb
 # ^^ install python 3.6.5_1
 brew cask install xquartz
