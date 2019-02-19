@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # Use python3 as default
-alias python=/usr/local/bin/python3
+alias python=python3
 # Use pip3 as default
-alias pip=/usr/local/bin/pip3
+alias pip=pip3
 
 # pip update and list outdated commands
 alias pipupdateall="pip freeze — local | grep -v ‘^\-e’ | cut -d = -f 1 | xargs -n1 pip install -U"

@@ -5,6 +5,7 @@
 # show battey percentage
 # change screensaver start time to 5 minutes
 # change Aerial display options to show location in bottom right
+# change screenshot location to Downloads
 
 ###############################################################################
 # INSTALLS
@@ -17,6 +18,8 @@
 ###############################################################################
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 # This command also installs Xcode Command Line Tools, which includes git
+# sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
+# ^^ this may be needed on macOS Mojave to get pyenv to work
 
 ###############################################################################
 # Install apps
@@ -31,6 +34,8 @@ echo "Installing Sublime Text"
 brew cask install sublime-text
 echo "Installing Spotify"
 brew cask install spotify
+echo "Installing Dropbox"
+brew cask install dropbox
 
 
 echo "Installing LICEcap"
@@ -104,8 +109,13 @@ brew cask install qlstephen
 
 
 brew install python
-pip install virtualenv
-pip install black
+brew install pyenv
+brew install pyenv-virtualenv
+brew install pyenv-virtualenvwrapper
+brew install black
+brew link black
+brew install ipython
+brew install jupyter
 # brew install --ignore-dependencies https://raw.githubusercontent.com/Homebrew/homebrew-core/f2a764ef944b1080be64bd88dca9a1d80130c558/Formula/python.rb
 # ^^ install python 3.6.5_1
 brew cask install xquartz
@@ -115,6 +125,11 @@ brew install mysql
 # sudo chown -R _mysql:mysql /usr/local/var/mysql << maybe not this one?
 sudo mysql.server start
 
+# pip install flake8
+# pip install flake8-docstrings
+# pip install hacking
+# pip install bandit
+# pip install pylint
 
 ###############################################################################
 # Install fonts
