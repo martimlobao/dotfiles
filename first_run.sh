@@ -6,6 +6,9 @@
 # change screensaver start time to 5 minutes
 # change Aerial display options to show location in bottom right
 # change screenshot location to Downloads
+# use Stacks in Desktop
+# add user folder to Finder sidebar
+# open new Finder window in user folder
 
 ###############################################################################
 # INSTALLS
@@ -25,6 +28,8 @@
 # Install apps
 ###############################################################################
 echo "Is this a work computer or a personal computer?"
+read -n 1 pctype
+echo
 
 echo "Installing Atom"
 brew cask install atom
@@ -42,6 +47,8 @@ echo "Installing LICEcap"
 brew cask install licecap
 
 brew cask install aerial
+brew cask install the-unarchiver
+brew cask install tableau-public
 
 # ALL
 # Install Aerial
@@ -49,15 +56,13 @@ brew cask install aerial
 # The Unarchiver.app
 # Trello.app
 # WolframScript.app
+# Dropbox.app
 
 
 # WORK
-# DB Browser for SQLite.app
-# pgAdmin 4.app
 
 
 # PERSONAL
-# Dropbox.app
 # Evernote.app
 # GIF Brewery 3.app
 # InsomniaX.app
@@ -74,7 +79,7 @@ brew cask install aerial
 # Microsoft OneNote.app
 # Microsoft Excel.app
 # Mathematica.app
-# Houseparty.app
+# Houseparty.app < install manually
 # CleanMyMac X.app
 # Adobe Photoshop CC 2018
 # Adobe Lightroom Classic CC
@@ -85,6 +90,11 @@ brew cask install aerial
 # Tunnelblick.app
 # Wunderlist.app
 # Wine.app
+# Parallels Desktop
+# Tomato One or Be Focused
+# Skype
+# Wine
+# Wake Up Time
 
 ###############################################################################
 # Install software and packages
