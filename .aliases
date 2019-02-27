@@ -6,8 +6,8 @@ alias python=python3
 alias pip=pip3
 
 # pip update and list outdated commands
-alias pipupdateall="pip freeze — local | grep -v ‘^\-e’ | cut -d = -f 1 | xargs -n1 pip install -U"
-alias pipoutdated="pip|pip3 list --outdated --format=columns"
+alias pipupdate="pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U"
+alias pipoutdated="pip list --outdated --format=columns"
 
 # Search command history
 alias hgrep='history | grep --color=auto '
