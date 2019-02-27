@@ -119,13 +119,14 @@ brew cask install qlstephen
 
 
 brew install python
-brew install pyenv
-brew install pyenv-virtualenv
-brew install pyenv-virtualenvwrapper
-brew install black
+brew install pipenv
+brew install pyenv # remove pyenv?
+# brew install pyenv-virtualenv
+# brew install pyenv-virtualenvwrapper
+brew install black # maybe remove from here and use in local environments?
 brew link black
 brew install ipython
-brew install jupyter
+# brew install jupyter
 # brew install --ignore-dependencies https://raw.githubusercontent.com/Homebrew/homebrew-core/f2a764ef944b1080be64bd88dca9a1d80130c558/Formula/python.rb
 # ^^ install python 3.6.5_1
 brew cask install xquartz
