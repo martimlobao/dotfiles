@@ -135,6 +135,7 @@ brew install rabbitmq
 brew install mysql
 # sudo chown -R _mysql:mysql /usr/local/var/mysql << maybe not this one?
 sudo mysql.server start
+brew cask install java
 
 # pip install flake8
 # pip install flake8-docstrings
