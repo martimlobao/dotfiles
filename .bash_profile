@@ -1,6 +1,13 @@
+# export PATH="$PATH:/usr/local/bin"
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+# export PATH="$PATH:/usr/local/miniconda3/bin:$PATH"
 export PATH="$PATH:/usr/local/sbin"
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
+
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
 
 
 # Load the shell dotfiles, and then some:
@@ -48,6 +55,3 @@ complete -W "NSGlobalDomain" defaults;
 
 # Add `killall` tab completion for common apps
 complete -o "nospace" -W "Contacts Calendar Dock Finder Mail Safari iTunes SystemUIServer Terminal Twitter" killall;
-
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
