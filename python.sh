@@ -6,7 +6,6 @@
 # sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
 brew install python
 brew install black
-# brew link black
 brew install pyenv
 brew install pyenv-virtualenv
 
@@ -32,15 +31,22 @@ brew install ipython
 # Tell jupyter to respect the virtualenv it is launched in
 ipython profile create
 curl -L http://hbn.link/hb-ipython-startup-script > ~/.ipython/profile_default/startup/00-venv-sitepackages.py
-# If installing jupyter locally, check pip show tornado compatibility with jupyter
-# (tornado 6.0.1 breaks jupyter, 5.1.1 works, see https://github.com/jupyter/notebook/issues/4439)
 
-# Install python 3.7.2 and set it as the default python environment
-pyenv install 3.7.2
-pyenv global 3.7.2
+# Install latest python version and set it as the default python environment
+PYTHONVERSION=$(pyenv install --list | grep -Eo ' [0-9\.]+$' | tail -1)
+pyenv install $PYTHONVERSION
+pyenv global $PYTHONVERSION
 
 # Configure miniconda within pyenv
 pyenv install miniconda3-latest
+
+# Create jupyterlab environment in miniconda3-latest/envs/jupyter
+pyenv activate miniconda3-latest
+CONDAVERSION=$(conda -V | grep -Eo '[0-9\.]+')
+conda create -y -n jupyter conda=$CONDAVERSION
+conda activate jupyter
+conda install -y jupyterlab
+pyenv deactivate
 
 ###############################################################################
 # To create conda environments that can be activated directly through pyenv:
