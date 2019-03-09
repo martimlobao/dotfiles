@@ -1,14 +1,9 @@
-# export PATH="$PATH:/usr/local/bin"
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-# export PATH="$PATH:/usr/local/miniconda3/bin:$PATH"
 export PATH="$PATH:/usr/local/sbin"
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
-
 
 # Load the shell dotfiles, and then some:
 # * ~/.path can be used to extend `$PATH`.
@@ -35,11 +30,11 @@ for option in autocd globstar; do
 done;
 
 # Add tab completion for many Bash commands
-# if which brew &> /dev/null && [ -f "$(brew --prefix)/share/bash-completion/bash_completion" ]; then
-# 	source "$(brew --prefix)/share/bash-completion/bash_completion";
-# elif [ -f /etc/bash_completion ]; then
-# 	source /etc/bash_completion;
-# fi;
+if which brew &> /dev/null && [ -f "$(brew --prefix)/share/bash-completion/bash_completion" ]; then
+	source "$(brew --prefix)/share/bash-completion/bash_completion";
+elif [ -f /etc/bash_completion ]; then
+	source /etc/bash_completion;
+fi;
 
 # Enable tab completion for `g` by marking it as an alias for `git`
 if type _git &> /dev/null && [ -f /usr/local/etc/bash_completion.d/git-completion.bash ]; then
