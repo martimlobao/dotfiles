@@ -1,14 +1,5 @@
 #!/usr/bin/env bash
 
-# Use python3 as default
-alias python=python3
-# Use pip3 as default
-alias pip=pip3
-
-# pip update and list outdated commands
-alias pipupdate="pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U"
-alias pipoutdated="pip list --outdated --format=columns"
-
 # Search command history
 alias hgrep='history | grep --color=auto '
 
@@ -40,8 +31,8 @@ fi
 # List all files colorized in long format
 alias l="ls -lF ${colorflag}"
 
-# List all files colorized in long format, including dot files
-alias la="ls -laF ${colorflag}"
+# List all files colorized in long format, excluding . and ..
+alias la="ls -lAF ${colorflag}"
 
 # List only directories
 alias lsd="ls -lF ${colorflag} | grep --color=never '^d'"
@@ -60,6 +51,9 @@ alias sudo='sudo '
 
 # Get week number
 alias week='date +%V'
+
+# Get macOS Software Updates, and update installed Ruby gems, Homebrew, npm, and their installed packages
+alias update='sudo softwareupdate -i -a; brew update; brew upgrade; brew cleanup; npm install npm -g; npm update -g; sudo gem update --system; sudo gem update; sudo gem cleanup'
 
 # Google Chrome
 alias chrome='/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome'
