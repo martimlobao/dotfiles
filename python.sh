@@ -8,27 +8,38 @@ brew install python
 brew install black
 brew install pyenv
 brew install pyenv-virtualenv
+brew install pipenv
 
 ###############################################################################
-# To automatically launch local virtual environments, add the following commands to ~/.bash_profile:
+# To automatically launch local virtual environments, add the following commands to
+# ~/.bash_profile:
 # $ eval "$(pyenv init -)"
 # $ eval "$(pyenv virtualenv-init -)"
 #
 # To create a virtual environment:
-# pyenv virtualenv 3.7.2 myenv
+# $ pyenv virtualenv 3.7.2 myproject
 #
 # To set a local environment, use the following command in the project folder:
 # $ pyenv local myproject
+#
+# To install packages, use pipenv instead of pip after setting and activating a local
+# environment (pipenv respects the virtualenv it's launched in):
+# $ pyenv virtualenv 3.7.2 myproject
+# $ pyenv local myproject
+# $ pipenv install requests
 ###############################################################################
 
-# Tell pyenv to search in system commands if it can't find a command in the local environment (see https://github.com/pyenv/pyenv/issues/772)
-# Required to get jupyter running anywhere if it has also been installed on some virtualenv
+# Tell pyenv to search in system commands if it can't find a command in the local
+# environment (see https://github.com/pyenv/pyenv/issues/772)
+# Required to get jupyter running anywhere if it has also been installed on some
+# virtualenv
 brew install pyenv-which-ext
 
 # Install Jupyter globally
 brew install jupyter
 brew install ipython
 # Tell jupyter to respect the virtualenv it is launched in
+# (https://medium.com/@henriquebastos/the-definitive-guide-to-setup-my-python-workspace-628d68552e14)
 ipython profile create
 curl -L http://hbn.link/hb-ipython-startup-script > ~/.ipython/profile_default/startup/00-venv-sitepackages.py
 
@@ -50,7 +61,8 @@ pyenv deactivate
 
 ###############################################################################
 # To create conda environments that can be activated directly through pyenv:
-# (without specifying a version like 'conda=4.3.30' pyenv won't recognize the environment)
+# (without specifying a version like 'conda=4.3.30' pyenv won't recognize the
+# environment)
 # $ pyenv activate miniconda3-latest
 # $ conda create -n myenv conda=4.3.30
 # $ pyenv deactivate
