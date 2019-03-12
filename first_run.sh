@@ -21,12 +21,20 @@
 ###############################################################################
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 # This command also installs Xcode Command Line Tools, which includes git
-# sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
+sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
 # ^^ this may be needed on macOS Mojave to get pyenv to work
+
+###############################################################################
+# Set up python environment
+###############################################################################
+./python.sh
 
 ###############################################################################
 # Install apps
 ###############################################################################
+# Install Mac App Store apps through the command line (requires signed in an apps already purchased)
+# brew install mas
+
 echo "Is this a work computer or a personal computer?"
 read -n 1 pctype
 echo
@@ -39,32 +47,41 @@ echo "Installing Sublime Text"
 brew cask install sublime-text
 echo "Installing Spotify"
 brew cask install spotify
-echo "Installing Dropbox"
-brew cask install dropbox
+# echo "Installing Dropbox"
+# brew cask install dropbox
 
 
 echo "Installing LICEcap"
 brew cask install licecap
 
-brew cask install aerial
-brew cask install the-unarchiver
-brew cask install tableau-public
-
 # ALL
 # Install Aerial
+brew cask install aerial
 # Slack.app
+brew cask install slack
+# mas install 803453959
 # The Unarchiver.app
+brew cask install the-unarchiver
+# mas install 425424353
+
 # Trello.app
+
 # WolframScript.app
+
 # Dropbox.app
+echo "Installing Dropbox"
+brew cask install dropbox
 
 
 # WORK
+# Tableau
+brew cask install tableau-public
 
 
 # PERSONAL
 # Evernote.app
 # GIF Brewery 3.app
+mas install 1081413713
 # InsomniaX.app
 # iStat Menus.app
 # Spotify.app
@@ -72,6 +89,7 @@ brew cask install tableau-public
 # WhatsApp.app
 # Transmission.app
 # Sonos.app
+brew cask install homebrew/cask-drivers/sonos
 # Minecraft.app
 # Vector Magic.app
 # Microsoft Word.app
@@ -80,6 +98,7 @@ brew cask install tableau-public
 # Microsoft Excel.app
 # Mathematica.app
 # Houseparty.app < install manually
+mas install 1381523962
 # CleanMyMac X.app
 # Adobe Photoshop CC 2018
 # Adobe Lightroom Classic CC
@@ -104,13 +123,7 @@ brew install mongodb
 sudo sudo mkdir -p /data/db
 sudo sudo chown -R $(whoami) /data/db
 brew cask install mongodb-compass
-brew install mysql
-brew cask install mysqlworkbench
-brew install bash
-brew install bash-completion2
-brew install git
-brew install exiftool
-# brew cask install aerial
+brew cask install aerial
 brew cask install android-platform-tools
 brew cask install webpquicklook
 brew cask install qlmarkdown
@@ -118,23 +131,13 @@ brew cask install quicklook-json
 brew cask install qlstephen
 
 
-brew install python
-brew install pipenv
-brew install pyenv # remove pyenv?
-# brew install pyenv-virtualenv
-# brew install pyenv-virtualenvwrapper
-brew install black # maybe remove from here and use in local environments?
-brew link black
-brew install ipython
-# brew install jupyter
-# brew install --ignore-dependencies https://raw.githubusercontent.com/Homebrew/homebrew-core/f2a764ef944b1080be64bd88dca9a1d80130c558/Formula/python.rb
-# ^^ install python 3.6.5_1
 brew cask install xquartz
 # work
 brew install rabbitmq
 brew install mysql
 # sudo chown -R _mysql:mysql /usr/local/var/mysql << maybe not this one?
 sudo mysql.server start
+brew cask install mysqlworkbench
 brew cask install java
 
 # pip install flake8
@@ -161,6 +164,9 @@ echo "Installing fonts..."
 sudo find /tmp/goog-fonts/fonts/ -type f -name "*.ttf" -exec cp {} $font_path \;
 echo "Cleaning up files..."
 rm -rf /tmp/goog-fonts
+
+# brew cask install homebrew/cask-fonts/font-source-sans-pro
+# brew cask install homebrew/cask-fonts/font-source-code-pro
 
 
 
@@ -398,7 +404,7 @@ defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 # defaults write com.apple.screensaver askForPasswordDelay -int 0
 
 # Save screenshots to the Downloads folder
-defaults write com.apple.screencapture location -string "$~/Downloads"
+defaults write com.apple.screencapture location -string "~/Downloads"
 
 # Save screenshots in PNG format (other options: BMP, GIF, JPG, PDF, TIFF)
 # defaults write com.apple.screencapture type -string "png"
