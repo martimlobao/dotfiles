@@ -11,11 +11,6 @@ function battery() {
 	pmset -g batt | egrep "([0-9]+\%).*" -o --colour=auto | cut -f3 -d';'
 }
 
-# Show IP address.
-function ip() {
-	dig +short myip.opendns.com @resolver1.opendns.com
-}
-
 # Create a new directory and enter it.
 function mkd() {
 	mkdir -p "$@" && cd "$_";
