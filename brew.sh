@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
+# Ask for the administrator password upfront and keep alive until script has finished
+sudo -v
+while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
 ###############################################################################
-# INSTALL COMMAND-LINE TOOLS USING HOMEBREW
+# INSTALL COMMAND-LINE TOOLS USING HOMEBREW                                   #
 ###############################################################################
 
 # Update Homebrew and installed formulas.
@@ -12,13 +16,11 @@ brew upgrade
 brew install bash
 brew install bash-completion2
 
-# Save Homebrew’s installed location.
-BREW_PREFIX=$(brew --prefix)
-
 # Switch to using brew-installed bash as default shell.
+BREW_PREFIX=$(brew --prefix)
 if ! fgrep -q "${BREW_PREFIX}/bin/bash" /etc/shells; then
-    echo "${BREW_PREFIX}/bin/bash" | sudo tee -a /etc/shells;
-    chsh -s "${BREW_PREFIX}/bin/bash";
+	echo "${BREW_PREFIX}/bin/bash" | sudo tee -a /etc/shells;
+	chsh -s "${BREW_PREFIX}/bin/bash";
 fi;
 
 # Install git utilities.
