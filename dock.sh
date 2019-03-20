@@ -1,5 +1,6 @@
+#!/usr/bin/env bash
+
 # functions for manipulating macOS Dock - contributed by @rpavlick and @martimlobao
-# https://github.com/martimlobao/add_to_dock
 function add_app_to_dock {
 	# adds an application to macOS Dock
 	# usage: add_app_to_dock "Application Name"

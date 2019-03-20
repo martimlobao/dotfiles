@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 
 # Start screensaver.
-function ss() {
+ss () {
 	open -a ScreenSaverEngine
 }
 
 # Show battery percentage.
-function battery() {
+battery () {
 	pmset -g batt | egrep "([0-9]+\%).*" -o --colour=auto | cut -f1 -d';'
 	pmset -g batt | egrep "([0-9]+\%).*" -o --colour=auto | cut -f3 -d';'
 }
 
 # Create a new directory and enter it.
-function mkd() {
+mkd () {
 	mkdir -p "$@" && cd "$_";
 }
 
 # Determine size of a file or total size of a directory.
-function fs() {
+fs () {
 	if du -b /dev/null > /dev/null 2>&1; then
 		local arg=-sbh;
 	else
@@ -31,7 +31,7 @@ function fs() {
 }
 
 # Create a data URL from a file.
-function dataurl() {
+dataurl () {
 	local mimeType=$(file -b --mime-type "$1");
 	if [[ $mimeType == text/* ]]; then
 		mimeType="${mimeType};charset=utf-8";
@@ -40,7 +40,7 @@ function dataurl() {
 }
 
 # Create a private github repo on github and copy the current repo to it under the remote 'personal'
-function copy_repo_to_personal() {
+copy_repo_to_personal () {
 	REPO=$(basename ${PWD##*/})
 	GHUSER=$(git config --get github.user);
 	GHTOKEN=$(git config --get github.token);
