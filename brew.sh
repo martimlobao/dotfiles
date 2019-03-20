@@ -23,6 +23,27 @@ if ! fgrep -q "${BREW_PREFIX}/bin/bash" /etc/shells; then
 	chsh -s "${BREW_PREFIX}/bin/bash";
 fi;
 
+# Install cht.sh (https://github.com/chubin/cheat.sh).
+curl https://cht.sh/:cht.sh | sudo tee /usr/local/bin/cht.sh
+sudo chmod +x /usr/local/bin/cht.sh
+brew install rlwrap
+
+###############################################################################
+# Usage:
+# $ cht.sh python random list elements
+#
+# Shell mode:
+# $ cht.sh --shell python
+# cht.sh/python> reverse a list
+#
+# Stealth mode:
+# $ cht.sh --shell python
+# cht.sh/python> stealth Q
+# (selecting "reverse a list")
+# stealth: reverse a list
+# reverse_lst = lst[::-1]
+###############################################################################
+
 # Install git utilities.
 brew install git
 brew install git-lfs
@@ -48,8 +69,11 @@ brew install neofetch
 brew install thefuck
 
 # Install other useful binaries.
+brew install ack
 brew install exiftool
+brew install gnu-sed
 brew install imagemagick
+brew install jq
 brew install pandoc
 
 # Remove outdated versions from the cellar.
