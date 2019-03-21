@@ -10,13 +10,7 @@ function doIt() {
 		--exclude ".gitignore" \
 		--exclude "README.md" \
 		--exclude "LICENSE-MIT.txt" \
-		--exclude "apps.sh" \
-		--exclude "bootstrap.sh" \
-		--exclude "brew.sh" \
-		--exclude "dock.sh" \
-		--exclude "first_run.sh" \
-		--exclude "macos.sh" \
-		--exclude "python.sh" \
+		--exclude "*.sh" \
 		-avh --no-perms . ~;
 	source ~/.bash_profile;
 }

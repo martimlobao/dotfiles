@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-# functions for manipulating macOS Dock - contributed by @rpavlick and @martimlobao
+###############################################################################
+# Functions for manipulating macOS Dock                                       #
+###############################################################################
 function add_app_to_dock {
 	# adds an application to macOS Dock
 	# usage: add_app_to_dock "Application Name"
 	# example add_app_to_dock "Terminal"
-
 	app_name="${1}"
 	launchservices_path="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
 	app_path=$(${launchservices_path} -dump | grep -o "/.*${app_name}.app" | grep -v -E "Backups|Caches|TimeMachine|Temporary|/Volumes/${app_name}" | uniq | sort | head -n1)
@@ -36,7 +37,6 @@ function add_folder_to_dock {
 	# 1 -> Fan
 	# 2 -> Grid
 	# 3 -> List
-
 	folder_path="${1}"
 	sortby="1"
 	displayas="0"
@@ -64,7 +64,6 @@ function add_folder_to_dock {
 	done
 
 	if [ -d "$folder_path" ]; then
-
 		defaults write com.apple.dock persistent-others -array-add "<dict>
 				<key>tile-data</key> <dict>
 					<key>arrangement</key> <integer>${sortby}</integer>
@@ -86,24 +85,23 @@ function add_folder_to_dock {
 
 function add_spacer_to_dock {
 	# adds an empty space to macOS Dock
-
 	defaults write com.apple.dock persistent-apps -array-add '{"tile-type"="small-spacer-tile";}'
 }
 
 function clear_dock {
 	# removes all persistent icons from macOS Dock
-
 	defaults write com.apple.dock persistent-apps -array
 }
 
 function reset_dock {
 	# reset macOS Dock to default settings
-
 	defaults write com.apple.dock; killall Dock
 }
 
 
-# Configure dock.
+###############################################################################
+# Configure macOS Dock                                                        #
+###############################################################################
 clear_dock
 
 add_app_to_dock "Google Chrome"

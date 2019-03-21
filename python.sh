@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ###############################################################################
-# INSTALL PYTHON, PYENV, CONDA, AND JUPYTER
+# SET UP PYTHON ENVIRONMENT                                                   #
 ###############################################################################
 
 # Make sure homebrew is installed and the following command has been run:
