@@ -18,40 +18,36 @@ confirm_set () {
 	done
 }
 
-while [[ true ]]; do
-	read -p "Is this a (w)ork computer or a (p)ersonal computer? " PCTYPE
-	if [[ $PCTYPE =~ ^[wp]$ ]]; then
-		break
-	else
-		echo "Unrecognized response '$PCTYPE'"
-	fi
-done
-echo $PCTYPE
+read -p "Is this a work computer? (y/n) " -n 1;
+echo "";
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+	WORKPC=true;
+fi;
 
 # Setting up .gitconfig.local
 # Only run if file does not already exist?
-GITCONFIGLOCAL="~/.gitconfig.local"
+GITCONFIGLOCAL="$HOME/.gitconfig.local"
 touch $GITCONFIGLOCAL
 
-printf "[user]" > $GITCONFIGLOCAL
+printf "[user]\n" >> $GITCONFIGLOCAL
 confirm_set "Set your git author name: " NAME
-printf "\tname = $NAME" > $GITCONFIGLOCAL
+printf "\tname = $NAME\n" >> $GITCONFIGLOCAL
 confirm_set "Set your git author email: " EMAIL
-printf "\temail = $EMAIL" > $GITCONFIGLOCAL
+printf "\temail = $EMAIL\n" >> $GITCONFIGLOCAL
 
-printf "[github]" > $GITCONFIGLOCAL
+printf "[github]\n" >> $GITCONFIGLOCAL
 confirm_set "Set your github username: " GITHUBUSER
-printf "\tuser = $GITHUBUSER" > $GITCONFIGLOCAL
+printf "\tuser = $GITHUBUSER\n" >> $GITCONFIGLOCAL
 
 
 open "https://github.com/settings/tokens"
 confirm_set "Set your github token: " GITHUBTOKEN
-printf "\ttoken = $GITHUBTOKEN" > $GITCONFIGLOCAL
+printf "\ttoken = $GITHUBTOKEN\n" >> $GITCONFIGLOCAL
 
 # https://atom.io/packages/sync-settings
 confirm_set "Set your Atom 'Sync Settings' package token: " ATOMGISTID
 ATOMGISTID="eeee555"
-printf "\tatomgistid = $ATOMGISTID" > $GITCONFIGLOCAL
+printf "\tatomgistid = $ATOMGISTID\n" >> $GITCONFIGLOCAL
 
 echo "Generating SSH key..."
 ssh-keygen
