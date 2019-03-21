@@ -72,6 +72,7 @@ brew install thefuck
 brew install ack
 brew install exiftool
 brew install gnu-sed
+brew install gpg
 brew install imagemagick
 brew install jq
 brew install pandoc
