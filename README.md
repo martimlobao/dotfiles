@@ -85,7 +85,7 @@ Some of the functionality of these dotfiles depends on formulae installed by `br
 
 ## Thanks to…
 
-* [Mathias Bynens](https://mathiasbynens.be/) and [his dotfiles](https://github.com/mathiasbynens/dotfiles), off of which this repo was forked
+* [Mathias Bynens](https://mathiasbynens.be/) and [his dotfiles repository](https://github.com/mathiasbynens/dotfiles), off of which this repo was forked
 * @ptb and [his _macOS Setup_ repository](https://github.com/ptb/mac-setup)
 * [Ben Alman](http://benalman.com/) and his [dotfiles repository](https://github.com/cowboy/dotfiles)
 * [Cătălin Mariș](https://github.com/alrra) and his [dotfiles repository](https://github.com/alrra/dotfiles)

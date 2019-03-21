@@ -48,6 +48,6 @@ GITHUB_TOKEN=$GITHUBTOKEN GIST_ID=$ATOMGISTID atom
 # keep package tokens
 
 ###############################################################################
-# Sync dotfiles                                                               #
+# Update dotfiles                                                             #
 ###############################################################################
 ./bootstrap.sh
