@@ -1,6 +1,6 @@
 [include]
 	# For credentials and tokens and private info
-	# In ~/.gitconfig.local store with the following format:
+	# In ~/.gitconfig.private store with the following format:
 	# [user]
 	# 	name = Martim Lobao
 	# 	email = martim@email.com
@@ -9,7 +9,7 @@
 	#	user = martimlobao
 	#	token = 0123456789abcdef0123456789abcdef01234567
 
-	path = ~/.gitconfig.local
+	path = ~/.gitconfig.private
 
 [alias]
 	co = checkout

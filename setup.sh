@@ -13,7 +13,7 @@ sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_heade
 # This may be needed on macOS Mojave to get pyenv to work
 
 ###############################################################################
-# Local settings and environment variables                                    #
+# Local settings and variables                                                #
 ###############################################################################
 ./local.sh
 
@@ -39,13 +39,10 @@ sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_heade
 ./dock.sh
 
 ###############################################################################
-# App preferences                                                             #
+# Private dotfiles                                                            #
 ###############################################################################
-apm install sync-settings
-GIST_ID=eeee555
-# GITHUB_TOKEN=aaaaaaa GIST_ID=aaaaa atom
-GITHUB_TOKEN=$GITHUBTOKEN GIST_ID=$ATOMGISTID atom
-# keep package tokens
+# Install private dotfiles.
+git clone git@github.com:martimlobao/dotfiles-private.git
 
 ###############################################################################
 # Update dotfiles                                                             #

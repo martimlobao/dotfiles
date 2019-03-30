@@ -5,7 +5,7 @@ sudo -v
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 ###############################################################################
-# LOCAL SETTINGS AND ENVIRONMENT VARIABLES                                    #
+# LOCAL SETTINGS AND VARIABLES                                                #
 ###############################################################################
 
 confirm_set () {
@@ -18,37 +18,40 @@ confirm_set () {
 	done
 }
 
-read -p "Is this a work computer? (y/n) " -n 1;
-echo "";
+# Set computer name.
+confirm_set "Set the name for this computer: " COMPUTERNAME
+sudo scutil --set ComputerName $COMPUTERNAME
+sudo scutil --set HostName $COMPUTERNAME
+sudo scutil --set LocalHostName $COMPUTERNAME
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string $COMPUTERNAME
+
+# Set work or personal profile.
+read -p "Is this a work computer? (y/n) " -n 1
+echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	WORKPC=true;
-fi;
+	WORKPC=true
+else
+	WORKPC=false
+fi
+export WORKPC=$WORKPC
 
-# Setting up .gitconfig.local
-# Only run if file does not already exist?
-GITCONFIGLOCAL="$HOME/.gitconfig.local"
+# Set up .gitconfig.private.
+GITCONFIGLOCAL=".gitconfig.private"
+rm -f $GITCONFIGLOCAL
 touch $GITCONFIGLOCAL
-
 printf "[user]\n" >> $GITCONFIGLOCAL
 confirm_set "Set your git author name: " NAME
 printf "\tname = $NAME\n" >> $GITCONFIGLOCAL
 confirm_set "Set your git author email: " EMAIL
 printf "\temail = $EMAIL\n" >> $GITCONFIGLOCAL
-
 printf "[github]\n" >> $GITCONFIGLOCAL
 confirm_set "Set your github username: " GITHUBUSER
 printf "\tuser = $GITHUBUSER\n" >> $GITCONFIGLOCAL
-
-
 open "https://github.com/settings/tokens"
 confirm_set "Set your github token: " GITHUBTOKEN
 printf "\ttoken = $GITHUBTOKEN\n" >> $GITCONFIGLOCAL
 
-# https://atom.io/packages/sync-settings
-confirm_set "Set your Atom 'Sync Settings' package token: " ATOMGISTID
-ATOMGISTID="eeee555"
-printf "\tatomgistid = $ATOMGISTID\n" >> $GITCONFIGLOCAL
-
+# Setting up ssh.
 echo "Generating SSH key..."
 ssh-keygen
 echo "Copying key to clipboard."
@@ -60,8 +63,5 @@ echo "Please add your SSH key to your Github account."
 open "https://github.com/settings/keys"
 echo "Please add your SSH key to your Bitbucket account."
 open "https://bitbucket.org/account/"
-
-confirm_set "Set your computer name: " COMPUTERNAME
-echo $COMPUTERNAME
 
 unset confirm_set;
