@@ -19,16 +19,18 @@ brew cask install webpquicklook
 brew cask install xquartz
 
 # APPLE
-echo "Installing Numbers..."
-mas install 409203825
-echo "Installing GarageBand..."
-mas install 682658836
-echo "Installing iMovie..."
-mas install 408981434
-echo "Installing Pages..."
-mas install 409201541
-echo "Installing Keynote..."
-mas install 409183694
+if [[ ! $WORKPC != true ]]; then
+	echo "Installing Numbers..."
+	mas install 409203825
+	echo "Installing GarageBand..."
+	mas install 682658836
+	echo "Installing iMovie..."
+	mas install 408981434
+	echo "Installing Pages..."
+	mas install 409201541
+	echo "Installing Keynote..."
+	mas install 409183694
+fi
 
 # DESIGN
 echo "Installing LICEcap..."
@@ -61,8 +63,10 @@ echo "Installing Spotify..."
 brew cask install spotify
 echo "Installing Sonos..."
 brew cask install homebrew/cask-drivers/sonos
-echo "Installing Minecraft..."
-brew cask install minecraft
+if [[ ! $WORKPC != true ]]; then
+	echo "Installing Minecraft..."
+	brew cask install minecraft
+fi
 
 # OFFICE
 # Microsoft Excel.app
@@ -73,40 +77,46 @@ brew cask install minecraft
 # PRODUCTIVITY
 echo "Installing Dropbox..."
 brew cask install dropbox
-echo "Installing Evernote..."
-brew cask install evernote # mas install 406056744
 echo "Installing Slack..."
 brew cask install slack # mas install 803453959
-echo "Installing Wunderlist..."
-mas install 410628904
+if [[ ! $WORKPC != true ]]; then
+	echo "Installing Evernote..."
+	brew cask install evernote # mas install 406056744
+	echo "Installing Wunderlist..."
+	mas install 410628904
+fi
 
 # SOCIAL
 echo "Installing Houseparty..."
 mas install 1381523962
 echo "Installing Skype..."
 brew cask install skype
-echo "Installing Telegram..."
-brew cask install telegram # mas install 747648890
-echo "Installing WhatsApp..."
-brew cask install whatsapp # mas install 1147396723
+if [[ ! $WORKPC != true ]]; then
+	echo "Installing Telegram..."
+	brew cask install telegram # mas install 747648890
+	echo "Installing WhatsApp..."
+	brew cask install whatsapp # mas install 1147396723
+fi
 
 # UTILITIES
 echo "Installing Google Chrome..."
 brew cask install google-chrome
 echo "Installing InsomniaX..."
 brew cask install insomniax
-echo "Installing iStat Menus..."
-brew cask install istat-menus
 echo "Installing The Unarchiver..."
 brew cask install the-unarchiver # mas install 425424353
-echo "Installing Transmission..."
-brew cask install transmission
 echo "Installing Tunnelblick..."
 brew cask install tunnelblick
-echo "Installing VLC..."
-brew cask install vlc
-echo "Installing Wake Up Time..."
-mas install 495945638
+if [[ ! $WORKPC != true ]]; then
+	echo "Installing iStat Menus..."
+	brew cask install istat-menus
+	echo "Installing Transmission..."
+	brew cask install transmission
+	echo "Installing VLC..."
+	brew cask install vlc
+	echo "Installing Wake Up Time..."
+	mas install 495945638
+fi
 # echo "Installing CleanMyMac X..."
 # brew cask install cleanmymac
 # Parallels Desktop
