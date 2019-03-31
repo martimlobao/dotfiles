@@ -14,6 +14,6 @@ Thumbs.db
 .Trashes
 
 # Exclude private and local files
-.gitconfig.local
-.extra
-.private
+*.local
+*.extra
+*.private

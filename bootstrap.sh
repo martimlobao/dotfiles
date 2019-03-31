@@ -8,13 +8,13 @@ cd "$(dirname "${BASH_SOURCE}")";
 
 git pull origin master;
 
+# Sync dotfiles (excludes folders, .sh files, .md files, and git files)
 function bootstrap() {
-	rsync --exclude ".git/" \
+	rsync --exclude "*.sh" \
+		--exclude "*.md" \
 		--exclude ".DS_Store" \
 		--exclude ".gitignore" \
-		--exclude "README.md" \
-		--exclude "LICENSE-MIT.txt" \
-		--exclude "*.sh" \
+		-f"- */" \
 		-avh --no-perms . ~;
 	source ~/.bash_profile;
 }
