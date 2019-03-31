@@ -19,7 +19,7 @@ Here's a short description of each script in this repository:
 
 ## Installation
 
-**Note:** If you fork this repository to create your own dotfiles, replace [https://git.io/dotinstall](https://git.io/dotinstall) with [https://github.com/\<USER\>/\<REPO\>/tarball/master]() in the commands below.
+**Note:** If you fork this repository to create your own dotfiles, replace `https://git.io/dotinstall` with `https://github.com/<USER>/<REPO>/tarball/master` in the commands below.
 
 ### Fresh install
 
