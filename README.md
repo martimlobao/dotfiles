@@ -2,100 +2,99 @@
 
 ![Screenshot of my shell prompt](https://i.imgur.com/3AroNRu.png)
 
+This repository contains my personal dotfiles, as well as several scripts to install applications and configure settings. Although the bash configuration settings should (mostly) work on any Unix-based system, most of these scripts were only designed to run on macOS and likely won't run at all on any other OS.
+
+Here's a short description of each script in this repository:
+
+* `local.sh` *interactively* configure local settings unique to each machine, like the computer name and your git user details
+* `macos.sh` configure several macOS settings
+* `brew.sh` install command-line tools using Homebrew
+* `python.sh` configure python environment
+* `apps.sh` install fonts and macOS apps using Homebrew and Mac App Store
+* `dock.sh` configure macOS dock
+* `bootstrap.sh` install dotfiles for bash settings and command line layout
+* `setup.sh` install Homebrew, run all scripts, and install private dotfiles from private repository
+
+**Attention:** Running these dotfiles blindly will overwrite settings and install apps and fonts that you probably don't need. Some care was taken to not overwrite non-transferable settings (e.g. [git user settings](https://github.com/martimlobao/dotfiles/blob/master/local.sh)), but unless your preferences are identical to mine, you should [fork this repository](https://github.com/martimlobao/dotfiles/fork), review the code, and remove things you don't want or need. Use at your own risk!
+
 ## Installation
 
-**Warning:** If you want to give these dotfiles a try, you should first fork this repository, review the code, and remove things you don’t want or need. Don’t blindly use my settings unless you know what that entails. Use at your own risk!
+**Note:** If you fork this repository to create your own dotfiles, replace [https://git.io/dotinstall](https://git.io/dotinstall) with [https://github.com/\<USER\>/\<REPO\>/tarball/master]() in the commands below.
 
-### Using Git and the bootstrap script
+### Fresh install
 
-You can clone the repository wherever you want. (I like to keep it in `~/Projects/dotfiles`, with `~/dotfiles` as a symlink.) The bootstrapper script will pull in the latest version and copy the files to your home folder.
+To download these dotfiles on a new Mac (without git):
 
 ```bash
-git clone https://github.com/martimlobao/dotfiles.git && cd dotfiles && source bootstrap.sh
+curl -L https://git.io/dotinstall | tar -x
 ```
 
-To update, `cd` into your local `dotfiles` repository and then:
+Then, open the downloaded folder and run `setup.sh`, `bootstrap.sh`, or any other script:
 
 ```bash
-source bootstrap.sh
+cd martim*
+./local.sh
 ```
 
-Alternatively, to update while avoiding the confirmation prompt:
+### One-line everything install
+To run everything in a single command:
 
 ```bash
-set -- -f; source bootstrap.sh
+curl -L https://git.io/dotinstall | tar -x; cd martim*; ./setup.sh
+```
+**Warning:** This will overwrite settings, any existing dotfiles in your home directory, and install apps and fonts. Don't run this unless you're me or you have my exact preferences!
+
+### One-line dotfiles install
+To *only* install dotfiles without needing to install git or run any scripts:
+
+```bash
+cd; curl -L https://git.io/dotinstall | tar -xv --strip-components 1 --exclude={*.sh,*.md}
 ```
 
-### Git-free install
+**Warning:** This will overwrite any existing dotfiles in your home directory.
 
-To install these dotfiles without Git:
+### Terminal-free install!
+Go to [git.io/dotinstall](https://git.io/dotinstall) and open the downloaded file, then double-click on a script to run it.
+
+## Usage
+
+Most of these scripts rely on [Homebrew](https://brew.sh/), which is installed when running `setup.sh`. However, if you don't want to install everything in this repository, you can choose to install Homebrew by itself and pick and choose what you like:
 
 ```bash
-cd; curl -#L https://github.com/martimlobao/dotfiles/tarball/master | tar -xzv --strip-components 1 --exclude={README.md,bootstrap.sh,.osx,LICENSE-MIT.txt}
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ```
 
-To update later on, just run that command again.
+### Private dotfiles
+In addition to this public repository, I also have a private repository where I store other settings that I don't want to be publicly viewable, like my [iStat Menus](https://bjango.com/mac/istatmenus/) license or my [Atom](https://atom.io/) preferences. At the end of the `setup.sh` script, this private repository is cloned and a `run.sh` script is called to install these settings.
 
-### Specify the `$PATH`
+Of course, nothing else will be installed for you since you don't have access to this repository, but you can create your own private settings repository and add it to `setup.sh` if you wish.
 
-If `~/.path` exists, it will be sourced along with the other files, before any feature testing (such as [detecting which version of `ls` is being used](https://github.com/mathiasbynens/dotfiles/blob/aff769fd75225d8f2e481185a71d5e05b76002dc/.aliases#L21-26)) takes place.
+### Add custom commands
 
-Here’s an example `~/.path` file that adds `/usr/local/bin` to the `$PATH`:
+If you want to add a few extra commands without creating your own fork or an additional private repository, you can add these to `.extra`. Since this file is in the `.gitignore`, any changes will remain local to your machine and will not be committed to a public repository.
+
+If `.extra` exists, it is sourced in `.bash_profile` after all other dotfiles, so it can also be used to override settings or functions.
+
+All settings that I do not want to sync are either generated using `local.sh` or stored in my private dotfiles repository, so I don't have anything in my `.extra` file. However, an example `.extra` could look something like this:
 
 ```bash
-export PATH="/usr/local/bin:$PATH"
+# Restore Atom settings using https://atom.io/packages/sync-settings
+apm install sync-settings
+GITHUB_TOKEN=6a10cc207b88888888888888888888887a67e871
+GIST_ID=b302588888888888888888888888c41c
+GITHUB_TOKEN=$GITHUB_TOKEN GIST_ID=$GIST_ID atom
 ```
 
-<!-- ### Add custom commands without creating a new fork
+## Contributing
+[Pull requests](https://github.com/martimlobao/dotfiles/pulls) are welcome. For non-minor changes, consider [opening an issue](https://github.com/martimlobao/dotfiles/issues) first to discuss what you would like to change.
 
-If `~/.extra` exists, it will be sourced along with the other files. You can use this to add a few custom commands without the need to fork this entire repository, or to add commands you don’t want to commit to a public repository.
+Note that these are my personal dotfiles, so if you'd like to customize them to your own taste, it might make more sense to [fork this repository](https://github.com/martimlobao/dotfiles/fork) instead.
 
-My `~/.extra` looks something like this:
+## Thanks
 
-```bash
-# Git credentials
-# Not in the repository, to prevent people from accidentally committing under my name
-GIT_AUTHOR_NAME="Mathias Bynens"
-GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
-git config --global user.name "$GIT_AUTHOR_NAME"
-GIT_AUTHOR_EMAIL="mathias@mailinator.com"
-GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-git config --global user.email "$GIT_AUTHOR_EMAIL"
-``` -->
-
-<!-- You could also use `~/.extra` to override settings, functions and aliases from my dotfiles repository. It’s probably better to [fork this repository](https://github.com/mathiasbynens/dotfiles/fork) instead, though. -->
-
-### Sensible macOS defaults
-
-When setting up a new Mac, you may want to set some sensible macOS defaults:
-
-```bash
-./.macos
-```
-
-### Install Homebrew formulae
-
-When setting up a new Mac, you may want to install some common [Homebrew](https://brew.sh/) formulae (after installing Homebrew, of course):
-
-```bash
-./brew.sh
-```
-
-Some of the functionality of these dotfiles depends on formulae installed by `brew.sh`. If you don’t plan to run `brew.sh`, you should look carefully through the script and manually install any particularly important ones. A good example is Bash/Git completion: the dotfiles use a special version from Homebrew.
-
-## Thanks to…
-
-* [Mathias Bynens](https://mathiasbynens.be/) and [his dotfiles repository](https://github.com/mathiasbynens/dotfiles), off of which this repo was forked
-* @ptb and [his _macOS Setup_ repository](https://github.com/ptb/mac-setup)
-* [Ben Alman](http://benalman.com/) and his [dotfiles repository](https://github.com/cowboy/dotfiles)
-* [Cătălin Mariș](https://github.com/alrra) and his [dotfiles repository](https://github.com/alrra/dotfiles)
-* [Gianni Chiappetta](https://butt.zone/) for sharing his [amazing collection of dotfiles](https://github.com/gf3/dotfiles)
-* [Jan Moesen](http://jan.moesen.nu/) and his [ancient `.bash_profile`](https://gist.github.com/1156154) + [shiny _tilde_ repository](https://github.com/janmoesen/tilde)
-* [Lauri ‘Lri’ Ranta](http://lri.me/) for sharing [loads of hidden preferences](http://osxnotes.net/defaults.html)
-* [Matijs Brinkhuis](https://matijs.brinkhu.is/) and his [dotfiles repository](https://github.com/matijs/dotfiles)
-* [Nicolas Gallagher](http://nicolasgallagher.com/) and his [dotfiles repository](https://github.com/necolas/dotfiles)
-* [Sindre Sorhus](https://sindresorhus.com/)
-* [Tom Ryder](https://sanctum.geek.nz/) and his [dotfiles repository](https://sanctum.geek.nz/cgit/dotfiles.git/about)
-* [Kevin Suttle](http://kevinsuttle.com/) and his [dotfiles repository](https://github.com/kevinSuttle/dotfiles) and [macOS-Defaults project](https://github.com/kevinSuttle/macOS-Defaults), which aims to provide better documentation for [`~/.macos`](https://mths.be/macos)
-* [Haralan Dobrev](https://hkdobrev.com/)
-* Anyone who [contributed a patch](https://github.com/mathiasbynens/dotfiles/contributors) or [made a helpful suggestion](https://github.com/mathiasbynens/dotfiles/issues)
+* [@mathiasbyens](https://mathiasbynens.be/) for his [dotfiles repository](https://github.com/mathiasbynens/dotfiles), off of which this repository was based
+* [@kennethreitz](https://www.kennethreitz.org/) for a few [functions and inspiration](https://github.com/kennethreitz/dotfiles)
+* [@kevinsuttle](https://kevinsuttle.com/) for a great compilation of [macOS defaults](https://github.com/kevinSuttle/macOS-Defaults)
+* [@coreyschafer](https://coreyms.com/) for his awesome [YouTube tutorials](https://www.youtube.com/user/schafer5) on multiple topics
+* [@henriquebastos](https://henriquebastos.net/) for [documentation](https://medium.com/@henriquebastos/the-definitive-guide-to-setup-my-python-workspace-628d68552e14) on getting Jupyter to run nicely with pyenv
+* [@ryanpavlick](https://github.com/rpavlick) for his [macOS dock customization functions](https://github.com/rpavlick/add_to_dock)

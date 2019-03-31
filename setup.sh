@@ -39,12 +39,14 @@ sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_heade
 ./dock.sh
 
 ###############################################################################
-# Private dotfiles                                                            #
-###############################################################################
-# Install private dotfiles.
-git clone git@github.com:martimlobao/dotfiles-private.git
-
-###############################################################################
 # Update dotfiles                                                             #
 ###############################################################################
 ./bootstrap.sh
+
+###############################################################################
+# Install private dotfiles                                                    #
+###############################################################################
+git clone git@github.com:martimlobao/dotfiles-private.git
+./dotfiles-private/run.sh 2> /dev/null
+
+echo "Setup complete!"
