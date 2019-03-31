@@ -1,9 +1,13 @@
 # Automatically activate a local python virtual environment when cd-ing into it.
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
+if which pyenv > /dev/null; then
+	eval "$(pyenv init -)"
+	eval "$(pyenv virtualenv-init -)"
+fi
 
 # Configure thefuck.
-eval $(thefuck --alias)
+if which pyenv > /dev/null; then
+	eval "$(thefuck --alias)"
+fi
 
 # Configure autojump.
 [ -f /usr/local/etc/profile.d/autojump.sh ] && . /usr/local/etc/profile.d/autojump.sh;
