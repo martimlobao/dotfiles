@@ -19,7 +19,7 @@ brew cask install webpquicklook
 brew cask install xquartz
 
 # APPLE
-if [[ ! $WORKPC != true ]]; then
+if [[ $WORKPC != true ]]; then
 	echo "Installing Numbers..."
 	mas install 409203825
 	echo "Installing GarageBand..."
@@ -63,7 +63,7 @@ echo "Installing Spotify..."
 brew cask install spotify
 echo "Installing Sonos..."
 brew cask install homebrew/cask-drivers/sonos
-if [[ ! $WORKPC != true ]]; then
+if [[ $WORKPC != true ]]; then
 	echo "Installing Minecraft..."
 	brew cask install minecraft
 fi
@@ -79,7 +79,7 @@ echo "Installing Dropbox..."
 brew cask install dropbox
 echo "Installing Slack..."
 brew cask install slack # mas install 803453959
-if [[ ! $WORKPC != true ]]; then
+if [[ $WORKPC != true ]]; then
 	echo "Installing Evernote..."
 	brew cask install evernote # mas install 406056744
 	echo "Installing Wunderlist..."
@@ -91,7 +91,7 @@ echo "Installing Houseparty..."
 mas install 1381523962
 echo "Installing Skype..."
 brew cask install skype
-if [[ ! $WORKPC != true ]]; then
+if [[ $WORKPC != true ]]; then
 	echo "Installing Telegram..."
 	brew cask install telegram # mas install 747648890
 	echo "Installing WhatsApp..."
@@ -107,7 +107,7 @@ echo "Installing The Unarchiver..."
 brew cask install the-unarchiver # mas install 425424353
 echo "Installing Tunnelblick..."
 brew cask install tunnelblick
-if [[ ! $WORKPC != true ]]; then
+if [[ $WORKPC != true ]]; then
 	echo "Installing iStat Menus..."
 	brew cask install istat-menus
 	echo "Installing Transmission..."
