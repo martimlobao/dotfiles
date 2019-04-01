@@ -5,7 +5,7 @@ if which pyenv > /dev/null; then
 fi
 
 # Configure thefuck.
-if which pyenv > /dev/null; then
+if which thefuck > /dev/null; then
 	eval "$(thefuck --alias)"
 fi
 
