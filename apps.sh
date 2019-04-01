@@ -14,6 +14,7 @@ brew cask install android-platform-tools
 brew cask install java
 brew cask install qlmarkdown
 brew cask install qlstephen
+brew cask install qlvideo
 brew cask install quicklook-json
 brew cask install webpquicklook
 brew cask install xquartz
@@ -47,6 +48,8 @@ mas install 1081413713
 # DEVELOPER
 echo "Installing Atom..."
 brew cask install atom
+echo "Installing Jupyter Notebook Viewer..."
+brew cask install jupyter-notebook-viewer
 echo "Installing MongoDB Compass..."
 brew cask install mongodb-compass
 echo "Installing MySQLWorkbench..."
