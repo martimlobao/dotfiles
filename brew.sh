@@ -12,6 +12,9 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 brew update
 brew upgrade
 
+# Update system nano.
+brew install nano
+
 # Install Bash 4.
 brew install bash
 brew install bash-completion2
