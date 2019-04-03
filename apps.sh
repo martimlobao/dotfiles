@@ -91,7 +91,7 @@ fi
 
 # SOCIAL
 echo "Installing Houseparty..."
-mas install 1381523962
+brew cask install houseparty # mas install 1381523962
 echo "Installing Skype..."
 brew cask install skype
 if [[ $WORKPC != true ]]; then
