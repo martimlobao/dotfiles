@@ -2,8 +2,8 @@
 	# For credentials and tokens and private info
 	# In ~/.gitconfig.private store with the following format:
 	# [user]
-	# 	name = Martim Lobao
-	# 	email = martim@email.com
+	#	name = Martim Lobao
+	#	email = martim@email.com
 	#
 	# [github]
 	#	user = martimlobao
@@ -45,3 +45,9 @@
 [diff]
 	# Detect copies as well as renames
 	renames = copies
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true

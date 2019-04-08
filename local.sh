@@ -47,9 +47,6 @@ printf "\temail = $EMAIL\n" >> $GITCONFIGLOCAL
 printf "[github]\n" >> $GITCONFIGLOCAL
 confirm_set "Set your github username: " GITHUBUSER
 printf "\tuser = $GITHUBUSER\n" >> $GITCONFIGLOCAL
-open "https://github.com/settings/tokens"
-confirm_set "Set your github token: " GITHUBTOKEN
-printf "\ttoken = $GITHUBTOKEN\n" >> $GITCONFIGLOCAL
 
 # Setting up ssh.
 echo "Generating SSH key..."
@@ -59,9 +56,9 @@ cat ~/.ssh/id_rsa.pub | pbcopy
 echo "\n"
 cat ~/.ssh/id_rsa.pub
 echo "\n"
-echo "Please add your SSH key to your Github account."
+echo "Please add your SSH key to your Github and/or Bitbucket account."
+sleep 2
 open "https://github.com/settings/keys"
-echo "Please add your SSH key to your Bitbucket account."
 open "https://bitbucket.org/account/"
 
 unset confirm_set;

@@ -82,8 +82,8 @@ brew install pandoc
 
 # Install developer tools.
 brew install mongodb
-sudo sudo mkdir -p /data/db
-sudo sudo chown -R $(whoami) /data/db
+sudo mkdir -p /data/db
+sudo chown -R $(whoami) /data/db
 brew install mysql
 sudo mysql.server start
 brew install rabbitmq
