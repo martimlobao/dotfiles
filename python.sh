@@ -12,6 +12,9 @@ brew install pyenv
 brew install pyenv-virtualenv
 brew install pipenv
 
+# Reload .bash_profile with pyenv
+source ~/.bash_profile
+
 ###############################################################################
 # To automatically launch local virtual environments, add the following commands to
 # ~/.bash_profile:
