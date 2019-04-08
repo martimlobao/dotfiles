@@ -7,6 +7,7 @@
 # FONTS
 brew cask install homebrew/cask-fonts/font-source-code-pro
 brew cask install homebrew/cask-fonts/font-source-sans-pro
+brew cask install homebrew/cask-fonts/font-humor-sans
 
 # TOOLS
 brew cask install aerial
