@@ -63,6 +63,7 @@ brew install youtube-dl
 brew install autojump
 brew install mas
 brew install nnn
+brew install tree
 
 # Install very important stuff.
 brew install cowsay
@@ -71,10 +72,13 @@ brew install lolcat
 brew install neofetch
 brew install thefuck
 
+# Install newer versions of system binaries using different names.
+brew install gnu-sed # gsed
+brew install grep # ggrep
+
 # Install other useful binaries.
 brew install ack
 brew install exiftool
-brew install gnu-sed
 brew install gpg
 brew install imagemagick
 brew install jq
