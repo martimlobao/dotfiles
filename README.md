@@ -78,11 +78,9 @@ If `.extra` exists, it is sourced in `.bash_profile` after all other dotfiles, s
 All settings that I do not want to sync are either generated using `local.sh` or stored in my private dotfiles repository, so I don't have anything in my `.extra` file. However, an example `.extra` could look something like this:
 
 ```bash
-# Restore Atom settings using https://atom.io/packages/sync-settings
-apm install sync-settings
-GITHUB_TOKEN=6a10cc207b88888888888888888888887a67e871
-GIST_ID=b302588888888888888888888888c41c
-GITHUB_TOKEN=$GITHUB_TOKEN GIST_ID=$GIST_ID atom
+# Export Githbug token and gist ID for Atom sync-settings https://atom.io/packages/sync-settings
+export GITHUB_TOKEN=6a10cc207b88888888888888888888887a67e871
+export GIST_ID=b302588888888888888888888888c41c
 ```
 
 ## Contributing
