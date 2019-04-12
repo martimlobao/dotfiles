@@ -26,7 +26,7 @@ Here's a short description of each script in this repository:
 To download these dotfiles on a new Mac (without git):
 
 ```bash
-curl -L https://git.io/dotinstall | tar -x
+curl -L https://git.io/dotinstall | tar -xz
 ```
 
 Then, open the downloaded folder and run `setup.sh`, `bootstrap.sh`, or any other script:
@@ -40,7 +40,7 @@ cd martim*
 To run everything in a single command:
 
 ```bash
-curl -L https://git.io/dotinstall | tar -x; cd martim*; ./setup.sh
+curl -L https://git.io/dotinstall | tar -xz; cd martim*; ./setup.sh
 ```
 **Warning:** This will overwrite settings, any existing dotfiles in your home directory, and install apps and fonts. Don't run this unless you're me or you have my exact preferences!
 
@@ -48,7 +48,7 @@ curl -L https://git.io/dotinstall | tar -x; cd martim*; ./setup.sh
 To *only* install dotfiles without needing to install git or run any scripts:
 
 ```bash
-cd; curl -L https://git.io/dotinstall | tar -xv --strip-components 1 --exclude={*.sh,*.md}
+cd; curl -L https://git.io/dotinstall | tar -xzv --strip-components 1 --exclude={*.sh,*.md}
 ```
 
 **Warning:** This will overwrite any existing dotfiles in your home directory.
