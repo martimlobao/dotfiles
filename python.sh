@@ -8,6 +8,7 @@
 # sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
 brew install python
 brew install black
+brew install autopep8
 brew install pyenv
 brew install pyenv-virtualenv
 brew install pipenv
