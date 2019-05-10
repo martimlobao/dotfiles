@@ -116,7 +116,7 @@ PS1+="\[${bold}\]\n"; # newline
 PS1+="\[${userStyle}\]\u"; # username
 PS1+="\[${white}\]@";
 PS1+="\[${hostStyle}\]\h"; # host
-if [[ $(ps -p $$ | awk '$1 == PP {print $4}' PP=$$) != "-bash" ]]; then # when not in login shell
+if [[ "$(echo $0)" != "-bash" ]]; then # when not in login shell
 	PS1+="\[${white}\] using ";
 	PS1+="\[${red}\]\s"; # shell
 fi;
