@@ -11,6 +11,13 @@ battery () {
 	pmset -g batt | egrep "([0-9]+\%).*" -o --colour=auto | cut -f3 -d';'
 }
 
+# Relaunch core audio when it stops working without having to restart macOS
+audiokill () {
+	# sudo killall coreaudiod
+	sudo launchctl stop com.apple.audio.coreaudiod
+	sudo launchctl start com.apple.audio.coreaudiod
+}
+
 # Create a new directory and enter it.
 mkd () {
 	mkdir -p "$@" && cd "$_";
