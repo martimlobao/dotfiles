@@ -31,6 +31,7 @@ fi
 # DESIGN
 brew cask install licecap
 mas install 1081413713 # GIF Brewery 3
+mas install 1351639930 # Gifski
 
 # DEVELOPER
 brew cask install atom

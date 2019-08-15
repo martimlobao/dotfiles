@@ -52,6 +52,7 @@ brew install git
 brew install git-lfs
 
 # Install other languages.
+brew install go
 brew install node
 
 # Install download utilities.
@@ -79,6 +80,7 @@ brew install grep # ggrep
 # Install other useful binaries.
 brew install ack
 brew install exiftool
+brew install gifski
 brew install gpg
 brew install imagemagick
 brew install jq
