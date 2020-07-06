@@ -34,23 +34,26 @@ mas install 1081413713 # GIF Brewery 3
 mas install 1351639930 # Gifski
 
 # DEVELOPER
-brew cask install atom
+brew cask install docker
 brew cask install jupyter-notebook-viewer
 brew cask install mongodb-compass
 brew cask install mysqlworkbench
 brew cask install sublime-text
 brew cask install tableau-public
+brew cask install visual-studio-code
 
 # LEISURE
-brew cask install spotify
 brew cask install homebrew/cask-drivers/sonos
+brew cask install spotify
 if [[ $WORKPC != true ]]; then
 	brew cask install minecraft
+	brew cask install https://raw.githubusercontent.com/popcorn-official/popcorn-desktop/development/casks/popcorn-time.rb
 fi
 
 # PRODUCTIVITY
 brew cask install dropbox
 brew cask install slack # mas install 803453959
+brew cask install zoomus
 if [[ $WORKPC != true ]]; then
 	brew cask install evernote # mas install 406056744
 	mas install 410628904 # Wunderlist
