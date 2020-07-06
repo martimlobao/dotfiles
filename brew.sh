@@ -66,6 +66,10 @@ brew install mas
 brew install nnn
 brew install tree
 
+# Install alternative shells for fun.
+brew install fish
+brew install nushell
+
 # Install very important stuff.
 brew install cowsay
 brew install googler
@@ -87,13 +91,21 @@ brew install jq
 brew install pandoc
 
 # Install developer tools.
-brew install mongodb
-sudo mkdir -p /data/db
-sudo chown -R $(whoami) /data/db
-brew install mysql
-sudo mysql.server start
-brew install rabbitmq
+brew install docker
+brew tap mongodb/brew
+brew install mongodb-community@4.2
+# brew services start mongodb-community
+# sudo mkdir -p /data/db
+# sudo chown -R $(whoami) /data/db
+sudo chown -R $(whoami) $(brew --prefix)/*
+brew install mysql@5.7
+brew services start mysql
+# sudo mysql.server start
 brew install wine
+brew install apache-spark
+brew install elasticsearch
+brew install postgresql
+brew install redis
 
 # Remove outdated versions from the cellar.
 brew cleanup
