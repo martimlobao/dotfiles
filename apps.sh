@@ -5,20 +5,21 @@
 ###############################################################################
 
 # FONTS
-brew cask install homebrew/cask-fonts/font-source-code-pro
-brew cask install homebrew/cask-fonts/font-source-sans-pro
-brew cask install homebrew/cask-fonts/font-humor-sans
+brew install --cask homebrew/cask-fonts/font-fira-code
+brew install --cask homebrew/cask-fonts/font-humor-sans
+brew install --cask homebrew/cask-fonts/font-source-code-pro
+brew install --cask homebrew/cask-fonts/font-source-sans-pro
 
 # TOOLS
-brew cask install aerial
-brew cask install android-platform-tools
-brew cask install java
-brew cask install qlmarkdown
-brew cask install qlstephen
-brew cask install qlvideo
-brew cask install quicklook-json
-brew cask install webpquicklook
-brew cask install xquartz
+brew install --cask aerial
+brew install --cask android-platform-tools
+brew install --cask java
+brew install --cask qlmarkdown
+brew install --cask qlstephen
+brew install --cask qlvideo
+brew install --cask quicklook-json
+brew install --cask webpquicklook
+brew install --cask xquartz
 
 # APPLE
 if [[ $WORKPC != true ]]; then
@@ -29,51 +30,54 @@ if [[ $WORKPC != true ]]; then
 fi
 
 # DESIGN
-brew cask install licecap
+brew install --cask licecap
 mas install 1081413713 # GIF Brewery 3
 mas install 1351639930 # Gifski
 
 # DEVELOPER
-brew cask install docker
-brew cask install jupyter-notebook-viewer
-brew cask install mongodb-compass
-brew cask install mysqlworkbench
-brew cask install sublime-text
-brew cask install tableau-public
-brew cask install visual-studio-code
+brew install --cask docker
+brew install --cask hyper
+brew install --cask jupyter-notebook-viewer
+brew install --cask mongodb-compass
+brew install --cask mysqlworkbench
+brew install --cask sublime-text
+brew install --cask tableau-public
+brew install --cask visual-studio-code
 
 # LEISURE
-brew cask install homebrew/cask-drivers/sonos
-brew cask install spotify
+brew install --cask sonos
+brew install --cask spotify
 if [[ $WORKPC != true ]]; then
-	brew cask install minecraft
-	brew cask install https://raw.githubusercontent.com/popcorn-official/popcorn-desktop/development/casks/popcorn-time.rb
+	brew install --cask minecraft
+	brew tap popcorn-official/popcorn-desktop https://github.com/popcorn-official/popcorn-desktop.git
+	brew install --cask popcorn-time
 fi
 
 # PRODUCTIVITY
-brew cask install dropbox
-brew cask install slack # mas install 803453959
-brew cask install zoomus
+brew install --cask dropbox
+brew install --cask slack # mas install 803453959
+brew install --cask zoomus
 if [[ $WORKPC != true ]]; then
-	brew cask install evernote # mas install 406056744
+	brew install --cask evernote # mas install 406056744
 	mas install 410628904 # Wunderlist
 fi
 
 # SOCIAL
-brew cask install houseparty # mas install 1381523962
-brew cask install skype
+brew install --cask houseparty # mas install 1381523962
+brew install --cask skype
 if [[ $WORKPC != true ]]; then
-	brew cask install telegram # mas install 747648890
-	brew cask install whatsapp # mas install 1147396723
+	brew install --cask telegram # mas install 747648890
+	brew install --cask whatsapp # mas install 1147396723
 fi
 
 # UTILITIES
-brew cask install google-chrome
-brew cask install the-unarchiver # mas install 425424353
-brew cask install tunnelblick
+brew install --cask expressvpn
+brew install --cask google-chrome
+brew install --cask the-unarchiver # mas install 425424353
+brew install --cask tunnelblick
 if [[ $WORKPC != true ]]; then
-	brew cask install istat-menus
-	brew cask install transmission
-	brew cask install vlc
+	brew install --cask istat-menus
+	brew install --cask transmission
+	brew install --cask vlc
 	mas install 495945638 # Wake Up Time
 fi
