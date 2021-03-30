@@ -47,41 +47,44 @@ brew install rlwrap
 # reverse_lst = lst[::-1]
 ###############################################################################
 
-# Install git utilities.
+# Install git utilities
 brew install git
 brew install git-lfs
 
-# Install other languages.
+# Install other languages
 brew install go
 brew install node
 
-# Install download utilities.
+# Install download utilities
 brew install httpie
 brew install wget
 brew install youtube-dl
 
-# Install fancy shell stuff.
+# Install fancy shell stuff
 brew install autojump
 brew install mas
 brew install nnn
 brew install tree
 
-# Install alternative shells for fun.
+# Install shell formatting
+brew install zsh-syntax-highlighting
+
+# Install alternative shells for fun
 brew install fish
 brew install nushell
 
-# Install very important stuff.
+# Install very important stuff
 brew install cowsay
 brew install googler
 brew install lolcat
 brew install neofetch
 brew install thefuck
 
-# Install newer versions of system binaries using different names.
+# Install newer versions of system binaries using different names
 brew install gnu-sed # gsed
 brew install grep # ggrep
 
-# Install other useful binaries.
+# Install other useful binaries
 brew install ack
 brew install exiftool
 brew install gifski
@@ -90,7 +93,7 @@ brew install imagemagick
 brew install jq
 brew install pandoc
 
-# Install developer tools.
+# Install developer tools
 brew install docker
 brew tap mongodb/brew
 brew install mongodb-community@4.2
@@ -107,5 +110,5 @@ brew install elasticsearch
 brew install postgresql
 brew install redis
 
-# Remove outdated versions from the cellar.
+# Remove outdated versions from the cellar
 brew cleanup

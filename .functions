@@ -76,6 +76,9 @@ remake () {
 		VENV=`echo $VIRTUAL_ENV | rev | cut -f 1 -d / | rev`
 		ALIAS=`echo $VIRTUAL_ENV | rev | cut -f 4- -d / | rev`
 		ALIAS="${ALIAS}/${VENV}"
+		echo $PYVERSION
+		echo $VENV
+		echo $ALIAS
 		rm -rf $VIRTUAL_ENV
 		rm -rf $ALIAS
 		pyenv virtualenv $PYVERSION $VENV

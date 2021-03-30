@@ -51,3 +51,14 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+
+[core]
+	autolf = true
+	autocrlf = input
+	eol = lf
+
+[push]
+	default = current
+
+[pull]
+	ff = only
