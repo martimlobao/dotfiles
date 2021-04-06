@@ -56,7 +56,7 @@ fi
 # PRODUCTIVITY
 brew install --cask dropbox
 brew install --cask slack # mas install 803453959
-brew install --cask zoomus
+brew install --cask zoom
 if [[ $WORKPC != true ]]; then
 	brew install --cask evernote # mas install 406056744
 	mas install 410628904 # Wunderlist
