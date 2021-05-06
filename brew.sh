@@ -109,6 +109,7 @@ brew install apache-spark
 brew install elasticsearch
 brew install postgresql
 brew install redis
+brew install aws-rotate-key
 
 # Remove outdated versions from the cellar
 brew cleanup
