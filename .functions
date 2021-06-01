@@ -85,6 +85,47 @@ remake () {
 	fi
 }
 
+# Rotate AWS access key
+rotateawskey () {
+	verbose=false
+	while getopts 'abf:v' flag; do
+		case "${flag}" in
+			v) verbose=true ;;
+			*) echo "rotateawskey: usage: rotateawskey [-v]";
+				return 1 ;;
+		esac
+	done;
+	USERNAME=$(aws sts get-caller-identity --query Arn --output text | cut -f 2 -d /);
+	OLDKEYID=$(aws iam list-access-keys --user-name "$USERNAME" \
+	--query 'AccessKeyMetadata[].AccessKeyId' --output text);
+	echo "Found existing key: ${OLDKEYID}"
+	if [ ${#OLDKEYID} != 20 ] ; then
+		echo "Multiple keys found, exiting.";
+		aws iam list-access-keys --user-name "$USERNAME";
+	else
+		NEWKEY=$(aws iam create-access-key \
+		--query '[AccessKey.AccessKeyId,AccessKey.SecretAccessKey]' \
+		--output text);
+		NEWKEYID=$(echo $NEWKEY | awk '{print $1}');
+		NEWACCESSKEY=$(echo $NEWKEY | awk '{print $2}');
+		echo "New key generated:  ${NEWKEYID}";
+		if [ $verbose = true ] ; then
+			echo "To manually set key:"
+			echo "export AWS_ACCESS_KEY_ID=${NEWKEYID}";
+			echo "export AWS_SECRET_ACCESS_KEY=${NEWACCESSKEY}";
+		fi
+		aws configure set aws_access_key_id "$NEWKEYID";
+		aws configure set aws_secret_access_key "$NEWACCESSKEY";
+		export AWS_ACCESS_KEY_ID="$NEWKEYID";
+		export AWS_SECRET_ACCESS_KEY="$NEWACCESSKEY";
+		echo "Deleting old key..."
+		while true; do
+			sleep 1
+			aws iam delete-access-key --user-name "$USERNAME" --access-key-id "$OLDKEYID" 2>/dev/null || test $? -eq 1 && break
+		done
+	fi
+}
+
 # Create a private github repo on github and copy the current repo to it under the remote 'personal'
 copy-repo-to-personal () {
 	REPO=$(basename ${PWD##*/})
