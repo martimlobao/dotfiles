@@ -77,6 +77,7 @@ brew install nushell
 brew install cowsay
 brew install googler
 brew install lolcat
+brew install pastel
 brew install neofetch
 brew install thefuck
 
