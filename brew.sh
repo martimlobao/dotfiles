@@ -62,6 +62,7 @@ brew install youtube-dl
 
 # Install fancy shell stuff
 brew install autojump
+brew install bat
 brew install mas
 brew install nnn
 brew install tree
