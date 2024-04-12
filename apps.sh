@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap "echo 'Script was interrupted by the user.'; exit 1" INT
 
 ###############################################################################
 # INSTALL APPS AND SOFTWARE                                                   #
 ###############################################################################
+
+echo -e "📲  \033[1;36mInstalling apps and software...\033[0m"
 
 # Installs a cask using Homebrew if it isn't installed yet.
 # Usage: brew_install <cask_name>
@@ -14,6 +17,19 @@ brew_install () {
 	else
 		echo -e "☑️  \033[1;32m$1 is already installed.\033[0m"
 	fi
+}
+
+# Installs an app using MAS if it isn't installed yet.
+# Usage: mas_install <app_id>
+mas_install () {
+    if mas list | grep -q "$1 "; then
+        APP_NAME=$(mas list | grep "$1 " | sed -E 's/.*[0-9]+[[:space:]]+(.*)[[:space:]]+\(.*/\1/' | sed -E 's/[[:space:]]*$//')
+        echo -e "☑️  \033[1;32m$APP_NAME is already installed from the App Store.\033[0m"
+    else
+        APP_NAME=$(mas info $1 | head -n 1 | sed -E 's/(.*)[[:space:]]+[0-9\.]+ \[.*\]/\1/')
+        echo -e "⬇️  \033[1;34mInstalling $APP_NAME from the App Store...\033[0m"
+        mas install $1
+    fi
 }
 
 # FONTS
@@ -31,14 +47,14 @@ brew_install quicklook-json
 brew_install webpquicklook
 
 # APPLE
-mas install 408981434  # iMovie
-mas install 409183694  # Keynote
-mas install 409201541  # Pages
-mas install 409203825  # Numbers
+mas_install 408981434  # iMovie
+mas_install 409183694  # Keynote
+mas_install 409201541  # Pages
+mas_install 409203825  # Numbers
 
 # DESIGN
 brew_install licecap
-mas install 1351639930  # Gifski
+mas_install 1351639930  # Gifski
 
 # DEVELOPER
 brew_install docker
@@ -58,8 +74,8 @@ brew_install obsidian
 brew_install slack  # mas install 803453959
 brew_install todoist
 brew_install zoom
-mas install 1274495053  # Microsoft To Do
-mas install 1423210932  # Flow - Focus & Pomodoro Timer
+mas_install 1274495053  # Microsoft To Do
+mas_install 1423210932  # Flow - Focus & Pomodoro Timer
 
 # SOCIAL
 brew_install skype
@@ -79,4 +95,4 @@ brew_install the-unarchiver  # mas install 425424353
 brew_install transmission
 brew_install tunnelblick
 brew_install vlc
-mas install 937984704  # Amphetamine
+mas_install 937984704  # Amphetamine
