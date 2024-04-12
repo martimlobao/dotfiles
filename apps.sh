@@ -1,84 +1,81 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 ###############################################################################
 # INSTALL APPS AND SOFTWARE                                                   #
 ###############################################################################
 
-# FONTS
-brew install --cask homebrew/cask-fonts/font-fira-code
-brew install --cask homebrew/cask-fonts/font-humor-sans
-brew install --cask homebrew/cask-fonts/font-source-code-pro
-brew install --cask homebrew/cask-fonts/font-source-sans-pro
+# Function for installing a cask using Homebrew if it doesn't exist
+brew_install () {
+	if ! brew list --cask $1 &> /dev/null; then
+		echo -e "⬇️  \033[1;34mInstalling $1...\033[0m"
+		brew install --cask $1
+	else
+		echo -e "☑️  \033[1;32m$1 is already installed.\033[0m"
+	fi
+}
 
-# TOOLS
-brew install --cask aerial
-brew install --cask android-platform-tools
-brew install --cask java
-brew install --cask qlmarkdown
-brew install --cask qlstephen
-brew install --cask qlvideo
-brew install --cask quicklook-json
-brew install --cask webpquicklook
-brew install --cask xquartz
+# FONTS
+brew_install homebrew/cask-fonts/font-fira-code
+brew_install homebrew/cask-fonts/font-humor-sans
+brew_install homebrew/cask-fonts/font-sauce-code-pro-nerd-font
+brew_install homebrew/cask-fonts/font-source-code-pro
+brew_install homebrew/cask-fonts/font-source-sans-3
+
+# UTILITIES
+brew_install qlmarkdown
+brew_install qlstephen
+brew_install qlvideo
+brew_install quicklook-json
+brew_install webpquicklook
 
 # APPLE
-if [[ $WORKPC != true ]]; then
-	mas install 409203825  # Numbers
-	mas install 408981434  # iMovie
-	mas install 409201541  # Pages
-	mas install 409183694  # Keynote
-fi
+mas install 408981434  # iMovie
+mas install 409183694  # Keynote
+mas install 409201541  # Pages
+mas install 409203825  # Numbers
 
 # DESIGN
-brew install --cask licecap
-mas install 1081413713  # GIF Brewery 3
+brew_install licecap
 mas install 1351639930  # Gifski
 
 # DEVELOPER
-brew install --cask docker
-brew install --cask hyper
-brew install --cask jupyter-notebook-viewer
-brew install --cask mongodb-compass
-brew install --cask mysqlworkbench
-brew install --cask sublime-text
-brew install --cask tableau-public
-brew install --cask visual-studio-code
+brew_install docker
+brew_install hyper
+brew_install jupyter-notebook-viewer
+brew_install visual-studio-code
 
 # LEISURE
-brew install --cask sonos
-brew install --cask spotify
-if [[ $WORKPC != true ]]; then
-	brew install --cask minecraft
-	brew tap popcorn-official/popcorn-desktop https://github.com/popcorn-official/popcorn-desktop.git
-	brew install --cask popcorn-time
-fi
+brew_install minecraft
+brew_install sonos
+brew_install spotify
 
 # PRODUCTIVITY
-brew install --cask dropbox
-brew install --cask slack  # mas install 803453959
-brew install --cask zoom
-if [[ $WORKPC != true ]]; then
-	brew install --cask evernote  # mas install 406056744
-	mas install 410628904  # Wunderlist
-fi
+brew_install evernote  # mas install 406056744
+brew_install notion
+brew_install obsidian
+brew_install slack  # mas install 803453959
+brew_install todoist
+brew_install zoom
 
 # SOCIAL
-brew install --cask houseparty  # mas install 1381523962
-brew install --cask skype
-if [[ $WORKPC != true ]]; then
-	brew install --cask telegram  # mas install 747648890
-	brew install --cask whatsapp  # mas install 1147396723
-fi
+brew_install skype
+brew_install telegram  # mas install 747648890
+brew_install whatsapp  # mas install 1147396723
 
-# UTILITIES
-brew install --cask eul  # iStat menus FOSS alternative
-brew install --cask expressvpn
-brew install --cask google-chrome
-brew install --cask the-unarchiver  # mas install 425424353
-brew install --cask tunnelblick
-if [[ $WORKPC != true ]]; then
-	brew install --cask istat-menus
-	brew install --cask transmission
-	brew install --cask vlc
-	mas install 495945638  # Wake Up Time
-fi
+# TOOLS
+brew_install 1password
+brew_install arc
+brew_install dropbox
+brew_install expressvpn
+brew_install google-chrome
+brew_install google-drive
+brew_install istat-menus
+brew_install notunes
+brew_install the-unarchiver  # mas install 425424353
+brew_install transmission
+brew_install tunnelblick
+brew_install vlc
+mas install 1274495053  # Microsoft To Do
+mas install 1423210932  # Flow - Focus & Pomodoro Timer
+mas install 937984704  # Amphetamine

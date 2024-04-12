@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # Ask for the administrator password upfront and keep alive until script has finished
 sudo -v
@@ -8,110 +9,80 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 # INSTALL COMMAND-LINE TOOLS USING HOMEBREW                                   #
 ###############################################################################
 
-# Update Homebrew and installed formulas.
+# Function for installing a command using Homebrew if it doesn't exist
+brew_install () {
+	if ! brew list $1 &> /dev/null; then
+		echo -e "⬇️  \033[1;34mInstalling $1...\033[0m"
+		brew install $1
+	else
+		echo -e "☑️  \033[1;32m$1 is already installed.\033[0m"
+	fi
+}
+
+# Update Homebrew and installed formulas
 brew update
 brew upgrade
 
-# Update system nano.
-brew install nano
+# Install newer version of zsh and install plugins
+brew_install zsh
+brew_install zsh-autosuggestions
+brew_install zsh-syntax-highlighting
 
-# Install Bash 4.
-brew install bash
-brew install bash-completion2
+# Update shell to Homebrew zsh if not already set
+if [ "$0" != "$(brew --prefix)/bin/zsh" ]; then
+	chsh -s $(brew --prefix)/bin/zsh
+else
+	echo "✔ \033[1;32mShell is already set to $(brew --prefix)/bin/zsh.\033[0m"
+fi
 
-# Switch to using brew-installed bash as default shell.
-BREW_PREFIX=$(brew --prefix)
-if ! fgrep -q "${BREW_PREFIX}/bin/bash" /etc/shells; then
-	echo "${BREW_PREFIX}/bin/bash" | sudo tee -a /etc/shells;
-	chsh -s "${BREW_PREFIX}/bin/bash";
-fi;
+sudo chsh -s $(brew --prefix)/bin/zsh
 
-# Install cht.sh (https://github.com/chubin/cheat.sh).
-curl https://cht.sh/:cht.sh | sudo tee /usr/local/bin/cht.sh
-sudo chmod +x /usr/local/bin/cht.sh
-brew install rlwrap
+# Update system git and nano
+brew_install git
+brew_install nano
 
-###############################################################################
-# Usage:
-# $ cht.sh python random list elements
-#
-# Shell mode:
-# $ cht.sh --shell python
-# cht.sh/python> reverse a list
-#
-# Stealth mode:
-# $ cht.sh --shell python
-# cht.sh/python> stealth Q
-# (selecting "reverse a list")
-# stealth: reverse a list
-# reverse_lst = lst[::-1]
-###############################################################################
+# # Install other languages
+brew_install go
+brew_install node
+brew_install rust
 
-# Install git utilities
-brew install git
-brew install git-lfs
-
-# Install other languages
-brew install go
-brew install node
-
-# Install download utilities
-brew install httpie
-brew install wget
-brew install youtube-dl
+# # Install download utilities
+brew_install httpie
+brew_install mas
+brew_install wget
+brew_install youtube-dl
 
 # Install fancy shell stuff
-brew install autojump
-brew install bat
-brew install mas
-brew install nnn
-brew install tree
-
-# Install shell formatting
-brew install zsh-syntax-highlighting
-
-# Install alternative shells for fun
-brew install fish
-brew install nushell
+brew_install autojump
+brew_install bat
+brew_install nnn
+brew_install tree
 
 # Install very important stuff
-brew install cowsay
-brew install googler
-brew install lolcat
-brew install pastel
-brew install neofetch
-brew install thefuck
+brew_install cowsay
+brew_install lolcat
 
 # Install newer versions of system binaries using different names
-brew install gnu-sed # gsed
-brew install grep # ggrep
+brew_install gsed
+brew_install grep  # ggrep is the command name
 
 # Install other useful binaries
-brew install ack
-brew install exiftool
-brew install gifski
-brew install gpg
-brew install imagemagick
-brew install jq
-brew install pandoc
+brew_install 1password-cli op  # op is the command name
+brew_install ack
+brew_install exiftool
+brew_install gifski
+brew_install gpg
+brew_install imagemagick
+brew_install jq
+brew_install pandoc
+brew_install pastel
+brew_install thefuck
 
 # Install developer tools
-brew install docker
-brew tap mongodb/brew
-brew install mongodb-community@4.2
-# brew services start mongodb-community
-# sudo mkdir -p /data/db
-# sudo chown -R $(whoami) /data/db
-sudo chown -R $(whoami) $(brew --prefix)/*
-brew install mysql@5.7
-brew services start mysql
-# sudo mysql.server start
-brew install wine
-brew install apache-spark
-brew install elasticsearch
-brew install postgresql
-brew install redis
-brew install aws-rotate-key
+brew_install docker
+brew_install apache-spark
+brew_install postgresql
+brew_install redis
 
 # Remove outdated versions from the cellar
 brew cleanup
