@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap "echo; exit 1" INT
+trap "echo 'Script was interrupted by the user.'; exit 1" INT
 
 ###############################################################################
 # INSTALL APPS AND SOFTWARE                                                   #
