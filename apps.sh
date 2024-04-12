@@ -5,7 +5,8 @@ set -euo pipefail
 # INSTALL APPS AND SOFTWARE                                                   #
 ###############################################################################
 
-# Function for installing a cask using Homebrew if it doesn't exist
+# Installs a cask using Homebrew if it isn't installed yet.
+# Usage: brew_install <cask_name>
 brew_install () {
 	if ! brew list --cask $1 &> /dev/null; then
 		echo -e "⬇️  \033[1;34mInstalling $1...\033[0m"

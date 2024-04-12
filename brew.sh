@@ -9,7 +9,8 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 # INSTALL COMMAND-LINE TOOLS USING HOMEBREW                                   #
 ###############################################################################
 
-# Function for installing a command using Homebrew if it doesn't exist
+# Installs a package using Homebrew if it isn't installed yet.
+# Usage: brew_install <package_name>
 brew_install () {
 	if ! brew list $1 &> /dev/null; then
 		echo -e "⬇️  \033[1;34mInstalling $1...\033[0m"
@@ -34,8 +35,6 @@ if [ "$0" != "$(brew --prefix)/bin/zsh" ]; then
 else
 	echo "✔ \033[1;32mShell is already set to $(brew --prefix)/bin/zsh.\033[0m"
 fi
-
-sudo chsh -s $(brew --prefix)/bin/zsh
 
 # Update system git and nano
 brew_install git
