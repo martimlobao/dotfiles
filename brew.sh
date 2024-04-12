@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-# Ask for the administrator password upfront and keep alive until script has finished
-sudo -v
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+trap "echo; exit 1" INT
 
 ###############################################################################
 # INSTALL COMMAND-LINE TOOLS USING HOMEBREW                                   #
 ###############################################################################
+
+echo -e "🛠️  \033[1;36mInstalling command-line tools using Homebrew...\033[0m"
 
 # Installs a package using Homebrew if it isn't installed yet.
 # Usage: brew_install <package_name>
@@ -24,17 +23,17 @@ brew_install () {
 brew update
 brew upgrade
 
-# Install newer version of zsh and install plugins
-brew_install zsh
+# Install oh-my-zsh if it isn't installed yet
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+	echo -e "⬇️  \033[1;34mInstalling oh-my-zsh...\033[0m"
+	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+else
+	echo -e "☑️  \033[1;32moh-my-zsh is already installed.\033[0m"
+fi
+
+# Install zsh plugins
 brew_install zsh-autosuggestions
 brew_install zsh-syntax-highlighting
-
-# Update shell to Homebrew zsh if not already set
-if [ "$0" != "$(brew --prefix)/bin/zsh" ]; then
-	chsh -s $(brew --prefix)/bin/zsh
-else
-	echo "✔ \033[1;32mShell is already set to $(brew --prefix)/bin/zsh.\033[0m"
-fi
 
 # Update system git and nano
 brew_install git
