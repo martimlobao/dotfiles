@@ -57,6 +57,8 @@ brew_install obsidian
 brew_install slack  # mas install 803453959
 brew_install todoist
 brew_install zoom
+mas install 1274495053  # Microsoft To Do
+mas install 1423210932  # Flow - Focus & Pomodoro Timer
 
 # SOCIAL
 brew_install skype
@@ -76,6 +78,4 @@ brew_install the-unarchiver  # mas install 425424353
 brew_install transmission
 brew_install tunnelblick
 brew_install vlc
-mas install 1274495053  # Microsoft To Do
-mas install 1423210932  # Flow - Focus & Pomodoro Timer
 mas install 937984704  # Amphetamine
