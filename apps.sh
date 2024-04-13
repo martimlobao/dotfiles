@@ -15,16 +15,17 @@ brew_install () {
 		echo -e "⬇️  \033[1;34mInstalling $1...\033[0m"
 		brew install --cask $1
 	else
-		echo -e "☑️  \033[1;32m$1 is already installed.\033[0m"
+		echo -e "✅  \033[1;32m$1 is already installed.\033[0m"
 	fi
 }
 
 # Installs an app using MAS if it isn't installed yet.
+# Note that mas can only install apps that you have previously downloaded from the App Store.
 # Usage: mas_install <app_id>
 mas_install () {
     if mas list | grep -q "$1 "; then
         APP_NAME=$(mas list | grep "$1 " | sed -E 's/.*[0-9]+[[:space:]]+(.*)[[:space:]]+\(.*/\1/' | sed -E 's/[[:space:]]*$//')
-        echo -e "☑️  \033[1;32m$APP_NAME is already installed from the App Store.\033[0m"
+        echo -e "✅  \033[1;32m$APP_NAME is already installed from the App Store.\033[0m"
     else
         APP_NAME=$(mas info $1 | head -n 1 | sed -E 's/(.*)[[:space:]]+[0-9\.]+ \[.*\]/\1/')
         echo -e "⬇️  \033[1;34mInstalling $APP_NAME from the App Store...\033[0m"
