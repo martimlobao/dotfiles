@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
+set -euo pipefail
+trap "echo 'Script was interrupted by the user.'; exit 1" INT
 
 ###############################################################################
-# Functions for manipulating macOS Dock                                       #
+# FUNCTIONS FOR MANIPULATING MACOS DOCK                                       #
 ###############################################################################
 function add_app_to_dock {
 	# adds an application to macOS Dock
@@ -90,23 +92,22 @@ function add_spacer_to_dock {
 
 function clear_dock {
 	# removes all persistent icons from macOS Dock
-	defaults write com.apple.dock persistent-apps -array
-}
-
-function reset_dock {
-	# reset macOS Dock to default settings
-	defaults write com.apple.dock; killall Dock
+	defaults delete com.apple.dock persistent-apps
+	defaults delete com.apple.dock persistent-others
+	killall Dock
 }
 
 
 ###############################################################################
-# Configure macOS Dock                                                        #
+# CONFIGURE MACOS DOCK                                                        #
 ###############################################################################
 clear_dock
 
-add_app_to_dock "Google Chrome"
-add_app_to_dock "Atom"
-add_app_to_dock "System Preferences"
-add_folder_to_dock /Downloads --sortby 2 --displayas 1 --viewcontentas 1
+add_app_to_dock "Arc"
+add_app_to_dock "Obsidian"
+add_app_to_dock "Visual Studio Code"
+add_app_to_dock "Hyper"
+add_app_to_dock "System Settings"
+add_folder_to_dock ~/Downloads --sortby 2 --displayas 1 --viewcontentas 1
 
 killall Dock
