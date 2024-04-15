@@ -8,10 +8,7 @@ echo
 echo "###############################################################################"
 echo "# Install Homebrew                                                            #"
 echo "###############################################################################"
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-# This command also installs Xcode Command Line Tools, which includes git
-sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
-# This may be needed on macOS Mojave to get pyenv to work
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 echo
 echo "###############################################################################"
@@ -35,7 +32,7 @@ echo
 echo "###############################################################################"
 echo "# Install command-line tools using Homebrew                                   #"
 echo "###############################################################################"
-sudo ./brew.sh
+./brew.sh
 
 echo
 echo "###############################################################################"
