@@ -1,39 +1,25 @@
 #!/usr/bin/env bash
 
 # Start screensaver.
-ss () {
+function ss () {
 	open -a ScreenSaverEngine
 }
 
 # Show battery percentage.
-battery () {
-	pmset -g batt | egrep "([0-9]+\%).*" -o --colour=auto | cut -f1 -d';'
-	pmset -g batt | egrep "([0-9]+\%).*" -o --colour=auto | cut -f3 -d';'
+function battery () {
+	pmset -g batt | grep -E "([0-9]+\%).*" -o --colour=auto | cut -f1 -d';'
+	pmset -g batt | grep -E "([0-9]+\%).*" -o --colour=auto | cut -f3 -d';'
 }
 
 # Relaunch core audio when it stops working without having to restart macOS
-audiokill () {
+function audiokill () {
 	# sudo killall coreaudiod
 	sudo launchctl stop com.apple.audio.coreaudiod
 	sudo launchctl start com.apple.audio.coreaudiod
 }
 
-# Determine size of a file or total size of a directory
-fs () {
-	if du -b /dev/null > /dev/null 2>&1; then
-		local arg=-sbh;
-	else
-		local arg=-sh;
-	fi
-	if [[ -n "$@" ]]; then
-		du $arg -- "$@";
-	else
-		du $arg .[^.]* ./*;
-	fi;
-}
-
 # `o` with no arguments opens the current directory, otherwise opens the given location
-o () {
+function o () {
 	if [ $# -eq 0 ]; then
 		open .;
 	else
@@ -42,18 +28,18 @@ o () {
 }
 
 # Create a new directory and enter it.
-mkd () {
-	mkdir -p "$@" && cd "$_";
+function mkd () {
+	mkdir -p "$@" && cd "$_" || exit 1;
 }
 
 # Determine size of a file or total size of a directory.
-fs () {
+function fs() {
 	if du -b /dev/null > /dev/null 2>&1; then
 		local arg=-sbh;
 	else
 		local arg=-sh;
 	fi
-	if [[ -n "$@" ]]; then
+	if [[ -n "$*" ]]; then
 		du $arg -- "$@";
 	else
 		du $arg .[^.]* ./*;
@@ -61,7 +47,7 @@ fs () {
 }
 
 # Create a data URL from a file.
-dataurl () {
+function dataurl () {
 	local mimeType=$(file -b --mime-type "$1");
 	if [[ $mimeType == text/* ]]; then
 		mimeType="${mimeType};charset=utf-8";
@@ -70,67 +56,67 @@ dataurl () {
 }
 
 # Remake virtualenv (using pyenv)
-remake () {
+function remake () {
 	if [[ $VIRTUAL_ENV ]]; then
-		PYVERSION=`echo $VIRTUAL_ENV | rev | cut -f 3 -d / | rev`
-		VENV=`echo $VIRTUAL_ENV | rev | cut -f 1 -d / | rev`
-		ALIAS=`echo $VIRTUAL_ENV | rev | cut -f 4- -d / | rev`
+		PYVERSION=$(echo "$VIRTUAL_ENV" | rev | cut -f 3 -d / | rev)
+		VENV=$(echo "$VIRTUAL_ENV" | rev | cut -f 1 -d / | rev)
+		ALIAS=$(echo "$VIRTUAL_ENV" | rev | cut -f 4- -d / | rev)
 		ALIAS="${ALIAS}/${VENV}"
-		echo $PYVERSION
-		echo $VENV
-		echo $ALIAS
-		rm -rf $VIRTUAL_ENV
-		rm -rf $ALIAS
-		pyenv virtualenv $PYVERSION $VENV
+		echo "$PYVERSION"
+		echo "$VENV"
+		echo "$ALIAS"
+		rm -rf "$VIRTUAL_ENV"
+		rm -rf "$ALIAS"
+		pyenv virtualenv "$PYVERSION" "$VENV"
 	fi
 }
 
 # Create a private github repo on github and copy the current repo to it under the remote 'personal'
-copy-repo-to-personal () {
-	REPO=$(basename ${PWD##*/})
+function copy-repo-to-personal () {
+	REPO=$(basename "${PWD##*/}")
 	GHUSER=$(git config --get github.user);
 	GHTOKEN=$(git config --get github.token);
 	if [[ -z "$GHUSER" || -z "$GHTOKEN" ]]; then
 		echo "ERROR: No Github user or token found."
 	else
-		curl -u $GHUSER:$GHTOKEN https://api.github.com/user/repos -d {\\\"name\\\":\\\"$REPO\\\"\\,\\\"private\\\":\\\"true\\\"} --fail;
-		git remote add personal git@github.com:$GHUSER/$REPO.git;
+		curl -u "$GHUSER":"$GHTOKEN" https://api.github.com/user/repos -d {\\\"name\\\":\\\""$REPO"\\\"\\,\\\"private\\\":\\\"true\\\"} --fail;
+		git remote add personal git@github.com:"$GHUSER"/"$REPO".git;
 		git push personal master
 	fi
 }
 
 # Clone remote branches to local repo, fetch all commits, and fast-forward new commits.
-git-update() {
+function git-update() {
 	# https://stackoverflow.com/a/10312587/4760185
-	git branch -r | grep -v '\->' | while read remote; do git branch --track "${remote#origin/}" "$remote"; done
+	git branch -r | grep -v '\->' | while read -r remote; do git branch --track "${remote#origin/}" "$remote"; done
 	git fetch --all
 	git pull --all
 
 	# https://stackoverflow.com/a/9076361/4760185
-	REMOTES="$@";
+	REMOTES="$*";
 	if [ -z "$REMOTES" ]; then
 		REMOTES=$(git remote);
 	fi
 	REMOTES=$(echo "$REMOTES" | xargs -n1 echo)
 	CLB=$(git rev-parse --abbrev-ref HEAD);
-	echo "$REMOTES" | while read REMOTE; do
-		git remote update $REMOTE
-		git remote show $REMOTE -n \
+	echo "$REMOTES" | while read -r REMOTE; do
+		git remote update "$REMOTE"
+		git remote show "$REMOTE" -n \
 		| awk '/merges with remote/{print $5" "$1}' \
-		| while read RB LB; do
+		| while read -r RB LB; do
 			ARB="refs/remotes/$REMOTE/$RB";
 			ALB="refs/heads/$LB";
-			NBEHIND=$(( $(git rev-list --count $ALB..$ARB 2>/dev/null) +0));
-			NAHEAD=$(( $(git rev-list --count $ARB..$ALB 2>/dev/null) +0));
+			NBEHIND=$(( $(git rev-list --count "$ALB".."$ARB" 2>/dev/null) +0));
+			NAHEAD=$(( $(git rev-list --count "$ARB".."$ALB" 2>/dev/null) +0));
 			if [ "$NBEHIND" -gt 0 ]; then
 				if [ "$NAHEAD" -gt 0 ]; then
 					echo " branch $LB is $NBEHIND commit(s) behind and $NAHEAD commit(s) ahead of $REMOTE/$RB. could not be fast-forwarded";
 				elif [ "$LB" = "$CLB" ]; then
 					echo " branch $LB was $NBEHIND commit(s) behind of $REMOTE/$RB. fast-forward merge";
-					git merge -q $ARB;
+					git merge -q "$ARB";
 				else
 					echo " branch $LB was $NBEHIND commit(s) behind of $REMOTE/$RB. resetting local branch to remote";
-					git branch -f $LB -t $ARB >/dev/null;
+					git branch -f "$LB" -t "$ARB" >/dev/null;
 				fi
 			fi
 		done
