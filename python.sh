@@ -1,85 +1,57 @@
 #!/usr/bin/env bash
+set -euo pipefail
+trap "echo 'Script was interrupted by the user.'; exit 1" INT
 
 ###############################################################################
 # SET UP PYTHON ENVIRONMENT                                                   #
 ###############################################################################
 
-# Make sure homebrew is installed and the following command has been run:
-# sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
-brew install python
-brew install black
-brew install autopep8
-brew install pyenv
-brew install pyenv-virtualenv
-brew install pipenv
+# Installs a package using Homebrew if it isn't installed yet.
+# Usage: brew_install <package_name>
+brew_install () {
+	if ! brew list "$1" &> /dev/null; then
+		echo -e "⬇️  \033[1;34mInstalling $1...\033[0m"
+		if ! brew install "$1"; then
+			echo -e "❌ \033[1;31mFailed to install $1. Please check manually.\033[0m"
+		fi
+	else
+		echo -e "✅  \033[1;32m$1 is already installed.\033[0m"
+	fi
+}
 
-# Reload .bash_profile with pyenv
-source ~/.bash_profile
+brew_install rye
+# This is needed for now since there is not official Homebrew installation for Rye yet, but it may not be needed in the future
+if [ ! -f "$HOME/.rye/env" ]; then
+	rye self install -y
+fi
+
+# Install pyenv and its plugins (might use rye instead of pyenv in the future, but for now install both)
+brew_install pyenv
+brew_install pyenv-virtualenv
+brew_install pyenv-virtualenvwrapper
+
+# Install latest Python
+PYTHONVERSION=$(pyenv install --list | grep -Eo ' [0-9\.]+$' | tail -1 | sed -e 's/^[[:space:]]*//')
+if ! pyenv versions | grep -q $PYTHONVERSION; then
+	echo -e "🐍  \033[1;32mInstalling Python $PYTHONVERSION using Pyenv...\033[0m"
+	pyenv install $PYTHONVERSION
+	pyenv global $PYTHONVERSION
+fi
+
+brew_install pantsbuild/tap/pants
+brew_install poetry
+brew_install ipython
 
 ###############################################################################
-# To automatically launch local virtual environments, add the following commands to
-# ~/.bash_profile:
-# $ eval "$(pyenv init -)"
-# $ eval "$(pyenv virtualenv-init -)"
-#
 # To create a virtual environment:
-# $ pyenv virtualenv 3.7.2 myproject
+# $ pyenv virtualenv 3.12.2 myproject
 #
 # To set a local environment, use the following command in the project folder:
 # $ pyenv local myproject
 #
 # To install packages, use pipenv instead of pip after setting and activating a local
 # environment (pipenv respects the virtualenv it's launched in):
-# $ pyenv virtualenv 3.7.2 myproject
+# $ pyenv virtualenv 3.12.2 myproject
 # $ pyenv local myproject
 # $ pipenv install requests
-###############################################################################
-
-# Tell pyenv to search in system commands if it can't find a command in the local
-# environment (see https://github.com/pyenv/pyenv/issues/772)
-# Required to get jupyter running anywhere if it has also been installed on some
-# virtualenv
-brew install pyenv-which-ext
-
-# Install Jupyter globally
-brew install jupyter
-brew install ipython
-# Tell jupyter to respect the virtualenv it is launched in
-# (https://medium.com/@henriquebastos/the-definitive-guide-to-setup-my-python-workspace-628d68552e14)
-ipython profile create
-curl -L http://hbn.link/hb-ipython-startup-script > ~/.ipython/profile_default/startup/00-venv-sitepackages.py
-
-# Install latest python version and set it as the default python environment
-PYTHONVERSION=$(pyenv install --list | grep -Eo ' [0-9\.]+$' | tail -1)
-pyenv install $PYTHONVERSION
-pyenv global $PYTHONVERSION
-
-# Configure miniconda within pyenv
-pyenv install miniconda3-latest
-
-# Create jupyterlab environment in miniconda3-latest/envs/jupyter
-pyenv activate miniconda3-latest
-CONDAVERSION=$(conda -V | grep -Eo '[0-9\.]+')
-conda create -y -n jupyter conda=$CONDAVERSION
-conda activate jupyter
-conda install -y jupyterlab
-pyenv deactivate
-
-###############################################################################
-# To create conda environments that can be activated directly through pyenv:
-# (without specifying a version like 'conda=4.3.30' pyenv won't recognize the
-# environment)
-# $ pyenv activate miniconda3-latest
-# $ conda create -n myenv conda=4.3.30
-# $ pyenv deactivate
-# $ pyenv activate miniconda3-latest/envs/myenv
-###############################################################################
-
-###############################################################################
-# To create kernels for Jupyter:
-# (https://stackoverflow.com/questions/39604271/conda-environments-not-showing-up-in-jupyter-notebook)
-# $ conda create -n pytwo python=2.7
-# $ conda activate pytwo
-# $ conda install ipykernel
-# $ python -m ipykernel install --user --name pytwo --display-name "Python (pytwo)"
 ###############################################################################

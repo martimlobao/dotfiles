@@ -4,7 +4,7 @@
 export LANG='en_US.UTF-8';
 export LC_ALL='en_US.UTF-8';
 
-# Make vim the default editor.
+# Make nano the default editor.
 export EDITOR='nano';
 
 # Make Python use UTF-8 encoding for output to stdin, stdout, and stderr.
@@ -16,15 +16,8 @@ export HISTFILESIZE="${HISTSIZE}";
 # Omit duplicates and commands that begin with a space from history.
 export HISTCONTROL='ignoreboth';
 
-# Highlight section titles in manual pages.
-export LESS_TERMCAP_md="${yellow}";
-
-# Don’t clear the screen after quitting a manual page.
-export MANPAGER='less -X';
-
-# Avoid issues with `gpg` as installed via Homebrew.
-# https://stackoverflow.com/a/42265848/96656
-export GPG_TTY=$(tty);
+# Don't clear the screen after quitting a manual page or git diff.
+export LESS=eFRX;
 
 # Change nnn selection color
 export NNN_CONTEXT_COLORS='1234';

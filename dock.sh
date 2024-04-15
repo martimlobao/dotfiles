@@ -106,7 +106,7 @@ clear_dock
 add_app_to_dock "Arc"
 add_app_to_dock "Obsidian"
 add_app_to_dock "Visual Studio Code"
-add_app_to_dock "Hyper"
+add_app_to_dock "Warp"
 add_app_to_dock "System Settings"
 add_folder_to_dock ~/Downloads --sortby 2 --displayas 1 --viewcontentas 1
 
