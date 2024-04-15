@@ -1,0 +1,1 @@
+. "$HOME/.rye/env"

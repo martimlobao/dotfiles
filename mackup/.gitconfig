@@ -1,0 +1,61 @@
+[include]
+	# For credentials and tokens and private info
+	# In ~/.gitconfig.private store with the following format:
+	# [user]
+	#	name = Martim Lobao
+	#	email = martim@email.com
+	#
+	# [github]
+	#	user = martimlobao
+	#	token = 0123456789abcdef0123456789abcdef01234567
+
+	path = ~/.gitconfig.private
+
+[user]
+	name = Martim Lobao
+	email = m@rtimlobao.com
+	# op item get "Github" --fields=username
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFh1I5d0Kut4Rzif7XP1TqU8UeZJsnK+5o3nVNu66JRg
+	# op item get --fields="public key" "Github SSH Commit Signing Key"
+
+[github]
+	user = martimlobao
+
+[core]
+	editor = nano
+
+[branch]
+	# Show most recently changed branches first.
+	sort = -committerdate
+	autoSetupMerge = always
+
+[diff]
+	# Detect copies as well as renames.
+	renames = copies
+
+[diff "bin"]
+	# Use `hexdump` to diff binary files.
+	textconv = hexdump -v -C
+
+[gpg]
+	format = ssh
+
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+
+[commit]
+	gpgsign = true
+
+[init]
+	defaultbranch = main
+
+[push]
+	default = current
+
+[pull]
+	default = current
+	rebase = false
+
+[alias]
+	unstage = reset HEAD --
+	uncommit = reset --soft HEAD~
