@@ -11,7 +11,9 @@ trap "echo 'Script was interrupted by the user.'; exit 1" INT
 brew_install () {
 	if ! brew list "$1" &> /dev/null; then
 		echo -e "⬇️  \033[1;34mInstalling $1...\033[0m"
-		brew install "$1"
+		if ! brew install "$1"; then
+			echo -e "❌ \033[1;31mFailed to install $1. Please check manually.\033[0m"
+		fi
 	else
 		echo -e "✅  \033[1;32m$1 is already installed.\033[0m"
 	fi

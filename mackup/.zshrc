@@ -71,14 +71,14 @@ ZSH_CUSTOM=$ZSH/custom
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-    1password
-    autojump
-    git
-    pyenv
-    rye
-    thefuck
-    zsh-autosuggestions
-    zsh-syntax-highlighting
+	1password
+	autojump
+	git
+	pyenv
+	rye
+	thefuck
+	zsh-autosuggestions
+	zsh-syntax-highlighting
 )
 
 source $ZSH/oh-my-zsh.sh
