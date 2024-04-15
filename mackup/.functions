@@ -14,8 +14,7 @@ function battery () {
 # Relaunch core audio when it stops working without having to restart macOS
 function audiokill () {
 	# sudo killall coreaudiod
-	sudo launchctl stop com.apple.audio.coreaudiod
-	sudo launchctl start com.apple.audio.coreaudiod
+	sudo pkill coreaudiod -i
 }
 
 # `o` with no arguments opens the current directory, otherwise opens the given location

@@ -24,9 +24,6 @@ alias la="ls -lAF"
 # List only directories
 alias lsd="ls -lF | grep --color=never '^d'"
 
-# Always use color output for `ls`
-alias ls="command ls"
-
 # Get week number
 alias week='date +%V'
 
@@ -52,9 +49,6 @@ alias plistbuddy="/usr/libexec/PlistBuddy"
 # Stuff I never really use but cannot delete either because of http://xkcd.com/530/
 alias stfu="osascript -e 'set volume output muted true'"
 alias pumpitup="osascript -e 'set volume output volume 100'"
-
-# Lock the screen (when going AFK)
-alias afk="/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend"
 
 # Print each PATH entry on a separate line
 alias path='echo -e ${PATH//:/\\n}'
