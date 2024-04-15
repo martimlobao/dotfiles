@@ -63,7 +63,7 @@ zstyle ':omz:update' frequency 14
 HIST_STAMPS="yyyy-mm-dd"
 
 # Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
+ZSH_CUSTOM=$ZSH/custom
 
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
@@ -77,7 +77,6 @@ plugins=(
     pyenv
     rye
     thefuck
-    virtualenv
     zsh-autosuggestions
     zsh-syntax-highlighting
 )
@@ -116,9 +115,24 @@ PROMPT+=' $(git_prompt_info)'
 PROMPT+=$'\n'
 PROMPT+="%(?:%{$fg_bold[green]%}%1{➜%} :%{$fg_bold[red]%}%1{➜%} )%{$reset_color%}"
 
+# Add pyenv to PATH
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+export PYENV_VIRTUALENVWRAPPER_PREFER_PYVENV="true"
+eval "$(pyenv init --path)"
+eval "$(pyenv virtualenv-init -)"
+pyenv virtualenvwrapper_lazy
+
+# 1Password completion
+eval "$(op completion zsh)"; compdef _op op
+
 # Activate Homebrew-installed plugins
 source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-# 1Password completion
-eval "$(op completion zsh)"; compdef _op op
+# Load the shell dotfiles, and then some:
+# * ~/.extra can be used for other settings you don't want to commit.
+for file in ~/.{aliases,exports,functions,extra}; do
+	[ -r "$file" ] && [ -f "$file" ] && source "$file";
+done;
+unset file;
