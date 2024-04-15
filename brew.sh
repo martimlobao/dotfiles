@@ -11,11 +11,11 @@ echo -e "🛠️  \033[1;36mInstalling command-line tools using Homebrew...\033[
 # Installs a package using Homebrew if it isn't installed yet.
 # Usage: brew_install <package_name>
 brew_install () {
-	if ! brew list $1 &> /dev/null; then
+	if ! brew list "$1" &> /dev/null; then
 		echo -e "⬇️  \033[1;34mInstalling $1...\033[0m"
-		brew install $1
+		brew install "$1"
 	else
-		echo -e "☑️  \033[1;32m$1 is already installed.\033[0m"
+		echo -e "✅  \033[1;32m$1 is already installed.\033[0m"
 	fi
 }
 
@@ -65,20 +65,18 @@ brew_install gsed
 brew_install grep  # ggrep is the command name
 
 # Install other useful binaries
-brew_install 1password-cli op  # op is the command name
+brew_install 1password-cli  # op is the command name
 brew_install ack
 brew_install exiftool
-brew_install gifski
-brew_install gpg
 brew_install imagemagick
 brew_install jq
 brew_install pandoc
 brew_install pastel
+brew_install shellcheck
 brew_install thefuck
 
 # Install developer tools
 brew_install docker
-brew_install apache-spark
 brew_install postgresql
 brew_install redis
 

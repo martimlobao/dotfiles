@@ -11,9 +11,9 @@ echo -e "📲  \033[1;36mInstalling apps and software...\033[0m"
 # Installs a cask using Homebrew if it isn't installed yet.
 # Usage: brew_install <cask_name>
 brew_install () {
-	if ! brew list --cask $1 &> /dev/null; then
+	if ! brew list --cask "$1" &> /dev/null; then
 		echo -e "⬇️  \033[1;34mInstalling $1...\033[0m"
-		brew install --cask $1
+		brew install --cask "$1"
 	else
 		echo -e "✅  \033[1;32m$1 is already installed.\033[0m"
 	fi
@@ -27,9 +27,9 @@ mas_install () {
         APP_NAME=$(mas list | grep "$1 " | sed -E 's/.*[0-9]+[[:space:]]+(.*)[[:space:]]+\(.*/\1/' | sed -E 's/[[:space:]]*$//')
         echo -e "✅  \033[1;32m$APP_NAME is already installed from the App Store.\033[0m"
     else
-        APP_NAME=$(mas info $1 | head -n 1 | sed -E 's/(.*)[[:space:]]+[0-9\.]+ \[.*\]/\1/')
+        APP_NAME=$(mas info "$1" | head -n 1 | sed -E 's/(.*)[[:space:]]+[0-9\.]+ \[.*\]/\1/')
         echo -e "⬇️  \033[1;34mInstalling $APP_NAME from the App Store...\033[0m"
-        mas install $1
+        mas install "$1"
     fi
 }
 
@@ -62,6 +62,7 @@ brew_install docker
 brew_install hyper
 brew_install jupyter-notebook-viewer
 brew_install visual-studio-code
+brew_install warp
 
 # LEISURE
 brew_install minecraft
