@@ -52,7 +52,7 @@ defaults write com.bjango.copy _modelid -string $(sysctl hw.model | sed 's/hw.mo
 defaults write com.bjango.copy installDateV6 -int $(date -v +14d +%s)
 ISTAT_EMAIL=$(op item get --fields="registered email" "iStat Menus 6")
 ISTAT_KEY=$(op item get --fields="license key" "iStat Menus 6")
-/usr/libexec/PlistBuddy -c "Delete :license6" ~/Library/Preferences/com.bjango.copy.plist
-/usr/libexec/PlistBuddy -c "Add :license6 dict" ~/Library/Preferences/com.bjango.copy.plist
-/usr/libexec/PlistBuddy -c "Add :license6:email string $ISTAT_EMAIL" ~/Library/Preferences/com.bjango.copy.plist
-/usr/libexec/PlistBuddy -c "Add :license6:serial string $ISTAT_KEY" ~/Library/Preferences/com.bjango.copy.plist
+/usr/libexec/PlistBuddy -c "Delete :license6" ~/Library/Preferences/com.bjango.istatmenus.plist
+/usr/libexec/PlistBuddy -c "Add :license6 dict" ~/Library/Preferences/com.bjango.istatmenus.plist
+/usr/libexec/PlistBuddy -c "Add :license6:email string $ISTAT_EMAIL" ~/Library/Preferences/com.bjango.istatmenus.plist
+/usr/libexec/PlistBuddy -c "Add :license6:serial string $ISTAT_KEY" ~/Library/Preferences/com.bjango.istatmenus.plist
