@@ -41,4 +41,18 @@ sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.serve
 # printf "\tuser = %s\n" "$GITHUBUSER" >> $GITCONFIGLOCAL
 
 # op item get --fields="registered email" "iStat Menus 6"
+# op read op://private/istat\ menus\ 6/registered\ email
 # op item get --fields="license key" "iStat Menus 6"
+# op read op://private/istat\ menus\ 6/license\ key
+
+# iStat Menus
+# copy all files from manual/ to ~/
+cp -r manual/ ~/
+defaults write com.bjango.copy _modelid -string $(sysctl hw.model | sed 's/hw.model: //')
+defaults write com.bjango.copy installDateV6 -int $(date -v +14d +%s)
+ISTAT_EMAIL=$(op item get --fields="registered email" "iStat Menus 6")
+ISTAT_KEY=$(op item get --fields="license key" "iStat Menus 6")
+/usr/libexec/PlistBuddy -c "Delete :license6" ~/Library/Preferences/com.bjango.copy.plist
+/usr/libexec/PlistBuddy -c "Add :license6 dict" ~/Library/Preferences/com.bjango.copy.plist
+/usr/libexec/PlistBuddy -c "Add :license6:email string $ISTAT_EMAIL" ~/Library/Preferences/com.bjango.copy.plist
+/usr/libexec/PlistBuddy -c "Add :license6:serial string $ISTAT_KEY" ~/Library/Preferences/com.bjango.copy.plist
