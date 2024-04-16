@@ -40,5 +40,21 @@ sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.serve
 # confirm_set "Set your github username: " GITHUBUSER
 # printf "\tuser = %s\n" "$GITHUBUSER" >> $GITCONFIGLOCAL
 
-# op item get --fields="registered email" "iStat Menus 6"
-# op item get --fields="license key" "iStat Menus 6"
+# copy all files from manual/ to ~/
+cp -r manual/ ~/
+
+# iStat Menus
+if ! defaults read com.bjango.istatmenus license6 &> /dev/null; then
+	echo -e "⬇️  \033[1;34mRegistering iStat Menus...\033[0m"
+	defaults write com.bjango.istatmenus _modelid -string $(sysctl hw.model | sed 's/hw.model: //')
+	defaults write com.bjango.istatmenus installDateV6 -int $(date -v +14d +%s)
+
+	ISTAT_EMAIL=$(op read "op://Private/iStat Menus 6/registered email")
+	ISTAT_KEY=$(op read "op://Private/iStat Menus 6/license key")
+	/usr/libexec/PlistBuddy -c "Add :license6 dict" ~/Library/Preferences/com.bjango.istatmenus.plist
+	/usr/libexec/PlistBuddy -c "Add :license6:email string $ISTAT_EMAIL" ~/Library/Preferences/com.bjango.istatmenus.plist
+	/usr/libexec/PlistBuddy -c "Add :license6:serial string $ISTAT_KEY" ~/Library/Preferences/com.bjango.istatmenus.plist
+	echo -e "✅  \033[1;32miStat Menus registered successfully.\033[0m"
+else
+	echo -e "✅  \033[1;32miStat Menus is already registered.\033[0m"
+fi
