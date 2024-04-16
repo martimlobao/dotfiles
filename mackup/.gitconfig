@@ -23,6 +23,7 @@
 
 [core]
 	editor = nano
+	attributesfile = ~/.gitattributes
 
 [branch]
 	# Show most recently changed branches first.
@@ -36,6 +37,9 @@
 [diff "bin"]
 	# Use `hexdump` to diff binary files.
 	textconv = hexdump -v -C
+
+[diff "plist"]
+	textconv = plutil -convert xml1 -o -
 
 [gpg]
 	format = ssh
