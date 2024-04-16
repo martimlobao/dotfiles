@@ -115,13 +115,14 @@ PROMPT+=' $(git_prompt_info)'
 PROMPT+=$'\n'
 PROMPT+="%(?:%{$fg_bold[green]%}%1{➜%} :%{$fg_bold[red]%}%1{➜%} )%{$reset_color%}"
 
-# Add pyenv to PATH
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-export PYENV_VIRTUALENVWRAPPER_PREFER_PYVENV="true"
-eval "$(pyenv init --path)"
-eval "$(pyenv virtualenv-init -)"
+# Set up virtualenvwrapper
 pyenv virtualenvwrapper_lazy
+
+# Shell completion for rye
+if [ ! -f "$ZSH_CUSTOM/plugins/rye/_rye" ] && command -v rye >/dev/null; then
+	mkdir -p "$ZSH_CUSTOM/plugins/rye"
+	rye self completion -s zsh > "$ZSH_CUSTOM/plugins/rye/_rye"
+fi
 
 # 1Password completion
 eval "$(op completion zsh)"; compdef _op op
