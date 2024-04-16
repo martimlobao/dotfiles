@@ -27,7 +27,7 @@
 [branch]
 	# Show most recently changed branches first.
 	sort = -committerdate
-	autoSetupMerge = always
+	autoSetupMerge = simple
 
 [diff]
 	# Detect copies as well as renames.
