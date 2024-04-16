@@ -48,8 +48,8 @@ sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.serve
 # iStat Menus
 # copy all files from manual/ to ~/
 cp -r manual/ ~/
-defaults write com.bjango.copy _modelid -string $(sysctl hw.model | sed 's/hw.model: //')
-defaults write com.bjango.copy installDateV6 -int $(date -v +14d +%s)
+defaults write com.bjango.istatmenus _modelid -string $(sysctl hw.model | sed 's/hw.model: //')
+defaults write com.bjango.istatmenus installDateV6 -int $(date -v +14d +%s)
 ISTAT_EMAIL=$(op item get --fields="registered email" "iStat Menus 6")
 ISTAT_KEY=$(op item get --fields="license key" "iStat Menus 6")
 /usr/libexec/PlistBuddy -c "Delete :license6" ~/Library/Preferences/com.bjango.istatmenus.plist
