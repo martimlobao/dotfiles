@@ -12,22 +12,21 @@
 	path = ~/.gitconfig.private
 
 [user]
-	name = Martim Lobao
-	email = m@rtimlobao.com
-	# op item get "Github" --fields=username
-	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFh1I5d0Kut4Rzif7XP1TqU8UeZJsnK+5o3nVNu66JRg
-	# op item get --fields="public key" "Github SSH Commit Signing Key"
+	name = _
+	email = _
+	signingKey = _
 
 [github]
-	user = martimlobao
+	user = _
 
 [core]
 	editor = nano
+	attributesfile = ~/.gitattributes
 
 [branch]
 	# Show most recently changed branches first.
 	sort = -committerdate
-	autoSetupMerge = always
+	autoSetupMerge = simple
 
 [diff]
 	# Detect copies as well as renames.
@@ -36,6 +35,9 @@
 [diff "bin"]
 	# Use `hexdump` to diff binary files.
 	textconv = hexdump -v -C
+
+[diff "plist"]
+	textconv = plutil -convert xml1 -o -
 
 [gpg]
 	format = ssh
