@@ -12,14 +12,12 @@
 	path = ~/.gitconfig.private
 
 [user]
-	name = Martim Lobao
-	email = m@rtimlobao.com
-	# op item get "Github" --fields=username
-	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFh1I5d0Kut4Rzif7XP1TqU8UeZJsnK+5o3nVNu66JRg
-	# op item get --fields="public key" "Github SSH Commit Signing Key"
+	name = _
+	email = _
+	signingKey = _
 
 [github]
-	user = martimlobao
+	user = _
 
 [core]
 	editor = nano
