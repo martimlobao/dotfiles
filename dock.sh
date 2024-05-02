@@ -1,6 +1,31 @@
 #!/usr/bin/env bash
-set -euo pipefail
-trap "echo 'Script was interrupted by the user.'; exit 1" INT
+set -o errexit  # stop the script each time a command fails
+set -o nounset  # stop if you attempt to use an undef variable
+
+function bash_traceback() {
+	local lasterr="$?"
+	set +o xtrace
+	local code="-1"
+	local bash_command=${BASH_COMMAND}
+	echo "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]} ('$bash_command' exited with status $lasterr)" >&2
+	if [ ${#FUNCNAME[@]} -gt 2 ]; then
+		# Print out the stack trace described by $function_stack
+		echo "Traceback of ${BASH_SOURCE[1]} (most recent call last):" >&2
+		for ((i=0; i < ${#FUNCNAME[@]} - 1; i++)); do
+		local funcname="${FUNCNAME[$i]}"
+		[ "$i" -eq "0" ] && funcname=$bash_command
+		echo -e "  ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]}\\t$funcname" >&2
+		done
+	fi
+	echo "Exiting with status ${code}" >&2
+	exit "${code}"
+}
+
+# provide an error handler whenever a command exits nonzero
+trap 'bash_traceback' ERR
+
+# propagate ERR trap handler functions, expansions and subshells
+set -o errtrace
 
 ###############################################################################
 # FUNCTIONS FOR MANIPULATING MACOS DOCK                                       #
@@ -92,19 +117,30 @@ function add_spacer_to_dock {
 
 function clear_dock {
 	# removes all persistent icons from macOS Dock
-	defaults delete com.apple.dock persistent-apps
-	defaults delete com.apple.dock persistent-others
+	if [ "$(defaults read com.apple.dock persistent-apps | wc -l)" -gt 0 ]; then
+		defaults write com.apple.dock persistent-apps -array
+	fi
+	if [ "$(defaults read com.apple.dock persistent-others | wc -l)" -gt 0 ]; then
+		defaults write com.apple.dock persistent-others -array
+	fi
 	killall Dock
+}
+
+function reset_launchpad {
+	# resets Launchpad so that all apps appear in their default order
+	defaults write com.apple.dock ResetLaunchPad -bool true
 }
 
 
 ###############################################################################
 # CONFIGURE MACOS DOCK                                                        #
 ###############################################################################
+reset_launchpad
 clear_dock
 
 add_app_to_dock "Arc"
 add_app_to_dock "Obsidian"
+add_app_to_dock "Todoist"
 add_app_to_dock "Visual Studio Code"
 add_app_to_dock "Warp"
 add_app_to_dock "System Settings"
