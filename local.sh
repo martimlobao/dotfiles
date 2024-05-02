@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Bash traceback
+# Source: https://gist.github.com/Asher256/4c68119705ffa11adb7446f297a7beae
+
 set -o errexit  # stop the script each time a command fails
 set -o nounset  # stop if you attempt to use an undef variable
 
