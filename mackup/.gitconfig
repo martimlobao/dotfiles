@@ -52,6 +52,9 @@
 [alias]
 	unstage = reset HEAD --
 	uncommit = reset --soft HEAD~
+	# Generate a default gitgnore file (e.g. `git ignore ruby c > .gitignore`).
+	# Defaults to Python, macOS, and Visual Studio Code.
+	ignore = "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/${@:-macos,visualstudiocode,python} ;}; gi"
 
 [pager]
 	stash = false
