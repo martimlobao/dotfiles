@@ -56,7 +56,13 @@ if [[ $SETNAME =~ ^[Yy]$ ]]; then
 fi
 
 # Set up .gitconfig.private
-git config --file=$HOME/.gitconfig.private user.name "$(op user get --me | grep 'Name:' | sed 's/Name: *//')"
+USERNAME=$(op user get --me | grep 'Name:' | sed 's/Name: *//')
+	if [ -n "$USERNAME" ]; then
+	    git config --file=$HOME/.gitconfig.private user.name "$USERNAME"
+	else
+	    echo "Error: User name is empty."
+	    exit 1
+	fi
 git config --file=$HOME/.gitconfig.private user.email "$(op read "op://Private/Github/email")"
 git config --file=$HOME/.gitconfig.private user.signingKey "$(op read "op://Private/Github SSH Commit Signing Key/public key")"
 git config --file=$HOME/.gitconfig.private github.user "$(op read "op://Private/Github/username")"
