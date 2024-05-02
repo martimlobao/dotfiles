@@ -70,6 +70,7 @@ brew_install warp
 brew_install minecraft
 brew_install sonos
 brew_install spotify
+mas_install 1048524688  # Delta - Game Emulator
 
 # PRODUCTIVITY
 brew_install evernote  # mas install 406056744
@@ -80,9 +81,9 @@ brew_install todoist
 brew_install zoom
 mas_install 1274495053  # Microsoft To Do
 mas_install 1423210932  # Flow - Focus & Pomodoro Timer
+mas_install 6469021132  # PDFgear: PDF Editor & Reader
 
 # SOCIAL
-brew_install skype
 brew_install telegram  # mas install 747648890
 brew_install whatsapp  # mas install 1147396723
 
