@@ -1,23 +1,14 @@
 [include]
-	# For credentials and tokens and private info
-	# In ~/.gitconfig.private store with the following format:
+	# For credentials and tokens that should not be shared.
+	# In ~/.gitconfig.private store with the following format or run
+	# ./local.sh to generate it.
 	# [user]
-	#	name = Martim Lobao
-	#	email = martim@email.com
-	#
+	#	name = ...
+	#	email = ...
+	#	signingKey = ...
 	# [github]
-	#	user = martimlobao
-	#	token = 0123456789abcdef0123456789abcdef01234567
-
-	path = ~/.gitconfig.private
-
-[user]
-	name = _
-	email = _
-	signingKey = _
-
-[github]
-	user = _
+	#	user = ...
+ 	path = ~/.gitconfig.private
 
 [core]
 	editor = nano
