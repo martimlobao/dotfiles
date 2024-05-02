@@ -1,6 +1,34 @@
 #!/usr/bin/env bash
-set -euo pipefail
-trap "echo 'Script was interrupted by the user.'; exit 1" INT
+# Bash traceback
+# Source: https://gist.github.com/Asher256/4c68119705ffa11adb7446f297a7beae
+
+set -o errexit  # stop the script each time a command fails
+set -o nounset  # stop if you attempt to use an undef variable
+
+function bash_traceback() {
+	local lasterr="$?"
+	set +o xtrace
+	local code="-1"
+	local bash_command=${BASH_COMMAND}
+	echo "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]} ('$bash_command' exited with status $lasterr)" >&2
+	if [ ${#FUNCNAME[@]} -gt 2 ]; then
+		# Print out the stack trace described by $function_stack
+		echo "Traceback of ${BASH_SOURCE[1]} (most recent call last):" >&2
+		for ((i=0; i < ${#FUNCNAME[@]} - 1; i++)); do
+		local funcname="${FUNCNAME[$i]}"
+		[ "$i" -eq "0" ] && funcname=$bash_command
+		echo -e "  ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]}\\t$funcname" >&2
+		done
+	fi
+	echo "Exiting with status ${code}" >&2
+	exit "${code}"
+}
+
+# provide an error handler whenever a command exits nonzero
+trap 'bash_traceback' ERR
+
+# propagate ERR trap handler functions, expansions and subshells
+set -o errtrace
 
 # Ask for the administrator password upfront and keep alive until script has finished
 sudo -v
@@ -20,32 +48,37 @@ confirm_set () {
 	done
 }
 
-# Set computer name.
-confirm_set "Set the name for this computer: " COMPUTERNAME
-sudo scutil --set ComputerName "$COMPUTERNAME"
-sudo scutil --set HostName "$COMPUTERNAME"
-sudo scutil --set LocalHostName "$COMPUTERNAME"
-sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$COMPUTERNAME"
+# Set computer name
+read -rp "Do you want to set the computer name? (y/n) " SETNAME
+if [[ $SETNAME =~ ^[Yy]$ ]]; then
+	confirm_set "Set the name for this computer: " COMPUTERNAME
+	sudo scutil --set ComputerName "$COMPUTERNAME"
+	sudo scutil --set HostName "$COMPUTERNAME"
+	sudo scutil --set LocalHostName "$COMPUTERNAME"
+	sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$COMPUTERNAME"
+fi
 
-# # Set up .gitconfig.private.
-# GITCONFIGLOCAL=".gitconfig.private"
-# rm -f $GITCONFIGLOCAL
-# touch $GITCONFIGLOCAL
-# printf "[user]\n" >> $GITCONFIGLOCAL
-# confirm_set "Set your git author name: " NAME
-# printf "\tname = %s\n" "$NAME" >> $GITCONFIGLOCAL
-# confirm_set "Set your git author email: " EMAIL
-# printf "\temail = %s\n" "$EMAIL" >> $GITCONFIGLOCAL
-# printf "[github]\n" >> $GITCONFIGLOCAL
-# confirm_set "Set your github username: " GITHUBUSER
-# printf "\tuser = %s\n" "$GITHUBUSER" >> $GITCONFIGLOCAL
+# Set up .gitconfig.private
+USERNAME=$(op user get --me | grep 'Name:' | sed 's/Name: *//')
+	if [ -n "$USERNAME" ]; then
+	    git config --file=$HOME/.gitconfig.private user.name "$USERNAME"
+	else
+	    echo "Error: User name is empty."
+	    exit 1
+	fi
+git config --file=$HOME/.gitconfig.private user.email "$(op read "op://Private/Github/email")"
+git config --file=$HOME/.gitconfig.private user.signingKey "$(op read "op://Private/Github SSH Commit Signing Key/public key")"
+git config --file=$HOME/.gitconfig.private github.user "$(op read "op://Private/Github/username")"
 
-# copy all files from manual/ to ~/
-cp -r manual/ ~/
+# Copy all files from manual/ to ~/
+read -rp "Do you want to copy and overwrite all files from manual/ to ~/? (y/n) " COPYMANUAL
+if [[ $COPYMANUAL =~ ^[Yy]$ ]]; then
+	cp -r manual/ ~/
+fi
 
 # iStat Menus
-if ! defaults read com.bjango.istatmenus license6 &> /dev/null; then
-	echo -e "⬇️  \033[1;34mRegistering iStat Menus...\033[0m"
+if [[ -z $(defaults read com.bjango.istatmenus license6) ]]; then
+	echo -e "📝  \033[1;34mRegistering iStat Menus...\033[0m"
 	defaults write com.bjango.istatmenus _modelid -string $(sysctl hw.model | sed 's/hw.model: //')
 	defaults write com.bjango.istatmenus installDateV6 -int $(date -v +14d +%s)
 
