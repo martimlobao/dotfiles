@@ -1,6 +1,31 @@
 #!/usr/bin/env bash
-set -euo pipefail
-trap "echo 'Script was interrupted by the user.'; exit 1" INT
+set -o errexit  # stop the script each time a command fails
+set -o nounset  # stop if you attempt to use an undef variable
+
+function bash_traceback() {
+	local lasterr="$?"
+	set +o xtrace
+	local code="-1"
+	local bash_command=${BASH_COMMAND}
+	echo "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]} ('$bash_command' exited with status $lasterr)" >&2
+	if [ ${#FUNCNAME[@]} -gt 2 ]; then
+		# Print out the stack trace described by $function_stack
+		echo "Traceback of ${BASH_SOURCE[1]} (most recent call last):" >&2
+		for ((i=0; i < ${#FUNCNAME[@]} - 1; i++)); do
+		local funcname="${FUNCNAME[$i]}"
+		[ "$i" -eq "0" ] && funcname=$bash_command
+		echo -e "  ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]}\\t$funcname" >&2
+		done
+	fi
+	echo "Exiting with status ${code}" >&2
+	exit "${code}"
+}
+
+# provide an error handler whenever a command exits nonzero
+trap 'bash_traceback' ERR
+
+# propagate ERR trap handler functions, expansions and subshells
+set -o errtrace
 
 ###############################################################################
 # SET UP PYTHON ENVIRONMENT                                                   #
@@ -19,11 +44,13 @@ brew_install () {
 	fi
 }
 
+# New Python environment setup tools
 brew_install rye
-# This is needed for now since there is not official Homebrew installation for Rye yet, but it may not be needed in the future
+# This is needed for now since there is no official Homebrew installation for Rye yet, but it may not be needed in the future
 if [ ! -f "$HOME/.rye/env" ]; then
 	rye self install -y
 fi
+brew_install hatch
 
 # Install pyenv and its plugins (might use rye instead of pyenv in the future, but for now install both)
 brew_install pyenv

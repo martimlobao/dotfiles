@@ -36,11 +36,11 @@ mas_install () {
 }
 
 # FONTS
-brew_install homebrew/cask-fonts/font-fira-code
-brew_install homebrew/cask-fonts/font-humor-sans
-brew_install homebrew/cask-fonts/font-sauce-code-pro-nerd-font
-brew_install homebrew/cask-fonts/font-source-code-pro
-brew_install homebrew/cask-fonts/font-source-sans-3
+brew_install font-fira-code
+brew_install font-humor-sans
+brew_install font-sauce-code-pro-nerd-font
+brew_install font-source-code-pro
+brew_install font-source-sans-3
 
 # UTILITIES
 brew_install qlmarkdown
@@ -70,7 +70,7 @@ brew_install warp
 brew_install minecraft
 brew_install sonos
 brew_install spotify
-mas_install 1048524688  # Delta - Game Emulator
+# mas_install 1048524688  # Delta - Game Emulator
 
 # PRODUCTIVITY
 brew_install evernote  # mas install 406056744
