@@ -25,6 +25,9 @@ brew_install () {
 brew update
 brew upgrade
 
+# Install Starship
+brew_install starship
+
 # Install oh-my-zsh if it isn't installed yet
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
 	echo -e "⬇️  \033[1;34mInstalling oh-my-zsh...\033[0m"

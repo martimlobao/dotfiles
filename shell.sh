@@ -2,6 +2,9 @@
 set -euo pipefail
 trap "echo 'Script was interrupted by the user.'; exit 1" INT
 
+# Install Starship
+brew install starship
+
 # Install oh-my-zsh if it isn't installed yet
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
 	echo -e "⬇️  \033[1;34mInstalling oh-my-zsh...\033[0m"
