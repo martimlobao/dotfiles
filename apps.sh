@@ -76,12 +76,12 @@ brew_install spotify
 brew_install evernote  # mas install 406056744
 brew_install notion
 brew_install obsidian
+brew_install sejda-pdf
 brew_install slack  # mas install 803453959
 brew_install todoist
 brew_install zoom
 mas_install 1274495053  # Microsoft To Do
 mas_install 1423210932  # Flow - Focus & Pomodoro Timer
-mas_install 6469021132  # PDFgear: PDF Editor & Reader
 
 # SOCIAL
 brew_install telegram  # mas install 747648890
