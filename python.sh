@@ -69,6 +69,9 @@ brew_install pantsbuild/tap/pants
 brew_install poetry
 brew_install ipython
 
+# Default linter
+brew_install ruff
+
 ###############################################################################
 # To create a virtual environment:
 # $ pyenv virtualenv 3.12.2 myproject
