@@ -73,6 +73,7 @@ brew_install spotify
 # mas_install 1048524688  # Delta - Game Emulator
 
 # PRODUCTIVITY
+brew_install chatgpt
 brew_install evernote  # mas install 406056744
 brew_install notion
 brew_install obsidian
