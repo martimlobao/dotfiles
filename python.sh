@@ -44,15 +44,9 @@ brew_install () {
 	fi
 }
 
-# New Python environment setup tools
-brew_install rye
-# This is needed for now since there is no official Homebrew installation for Rye yet, but it may not be needed in the future
-if [ ! -f "$HOME/.rye/env" ]; then
-	rye self install -y
-fi
-brew_install hatch
+brew_install uv
 
-# Install pyenv and its plugins (might use rye instead of pyenv in the future, but for now install both)
+# Install pyenv and its plugins
 brew_install pyenv
 brew_install pyenv-virtualenv
 brew_install pyenv-virtualenvwrapper
@@ -70,7 +64,7 @@ brew_install poetry
 brew_install ipython
 
 # Default linter
-brew_install ruff
+brew_install ruff  # Consider using `uv tool install ruff` instead
 
 ###############################################################################
 # To create a virtual environment:

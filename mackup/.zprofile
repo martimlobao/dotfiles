@@ -8,5 +8,5 @@ export PYENV_VIRTUALENVWRAPPER_PREFER_PYVENV="true"
 eval "$(pyenv init --path)"
 eval "$(pyenv virtualenv-init -)"
 
-# Add rye to PATH
-source "$HOME/.rye/env"
+# Add uv to PATH
+export PATH="$HOME/.local/bin:$PATH"
