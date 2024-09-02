@@ -75,8 +75,8 @@ plugins=(
 	autojump
 	git
 	pyenv
-	rye
 	thefuck
+	uv
 	zsh-autosuggestions
 	zsh-syntax-highlighting
 )
@@ -118,10 +118,10 @@ PROMPT+="%(?:%{$fg_bold[green]%}%1{➜%} :%{$fg_bold[red]%}%1{➜%} )%{$reset_co
 # Set up virtualenvwrapper
 pyenv virtualenvwrapper_lazy
 
-# Shell completion for rye
-if [ ! -f "$ZSH_CUSTOM/plugins/rye/_rye" ] && command -v rye >/dev/null; then
-	mkdir -p "$ZSH_CUSTOM/plugins/rye"
-	rye self completion -s zsh > "$ZSH_CUSTOM/plugins/rye/_rye"
+# Shell completion for uv
+if [ ! -f "$ZSH_CUSTOM/plugins/uv/_uv" ] && command -v uv >/dev/null; then
+	mkdir -p "$ZSH_CUSTOM/plugins/uv"
+	uv generate-shell-completion zsh > "$ZSH_CUSTOM/plugins/uv/_uv"
 fi
 
 # 1Password completion
