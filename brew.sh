@@ -53,7 +53,7 @@ brew_install rust
 brew_install httpie
 brew_install mas
 brew_install wget
-brew_install youtube-dl
+brew_install yt-dlp
 
 # Install fancy shell stuff
 brew_install autojump
@@ -82,6 +82,7 @@ brew_install thefuck
 
 # Install developer tools
 brew_install docker
+brew_install ffmpeg  # Also useful for yt-dlp
 brew_install postgresql
 brew_install redis
 
