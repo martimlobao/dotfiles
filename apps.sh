@@ -74,7 +74,6 @@ brew_install spotify
 
 # PRODUCTIVITY
 brew_install chatgpt
-brew_install evernote  # mas install 406056744
 brew_install notion
 brew_install obsidian
 brew_install sejda-pdf
