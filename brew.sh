@@ -86,5 +86,9 @@ brew_install ffmpeg  # Also useful for yt-dlp
 brew_install postgresql
 brew_install redis
 
+# Install Spark
+brew_install apache-spark
+brew_install temurin  # Simpler setup than installing openjdk@11 and symlinking
+
 # Remove outdated versions from the cellar
 brew cleanup
