@@ -9,21 +9,22 @@ ignore = [
     "ANN101",  # missing-type-self, deprecated
     "ANN102",  # missing-type-cls, deprecated
     "CPY001",  # missing-copyright-notice
+    "D104",  # undocumented-public-package
+    "D107",  # undocumented-public-init
+    "EM101",  # raw-string-in-exception
+    "EM102",  # f-string-in-exception
+    "G001",  # logging-string-format
+    "G004",  # logging-f-string
+    "TRY003",  # raise-vanilla-args
+    # exclusions for quick-and-dirty scripts
     "D100",  # undocumented-public-module
     "D101",  # undocumented-public-class
     "D102",  # undocumented-public-method
     "D103",  # undocumented-public-function
-    "D104",  # undocumented-public-package
     "D105",  # undocumented-magic-method
     "D106",  # undocumented-public-nested-class
-    "D107",  # undocumented-public-init
-    "EM101",  # raw-string-in-exception
-    "EM102",  # f-string-in-exception
     "ERA001",  # commented-out-code
-    "G001",  # logging-string-format
-    "G004",  # logging-f-string
     "T201",  # print
-    "TRY003",  # raise-vanilla-args
     # from https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "COM812",  # missing-trailing-comma
     "COM819",  # prohibited-trailing-comma
