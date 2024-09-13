@@ -43,6 +43,7 @@ brew_install font-source-code-pro
 brew_install font-source-sans-3
 
 # UTILITIES
+brew_install chromedriver
 brew_install qlmarkdown
 brew_install qlstephen
 brew_install qlvideo
