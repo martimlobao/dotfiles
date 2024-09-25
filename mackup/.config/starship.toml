@@ -8,10 +8,13 @@ add_newline = true
 truncation_length = 5
 truncate_to_repo = false
 
-# Disable the package module, hiding it from the prompt completely
-[package]
-disabled = true
-
 [username]
 style_user = "bold dimmed blue"
 show_always = false
+
+# Disable these modules, they're noisy
+[aws]
+disabled = true
+
+[package]
+disabled = true
