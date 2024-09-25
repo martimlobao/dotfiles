@@ -81,6 +81,7 @@ brew_install shellcheck
 brew_install thefuck
 
 # Install developer tools
+brew_install awscli
 brew_install docker
 brew_install ffmpeg  # Also useful for yt-dlp
 brew_install postgresql
