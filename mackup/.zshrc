@@ -74,7 +74,6 @@ plugins=(
 	1password
 	autojump
 	git
-	pyenv
 	thefuck
 	uv
 	zsh-autosuggestions
@@ -114,9 +113,6 @@ PROMPT="%{$fg_bold[red]%}%n%{$fg[white]%}@%{$fg_bold[yellow]%}%m %{$fg[white]%}i
 PROMPT+=' $(git_prompt_info)'
 PROMPT+=$'\n'
 PROMPT+="%(?:%{$fg_bold[green]%}%1{➜%} :%{$fg_bold[red]%}%1{➜%} )%{$reset_color%}"
-
-# Set up virtualenvwrapper
-pyenv virtualenvwrapper_lazy
 
 # Shell completion for uv
 if [ ! -f "$ZSH_CUSTOM/plugins/uv/_uv" ] && command -v uv >/dev/null; then

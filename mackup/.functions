@@ -54,22 +54,6 @@ function dataurl () {
 	echo "data:${mimeType};base64,$(openssl base64 -in "$1" | tr -d '\n')";
 }
 
-# Remake virtualenv (using pyenv)
-function remake () {
-	if [[ $VIRTUAL_ENV ]]; then
-		PYVERSION=$(echo "$VIRTUAL_ENV" | rev | cut -f 3 -d / | rev)
-		VENV=$(echo "$VIRTUAL_ENV" | rev | cut -f 1 -d / | rev)
-		ALIAS=$(echo "$VIRTUAL_ENV" | rev | cut -f 4- -d / | rev)
-		ALIAS="${ALIAS}/${VENV}"
-		echo "$PYVERSION"
-		echo "$VENV"
-		echo "$ALIAS"
-		rm -rf "$VIRTUAL_ENV"
-		rm -rf "$ALIAS"
-		pyenv virtualenv "$PYVERSION" "$VENV"
-	fi
-}
-
 # Create a private github repo on github and copy the current repo to it under the remote 'personal'
 function copy-repo-to-personal () {
 	REPO=$(basename "${PWD##*/}")
