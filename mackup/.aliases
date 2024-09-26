@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+alias python='uv run python'
+
 # Search command history
 alias hgrep='history | grep --color=auto '
 

@@ -44,6 +44,19 @@ brew_install zsh-syntax-highlighting
 brew_install git
 brew_install nano
 
+# Install Python stuff
+brew_install pantsbuild/tap/pants
+brew_install uv  # uv is awesome
+
+# Install using uv (runnable as uvx <tool>)
+# Consider using `uv python install` in the future instead of aliasing `python` to `uv run python`
+uv tool install ipython
+uv tool install marimo  # Jupyter alternative
+uv tool install mypy
+uv tool install poetry
+uv tool install ruff
+uv tool upgrade --all # Update all installed tools
+
 # # Install other languages
 brew_install go
 brew_install node
