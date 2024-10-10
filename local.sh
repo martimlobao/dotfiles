@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Bash traceback
-# Source: https://gist.github.com/Asher256/4c68119705ffa11adb7446f297a7beae
 
+# Bash traceback (from https://gist.github.com/Asher256/4c68119705ffa11adb7446f297a7beae)
 set -o errexit  # stop the script each time a command fails
 set -o nounset  # stop if you attempt to use an undef variable
 
@@ -31,6 +30,7 @@ trap 'bash_traceback' ERR
 set -o errtrace
 
 # Ask for the administrator password upfront and keep alive until script has finished
+echo -e "🦸  \033[1;34mRequesting admin permissions...\033[0m"
 sudo -v
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
@@ -49,9 +49,9 @@ confirm_set () {
 }
 
 # Set computer name
-read -rp "Do you want to set the computer name? (y/n) " SETNAME
+read -rp $'❓  \e[1;31mDo you want to (re)set the name for this computer? (y/n) \e[0m ' SETNAME
 if [[ $SETNAME =~ ^[Yy]$ ]]; then
-	confirm_set "Set the name for this computer: " COMPUTERNAME
+	confirm_set "💻  Set the name for this computer: " COMPUTERNAME
 	sudo scutil --set ComputerName "$COMPUTERNAME"
 	sudo scutil --set HostName "$COMPUTERNAME"
 	sudo scutil --set LocalHostName "$COMPUTERNAME"
@@ -59,6 +59,7 @@ if [[ $SETNAME =~ ^[Yy]$ ]]; then
 fi
 
 # Set up .gitconfig.private
+echo -e "📝  \033[1;34mSetting up .gitconfig.private...\033[0m"
 USERNAME=$(op user get --me | grep 'Name:' | sed 's/Name: *//')
 	if [ -n "$USERNAME" ]; then
 	    git config --file=$HOME/.gitconfig.private user.name "$USERNAME"
@@ -71,7 +72,7 @@ git config --file=$HOME/.gitconfig.private user.signingKey "$(op read "op://Priv
 git config --file=$HOME/.gitconfig.private github.user "$(op read "op://Private/Github/username")"
 
 # Copy all files from manual/ to ~/
-read -rp "Do you want to copy and overwrite all files from manual/ to ~/? (y/n) " COPYMANUAL
+read -rp $'❓  \e[1;31mDo you want to copy and overwrite all files from manual/ to $HOME? (y/n) \e[0m ' COPYMANUAL
 if [[ $COPYMANUAL =~ ^[Yy]$ ]]; then
 	cp -r manual/ ~/
 fi
@@ -87,7 +88,23 @@ if [[ -z $(defaults read com.bjango.istatmenus license6) ]]; then
 	/usr/libexec/PlistBuddy -c "Add :license6 dict" ~/Library/Preferences/com.bjango.istatmenus.plist
 	/usr/libexec/PlistBuddy -c "Add :license6:email string $ISTAT_EMAIL" ~/Library/Preferences/com.bjango.istatmenus.plist
 	/usr/libexec/PlistBuddy -c "Add :license6:serial string $ISTAT_KEY" ~/Library/Preferences/com.bjango.istatmenus.plist
+
 	echo -e "✅  \033[1;32miStat Menus registered successfully.\033[0m"
 else
 	echo -e "✅  \033[1;32miStat Menus is already registered.\033[0m"
+fi
+
+# Charles
+if [[ -z $(xmllint --xpath "string(//configuration/registrationConfiguration/key)" ~/Library/Preferences/com.xk72.charles.config) ]]; then
+	echo -e "📝  \033[1;34mRegistering Charles...\033[0m"
+
+	CHARLES_NAME=$(op read "op://Private/Charles/registered name")
+	CHARLES_KEY=$(op read "op://Private/Charles/license key")
+	# use printf instead of echo to avoid issues with newline characters in bash (not a problem with zsh)
+	printf 'cd /configuration/registrationConfiguration/name\nset %s\nsave\n' "$CHARLES_NAME" | xmllint --shell ~/Library/Preferences/com.xk72.charles.config 2>&1 >/dev/null
+	printf 'cd /configuration/registrationConfiguration/key\nset %s\nsave\n' "$CHARLES_KEY" | xmllint --shell ~/Library/Preferences/com.xk72.charles.config 2>&1 >/dev/null
+
+	echo -e "✅  \033[1;32mCharles registered successfully.\033[0m"
+else
+	echo -e "✅  \033[1;32mCharles is already registered.\033[0m"
 fi

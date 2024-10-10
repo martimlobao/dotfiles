@@ -61,6 +61,7 @@ brew_install licecap
 mas_install 1351639930  # Gifski
 
 # DEVELOPER
+brew_install charles
 brew_install docker
 brew_install hyper
 brew_install jupyter-notebook-viewer
