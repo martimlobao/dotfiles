@@ -36,6 +36,7 @@ mas_install () {
 }
 
 # FONTS
+brew_install font-eb-garamond
 brew_install font-fira-code
 brew_install font-humor-sans
 brew_install font-sauce-code-pro-nerd-font
@@ -62,6 +63,7 @@ mas_install 1351639930  # Gifski
 
 # DEVELOPER
 brew_install charles
+brew_install cursor
 brew_install docker
 brew_install hyper
 brew_install jupyter-notebook-viewer
@@ -78,7 +80,6 @@ brew_install spotify
 brew_install chatgpt
 brew_install notion
 brew_install obsidian
-brew_install sejda-pdf
 brew_install slack  # mas install 803453959
 brew_install todoist
 brew_install zoom
@@ -100,6 +101,5 @@ brew_install istat-menus
 brew_install notunes
 brew_install the-unarchiver  # mas install 425424353
 brew_install transmission
-brew_install tunnelblick
 brew_install vlc
 mas_install 937984704  # Amphetamine
