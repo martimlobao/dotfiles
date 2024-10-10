@@ -48,21 +48,22 @@ brew_install nano
 brew_install pantsbuild/tap/pants
 brew_install uv  # uv is awesome
 
-# Install using uv (runnable as uvx <tool>)
+# Install using uv (runnable by calling the alias or with `uvx <tool>`)
 # Consider using `uv python install` in the future instead of aliasing `python` to `uv run python`
 uv tool install ipython
 uv tool install marimo  # Jupyter alternative
 uv tool install mypy
 uv tool install poetry
 uv tool install ruff
+uv tool install sqlfluff
 uv tool upgrade --all # Update all installed tools
 
-# # Install other languages
+# Install other languages
 brew_install go
 brew_install node
 brew_install rust
 
-# # Install download utilities
+# Install download utilities
 brew_install httpie
 brew_install mas
 brew_install wget
@@ -84,7 +85,7 @@ brew_install grep  # ggrep is the command name
 
 # Install other useful binaries
 brew_install 1password-cli  # op is the command name
-brew_install ack
+brew_install ack  # Search tool like grep, but optimized for programmers
 brew_install exiftool
 brew_install imagemagick
 brew_install jq

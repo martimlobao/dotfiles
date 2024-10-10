@@ -101,6 +101,8 @@ module.exports = {
         // Supported Options:
         //  1. 'SOUND' -> Enables the bell as a sound
         //  2. false: turns off the bell
+        scrollback: 10000,
+        // the number of rows to be persisted in terminal buffer for scrolling
         bell: 'SOUND',
         // An absolute file path to a sound file on the machine.
         // bellSoundURL: '/path/to/sound/file',
