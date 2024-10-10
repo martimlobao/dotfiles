@@ -8,6 +8,9 @@ add_newline = true
 truncation_length = 5
 truncate_to_repo = false
 
+[git_branch]
+symbol = '🌱 '
+
 [username]
 style_user = "bold dimmed blue"
 show_always = false

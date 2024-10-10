@@ -82,38 +82,6 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
-# User configuration
-
-# export MANPATH="/usr/local/man:$MANPATH"
-
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
-
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
-
-# Modify default theme to show prompt with path relative to ~
-PROMPT="%{$fg_bold[red]%}%n%{$fg[white]%}@%{$fg_bold[yellow]%}%m %{$fg[white]%}in %{$fg[cyan]%}%~%{$reset_color%}"
-PROMPT+=' $(git_prompt_info)'
-PROMPT+=$'\n'
-PROMPT+="%(?:%{$fg_bold[green]%}%1{➜%} :%{$fg_bold[red]%}%1{➜%} )%{$reset_color%}"
-
 # Shell completion for uv
 if [ ! -f "$ZSH_CUSTOM/plugins/uv/_uv" ] && command -v uv >/dev/null; then
 	mkdir -p "$ZSH_CUSTOM/plugins/uv"
