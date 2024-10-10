@@ -101,8 +101,8 @@ if [[ -z $(xmllint --xpath "string(//configuration/registrationConfiguration/key
 	CHARLES_NAME=$(op read "op://Private/Charles/registered name")
 	CHARLES_KEY=$(op read "op://Private/Charles/license key")
 	# use printf instead of echo to avoid issues with newline characters in bash (not a problem with zsh)
-	printf 'cd /configuration/registrationConfiguration/name\nset %s\nsave\n' "$CHARLES_NAME" | xmllint --shell ~/Library/Preferences/com.xk72.charles.config 2>&1 >/dev/null
-	printf 'cd /configuration/registrationConfiguration/key\nset %s\nsave\n' "$CHARLES_KEY" | xmllint --shell ~/Library/Preferences/com.xk72.charles.config 2>&1 >/dev/null
+	printf 'cd /configuration/registrationConfiguration/name\nset %s\nsave\n' "$CHARLES_NAME" | xmllint --shell ~/Library/Preferences/com.xk72.charles.config >/dev/null
+	printf 'cd /configuration/registrationConfiguration/key\nset %s\nsave\n' "$CHARLES_KEY" | xmllint --shell ~/Library/Preferences/com.xk72.charles.config >/dev/null
 
 	echo -e "✅  \033[1;32mCharles registered successfully.\033[0m"
 else
