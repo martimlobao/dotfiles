@@ -39,7 +39,10 @@ mas_install () {
 brew_install font-eb-garamond
 brew_install font-fira-code
 brew_install font-humor-sans
+brew_install font-new-york
 brew_install font-sauce-code-pro-nerd-font
+brew_install font-sf-mono
+brew_install font-sf-pro
 brew_install font-source-code-pro
 brew_install font-source-sans-3
 
@@ -97,9 +100,9 @@ brew_install dropbox
 brew_install expressvpn
 brew_install google-chrome
 brew_install google-drive
+brew_install iina  # cleaner vlc alternative
 brew_install istat-menus
 brew_install notunes
 brew_install the-unarchiver  # mas install 425424353
 brew_install transmission
-brew_install vlc
 mas_install 937984704  # Amphetamine
