@@ -75,25 +75,11 @@ plugins=(
 	autojump
 	git
 	thefuck
-	uv
 	zsh-autosuggestions
 	zsh-syntax-highlighting
 )
 
 source $ZSH/oh-my-zsh.sh
-
-# Shell completion for uv
-if [ ! -f "$ZSH_CUSTOM/plugins/uv/_uv" ] && command -v uv >/dev/null; then
-	mkdir -p "$ZSH_CUSTOM/plugins/uv"
-	uv generate-shell-completion zsh > "$ZSH_CUSTOM/plugins/uv/_uv"
-fi
-
-# 1Password completion
-eval "$(op completion zsh)"; compdef _op op
-
-# Activate Homebrew-installed plugins
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Load the shell dotfiles, and then some:
 # * ~/.extra can be used for other settings you don't want to commit.
@@ -102,4 +88,16 @@ for file in ~/.{aliases,exports,functions,extra}; do
 done;
 unset file;
 
+# 1Password completion
+eval "$(op completion zsh)"; compdef _op op
+
+# Activate Homebrew-installed plugins
+source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# Starship complettion
 eval "$(starship init zsh)"
+
+# Shell completion for uv and uvx
+eval "$(uv generate-shell-completion zsh)"
+eval "$(uvx --generate-shell-completion zsh)"
