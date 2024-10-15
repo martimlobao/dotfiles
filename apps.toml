@@ -1,0 +1,140 @@
+[base]
+mas = "formula"
+uv = "formula"
+
+[fonts]
+font-eb-garamond = "cask"
+font-fira-code = "cask"
+font-humor-sans = "cask"
+font-new-york = "cask"
+font-sauce-code-pro-nerd-font = "cask"
+font-sf-mono = "cask"
+font-sf-pro = "cask"
+font-source-code-pro = "cask"
+font-source-sans-3 = "cask"
+
+[utilities]
+chromedriver = "cask"
+qlmarkdown = "cask"
+qlstephen = "cask"
+qlvideo = "cask"
+quicklook-json = "cask"
+webpquicklook = "cask"
+
+[apple]
+408981434 = "mas"  # iMovie
+409183694 = "mas"  # Keynote
+409201541 = "mas"  # Pages
+409203825 = "mas"  # Numbers
+
+[design]
+licecap = "cask"
+1351639930 = "mas"  # Gifski
+
+[developer]
+charles = "cask"
+cursor = "cask"
+docker = "cask"
+hyper = "cask"
+jupyter-notebook-viewer = "cask"
+visual-studio-code = "cask"
+warp = "cask"
+ffmpeg = "formula"  # Also useful for yt-dlp
+"postgresql@14" = "formula"
+redis = "formula"
+
+[leisure]
+minecraft = "cask"
+sonos = "cask"
+spotify = "cask"
+# 1048524688 = "mas"  # Delta - Game Emulator
+
+[productivity]
+chatgpt = "cask"
+notion = "cask"
+obsidian = "cask"
+slack = "cask"  # mas install 803453959
+todoist = "cask"
+zoom = "cask"
+1274495053 = "mas"  # Microsoft To Do
+1423210932 = "mas"  # Flow - Focus & Pomodoro Timer
+
+[social]
+telegram = "cask"  # mas install 747648890
+whatsapp = "cask"  # mas install 1147396723
+
+[tools]
+1password = "cask"
+arc = "cask"
+dropbox = "cask"
+expressvpn = "cask"
+google-chrome = "cask"
+google-drive = "cask"
+iina = "cask"  # modern vlc alternative
+istat-menus = "cask"
+notunes = "cask"
+openvpn-connect = "cask"
+the-unarchiver = "cask"  # mas install 425424353
+transmission = "cask"
+937984704 = "mas"  # Amphetamine
+
+[python-tools]
+ipython = "uv"
+marimo = "uv"  # Jupyter alternative
+mypy = "uv"
+"pantsbuild/tap/pants" = "cask"
+poetry = "uv"
+ruff = "uv"
+sqlfluff = "uv"
+
+[shell]
+starship = "formula"
+zsh-autosuggestions = "formula"
+zsh-syntax-highlighting = "formula"
+
+[spark]
+apache-spark = "formula"
+temurin = "cask"  # Simpler setup than installing openjdk@11 and symlinking
+
+[languages]
+go = "formula"
+node = "formula"
+rust = "formula"
+
+[cli-tools]
+# download tools
+httpie = "formula"
+wget = "formula"
+yt-dlp = "formula"
+
+nano = "formula"
+git = "formula"
+gh = "formula"
+
+autojump = "formula"
+bat = "formula"
+nnn = "formula"
+tree = "formula"
+
+# Install very important stuff
+cowsay = "formula"
+lolcat = "formula"
+
+# Install newer versions of system binaries using different names
+grep = "formula"  # ggrep is the command name
+
+# Install other useful binaries
+1password-cli = "cask"  # op is the command name
+ack = "formula"  # Search tool like grep, but optimized for programmers
+exiftool = "formula"
+imagemagick = "formula"
+jq = "formula"
+yq = "formula"
+mackup = "formula"
+pandoc = "formula"
+pastel = "formula"
+shellcheck = "formula"
+thefuck = "formula"
+
+# Install developer tools
+awscli = "formula"
