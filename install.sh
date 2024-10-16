@@ -93,12 +93,8 @@ install () {
 }
 
 brew_sync() {
-	local toml_apps=$(grep -E '^[^#[].*= *"(formula|cask)"' apps.toml |
-		sed -E 's/^([^=]+).*$/\1/' |
-		sed 's/^[[:space:]]*//' |
-		sed 's/[[:space:]]*$//' |
-		sed 's/^"//; s/"$//' |
-		sed -E 's|.*/||')
+	local toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "cask" or .value == "formula") | .key)) | flatten | .[]' apps.toml)
+	toml_apps=$(echo "$toml_apps" | sed -E 's|.*/||')  # get name from tapped apps (slashes in name)
 
 	local missing_formulae=$(comm -23 <(brew leaves | sort) <(echo "$toml_apps" | sort))
 	local missing_casks=$(comm -23 <(brew list --cask | sort) <(echo "$toml_apps" | sort))
@@ -113,12 +109,7 @@ brew_sync() {
 }
 
 uv_sync() {
-	local toml_apps=$(grep -E '^[^#[].*= *"uv"' apps.toml |
-		sed -E 's/^([^=]+).*$/\1/' |
-		sed 's/^[[:space:]]*//' |
-		sed 's/[[:space:]]*$//' |
-		sed 's/^"//; s/"$//' |
-		sed -E 's|.*/||')
+	local toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "uv") | .key)) | flatten | .[]' apps.toml)
 
 	local missing_uv_apps=$(comm -23 <(uv tool list | awk '{print $1}' | grep -v '^-*$' | sort) <(echo "$toml_apps" | sort))
 
@@ -131,12 +122,7 @@ uv_sync() {
 }
 
 mas_sync() {
-	local toml_apps=$(grep -E '^[^#[].*= *"mas"' apps.toml |
-		sed -E 's/^([^=]+).*$/\1/' |
-		sed 's/^[[:space:]]*//' |
-		sed 's/[[:space:]]*$//' |
-		sed 's/^"//; s/"$//' |
-		sed -E 's|.*/||')
+	local toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "mas") | .key)) | flatten | .[]' apps.toml)
 
 	local installed_mas_apps=$(mas list | sed -E 's/^([0-9]+)[[:space:]]+(.*)[[:space:]]+\(.*/\1 \2/' | sort)
 
