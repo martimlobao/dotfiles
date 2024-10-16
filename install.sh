@@ -48,7 +48,7 @@ in_array() {
 # Install function that uses the correct command based on the installation method
 install () {
     local app="$1"
-    local app_name="${app##*/}"  # This extracts the part after the last slash
+    local app_name="${app##*/}"  # Extract the part after the last slash
     local method="$2"
     local cmd=""
     local is_installed=false
@@ -107,20 +107,19 @@ parsed_toml=$(yq e 'to_entries | .[] | .key as $category | .value | to_entries[]
 current_category=""
 echo "$parsed_toml" | while IFS=$'\t' read -r category app method; do
     if [[ "$category" != "$current_category" ]]; then
-        echo -e "\n📦 \033[1;35mInstalling ${category} apps...\033[0m"
+        suffix=$([[ "$category" == *s ]] && echo "" || echo " apps")
+        echo -e "\n📦 \033[1;35mInstalling ${category}${suffix}...\033[0m"
         current_category="$category"
     fi
-    description=""
-    if [[ "$app" =~ ^[0-9]+$ ]]; then
-        description=$(yq e ".$category.\"$app\"" apps.toml | cut -d' ' -f2-)
-    fi
-    install "$app" "$method" "$description"
+    install "$app" "$method"
 done
 
 # Update Homebrew and installed formulas, casks and uv apps
+echo -e "\n🔼  \033[1;35mUpdating existing apps and software...\033[0m"
 brew update
 brew upgrade
 uv tool upgrade --all
+mas upgrade
 
 # Remove outdated versions from the cellar
 brew cleanup

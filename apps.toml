@@ -1,140 +1,131 @@
 [base]
-mas = "formula"
-uv = "formula"
-
-[fonts]
-font-eb-garamond = "cask"
-font-fira-code = "cask"
-font-humor-sans = "cask"
-font-new-york = "cask"
-font-sauce-code-pro-nerd-font = "cask"
-font-sf-mono = "cask"
-font-sf-pro = "cask"
-font-source-code-pro = "cask"
-font-source-sans-3 = "cask"
-
-[utilities]
-chromedriver = "cask"
-qlmarkdown = "cask"
-qlstephen = "cask"
-qlvideo = "cask"
-quicklook-json = "cask"
-webpquicklook = "cask"
+mas = "formula"  # Mac App Store command-line interface
+uv = "formula"  # Extremely fast Python package installer and resolver, written in Rust
 
 [apple]
-408981434 = "mas"  # iMovie
-409183694 = "mas"  # Keynote
-409201541 = "mas"  # Pages
-409203825 = "mas"  # Numbers
+408981434 = "mas"  # iMovie: Make your own movie magic
+409183694 = "mas"  # Keynote: Build stunning presentations
+409201541 = "mas"  # Pages: Documents that stand apart
+409203825 = "mas"  # Numbers: Create impressive spreadsheets
 
 [design]
-licecap = "cask"
-1351639930 = "mas"  # Gifski
+licecap = "cask"  # Animated screen capture application
+1351639930 = "mas"  # Gifski: Convert videos to quality GIFs
 
 [developer]
-charles = "cask"
-cursor = "cask"
-docker = "cask"
-hyper = "cask"
-jupyter-notebook-viewer = "cask"
-visual-studio-code = "cask"
-warp = "cask"
-ffmpeg = "formula"  # Also useful for yt-dlp
-"postgresql@14" = "formula"
-redis = "formula"
+awscli = "formula"  # Official Amazon AWS command-line interface
+charles = "cask"  # Web debugging Proxy application
+cursor = "cask"  # Write, edit, and chat about your code with AI
+docker = "cask"  # App to build and share containerised applications and microservices
+gh = "formula"  # GitHub command-line tool
+hyper = "cask"  # Terminal built on web technologies
+jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
+"postgresql@14" = "formula"  # Object-relational database system
+shellcheck = "formula"  # Static analysis and lint tool, for (ba)sh scripts
+redis = "formula"  # Persistent key-value database, with built-in net interface
+visual-studio-code = "cask"  # Open-source code editor
+warp = "cask"  # Rust-based terminal
+
+[fonts]
+font-eb-garamond = "cask"  # EB Garamond
+font-fira-code = "cask"  # Fira Code
+font-humor-sans = "cask"  # Humor Sans
+font-new-york = "cask"  # New York, NY
+font-sauce-code-pro-nerd-font = "cask"  # SauceCodePro Nerd Font (Source Code Pro)
+font-sf-mono = "cask"  # San Francisco Mono, SF Mono
+font-sf-pro = "cask"  # San Francisco Pro, SF Pro
+font-source-code-pro = "cask"  # Source Code Pro
+font-source-sans-3 = "cask"  # Source Sans 3
 
 [leisure]
-minecraft = "cask"
-sonos = "cask"
-spotify = "cask"
-# 1048524688 = "mas"  # Delta - Game Emulator
+minecraft = "cask"  # Sandbox construction video game
+sonos = "cask"  # Control your Sonos system
+spotify = "cask"  # Music streaming service
+# 1048524688 = "mas"  # Delta - Game Emulator: All-in-One GBA4iOS Successor
 
 [productivity]
-chatgpt = "cask"
-notion = "cask"
-obsidian = "cask"
-slack = "cask"  # mas install 803453959
-todoist = "cask"
-zoom = "cask"
-1274495053 = "mas"  # Microsoft To Do
-1423210932 = "mas"  # Flow - Focus & Pomodoro Timer
+chatgpt = "cask"  # OpenAI's official ChatGPT desktop app
+notion = "cask"  # App to write, plan, collaborate, and get organised
+obsidian = "cask"  # Knowledge base that works on top of a local folder of plain text Markdown files
+slack = "cask"  # Team communication and collaboration software
+todoist = "cask"  # To-do list
+zoom = "cask"  # Video communication and virtual meeting platform
+1274495053 = "mas"  # Microsoft To Do: Capture Tasks & Set Reminders
+1423210932 = "mas"  # Flow - Focus & Pomodoro Timer: Productivity for work & study
 
 [social]
-telegram = "cask"  # mas install 747648890
-whatsapp = "cask"  # mas install 1147396723
+telegram = "cask"  # Messaging app with a focus on speed and security
+whatsapp = "cask"  # Native desktop client for WhatsApp
 
 [tools]
-1password = "cask"
-arc = "cask"
-dropbox = "cask"
-expressvpn = "cask"
-google-chrome = "cask"
-google-drive = "cask"
-iina = "cask"  # modern vlc alternative
-istat-menus = "cask"
-notunes = "cask"
-openvpn-connect = "cask"
-the-unarchiver = "cask"  # mas install 425424353
-transmission = "cask"
-937984704 = "mas"  # Amphetamine
+1password = "cask"  # Password manager that keeps all passwords secure behind one password
+arc = "cask"  # Chromium based browser
+dropbox = "cask"  # Client for the Dropbox cloud storage service
+expressvpn = "cask"  # VPN client for secure internet access and private browsing
+google-chrome = "cask"  # Web browser
+google-drive = "cask"  # Client for the Google Drive storage service
+iina = "cask"  # Free and open-source media player [modern vlc alternative]
+istat-menus = "cask"  # System monitoring app
+notunes = "cask"  # Simple application that will prevent iTunes or Apple Music from launching
+openvpn-connect = "cask"  # Client program for the OpenVPN Access Server
+the-unarchiver = "cask"  # Unpacks archive files
+transmission = "cask"  # Open-source BitTorrent client
+937984704 = "mas"  # Amphetamine: Powerful keep-awake utility
 
-[python-tools]
-ipython = "uv"
-marimo = "uv"  # Jupyter alternative
-mypy = "uv"
-"pantsbuild/tap/pants" = "cask"
-poetry = "uv"
-ruff = "uv"
-sqlfluff = "uv"
+[utilities]
+chromedriver = "cask"  # Automated testing of webapps for Google Chrome
+qlmarkdown = "cask"  # Quick Look generator for Markdown files
+qlstephen = "cask"  # Quick Look plugin for plaintext files without an extension
+qlvideo = "cask"  # Thumbnails, static previews, cover art and metadata for video files
+quicklook-json = "cask"  # Quick Look plugin for JSON files
+webpquicklook = "cask"  # Quick Look plugin for webp files
 
-[shell]
-starship = "formula"
-zsh-autosuggestions = "formula"
-zsh-syntax-highlighting = "formula"
-
-[spark]
-apache-spark = "formula"
-temurin = "cask"  # Simpler setup than installing openjdk@11 and symlinking
+[shell-tools]
+autojump = "formula"  # Shell extension to jump to frequently used directories
+starship = "formula"  # Cross-shell prompt for astronauts
+thefuck = "formula"  # Programmatically correct mistyped console commands
+zsh-autosuggestions = "formula"  # Fish-like fast/unobtrusive autosuggestions for zsh
+zsh-syntax-highlighting = "formula"  # Fish shell like syntax highlighting for zsh
 
 [languages]
-go = "formula"
-node = "formula"
-rust = "formula"
+go = "formula"  # Open source programming language to build simple/reliable/efficient software
+node = "formula"  # Platform built on V8 to build network applications
+rust = "formula"  # Safe, concurrent, practical language
+
+[python-tools]
+ipython = "uv"  # Interactive computing in Python
+marimo = "uv"  # Reactive notebook for Python [Jupyter alternative]
+mypy = "uv"  # Experimental optional static type checker for Python
+"pantsbuild/tap/pants" = "cask"  # Fast, scalable, user-friendly build system for codebases of all sizes
+poetry = "uv"  # Python package management tool
+ruff = "uv"  # Extremely fast Python linter, written in Rust
+sqlfluff = "uv"  # SQL linter and auto-formatter for Humans
+
+[apache-spark-tools]
+apache-spark = "formula"  # Engine for large-scale data processing
+temurin = "cask"  # JDK from the Eclipse Foundation (Adoptium) [simpler setup than installing openjdk@11 and symlinking]
 
 [cli-tools]
-# download tools
-httpie = "formula"
-wget = "formula"
-yt-dlp = "formula"
-
-nano = "formula"
-git = "formula"
-gh = "formula"
-
-autojump = "formula"
-bat = "formula"
-nnn = "formula"
-tree = "formula"
-
-# Install very important stuff
-cowsay = "formula"
-lolcat = "formula"
-
-# Install newer versions of system binaries using different names
-grep = "formula"  # ggrep is the command name
-
-# Install other useful binaries
-1password-cli = "cask"  # op is the command name
+1password-cli = "cask"  # Command-line interface for 1Password [command: op]
 ack = "formula"  # Search tool like grep, but optimized for programmers
-exiftool = "formula"
-imagemagick = "formula"
-jq = "formula"
-yq = "formula"
-mackup = "formula"
-pandoc = "formula"
-pastel = "formula"
-shellcheck = "formula"
-thefuck = "formula"
-
-# Install developer tools
-awscli = "formula"
+bat = "formula"  # Clone of cat(1) with syntax highlighting and Git integration
+exiftool = "formula"  # Perl lib for reading and writing EXIF metadata
+ffmpeg = "formula"  # Play, record, convert, and stream audio and video
+httpie = "formula"  # User-friendly cURL replacement (command-line HTTP client)
+imagemagick = "formula"  # Tools and libraries to manipulate images in many formats
+jq = "formula"  # Lightweight and flexible command-line JSON processor
+mackup = "formula"  # Keep your Mac's application settings in sync
+nano = "formula"  # Free (GNU) replacement for the Pico text editor
+nnn = "formula"  # Tiny, lightning fast, feature-packed file manager
+pandoc = "formula"  # Swiss-army knife of markup format conversion
+pastel = "formula"  # Command-line tool to generate, analyze, convert and manipulate colors
+tree = "formula"  # Display directories as trees (with optional color/HTML output)
+wget = "formula"  # Internet file retriever
+yq = "formula"  # Process YAML, JSON, XML, CSV and properties documents from the CLI
+yt-dlp = "formula"  # Feature-rich command-line audio/video downloader
+# Fun stuff
+cowsay = "formula"  # Configurable talking characters in ASCII art
+lolcat = "formula"  # Rainbows and unicorns in your console!
+# Newer versions of system binaries
+git = "formula"  # Distributed revision control system
+grep = "formula"  # GNU grep, egrep and fgrep [command: ggrep]
