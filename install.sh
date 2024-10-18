@@ -98,11 +98,21 @@ brew_sync() {
 
 	local missing_formulae=$(comm -23 <(brew leaves | sort) <(echo "$toml_apps" | sort))
 	local missing_casks=$(comm -23 <(brew list --cask | sort) <(echo "$toml_apps" | sort))
+	local missing_apps=$(echo -e "$missing_formulae\n$missing_casks" | sort -u)
 
-	if [[ -n "$missing_formulae" ]] || [[ -n "$missing_casks" ]]; then
+	if [[ -n "$missing_apps" ]]; then
 		echo -e "\n❗️ \033[1;31mThe following Homebrew-installed formulae and casks are missing from apps.toml:\033[0m"
 		echo "$missing_formulae" | sed 's/^/  /'
 		echo "$missing_casks" | sed 's/^/  /'
+		read -rp $'❓  \e[1;31mDo you want to uninstall these apps? (y/n) \e[0m ' choice
+		if [[ "$choice" == "y" ]]; then
+			for app in $missing_apps; do
+				brew uninstall "$app"
+				echo -e "\n🚮 \033[1;35mUninstalled $app.\033[0m"
+			done
+		else
+			echo -e "\n🆗 \033[1;35mNo apps were uninstalled.\033[0m"
+		fi
 	else
 		echo -e "\n✅ \033[1;32mAll Homebrew-installed formulae and casks are present in apps.toml.\033[0m"
 	fi
@@ -116,6 +126,15 @@ uv_sync() {
 	if [[ -n "$missing_uv_apps" ]]; then
 		echo -e "\n❗️ \033[1;31mThe following uv-installed apps are missing from apps.toml:\033[0m"
 		echo "$missing_uv_apps" | sed 's/^/  /'
+		read -rp $'❓  \e[1;31mDo you want to uninstall these apps? (y/n) \e[0m ' choice
+		if [[ "$choice" == "y" ]]; then
+			for app in $missing_uv_apps; do
+				uv tool uninstall "$app"
+				echo -e "\n🚮 \033[1;35mUninstalled $app.\033[0m"
+			done
+		else
+			echo -e "\n🆗 \033[1;35mNo apps were uninstalled.\033[0m"
+		fi
 	else
 		echo -e "\n✅ \033[1;32mAll uv-installed apps are present in apps.toml.\033[0m"
 	fi
@@ -126,16 +145,34 @@ mas_sync() {
 
 	local installed_mas_apps=$(mas list | sed -E 's/^([0-9]+)[[:space:]]+(.*)[[:space:]]+\(.*/\1 \2/' | sort)
 
-	local missing_mas_apps=""
+	# `-A` requires bash 4+, can't use Apple-provided bash which is 3.2
+	declare -A missing_mas_apps=()  # Ensure it's initialized as an empty associative array
+
 	while read -r id name; do
 		if ! echo "$toml_apps" | grep -q "^$id$"; then
-			missing_mas_apps+="\n$name ($id)"
+			missing_mas_apps["$id"]="$name"  # Store ID as key and app name as value
 		fi
 	done <<< "$installed_mas_apps"
 
-	if [[ -n "$missing_mas_apps" ]]; then
+	if [[ ${#missing_mas_apps[@]} -gt 0 ]]; then
 		echo -e "\n❗️ \033[1;31mThe following Mac App Store apps are missing from apps.toml:\033[0m"
-		echo -e "${missing_mas_apps/\\n/}"
+		for id in "${!missing_mas_apps[@]}"; do
+			echo -e "  ${missing_mas_apps[$id]} ($id)"
+		done
+		read -rp $'❓  \e[1;31mDo you want to uninstall these apps? (y/n) \e[0m ' choice
+		if [[ "$choice" == "y" ]]; then
+			for id in "${!missing_mas_apps[@]}"; do
+				name="${missing_mas_apps[$id]}"
+				# mas uninstall doesn't actually work so fall back to telling user to uninstall manually
+				if ! mas uninstall "$id"; then
+					echo -e "❌ \033[1;31mFailed to uninstall $name ($id). Please uninstall it manually.\033[0m"
+				else
+					echo -e "\n🚮 \033[1;35mUninstalled $name ($id).\033[0m"
+				fi
+			done
+		else
+			echo -e "\n🆗 \033[1;35mNo apps were uninstalled.\033[0m"
+		fi
 	else
 		echo -e "\n✅ \033[1;32mAll Mac App Store apps are present in apps.toml.\033[0m"
 	fi
