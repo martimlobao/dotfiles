@@ -13,7 +13,6 @@ licecap = "cask"  # Animated screen capture application
 1351639930 = "mas"  # Gifski: Convert videos to quality GIFs
 
 [developer]
-awscli = "formula"  # Official Amazon AWS command-line interface
 charles = "cask"  # Web debugging Proxy application
 cursor = "cask"  # Write, edit, and chat about your code with AI
 docker = "cask"  # App to build and share containerised applications and microservices
@@ -25,6 +24,11 @@ shellcheck = "formula"  # Static analysis and lint tool, for (ba)sh scripts
 redis = "formula"  # Persistent key-value database, with built-in net interface
 visual-studio-code = "cask"  # Open-source code editor
 warp = "cask"  # Rust-based terminal
+
+[work]
+awscli = "formula"  # Official Amazon AWS command-line interface
+aws-sso-cli = "formula"  # Securely manage AWS API credentials using AWS SSO
+tunnelblick = "cask"  # Free and open-source OpenVPN client
 
 [fonts]
 font-eb-garamond = "cask"  # EB Garamond
@@ -67,7 +71,6 @@ google-drive = "cask"  # Client for the Google Drive storage service
 iina = "cask"  # Free and open-source media player [modern vlc alternative]
 istat-menus = "cask"  # System monitoring app
 notunes = "cask"  # Simple application that will prevent iTunes or Apple Music from launching
-openvpn-connect = "cask"  # Client program for the OpenVPN Access Server
 the-unarchiver = "cask"  # Unpacks archive files
 transmission = "cask"  # Open-source BitTorrent client
 937984704 = "mas"  # Amphetamine: Powerful keep-awake utility
@@ -127,5 +130,6 @@ yt-dlp = "formula"  # Feature-rich command-line audio/video downloader
 cowsay = "formula"  # Configurable talking characters in ASCII art
 lolcat = "formula"  # Rainbows and unicorns in your console!
 # Newer versions of system binaries
+bash = "formula"  # Bourne-Again SHell, a UNIX command interpreter
 git = "formula"  # Distributed revision control system
 grep = "formula"  # GNU grep, egrep and fgrep [command: ggrep]
