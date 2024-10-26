@@ -21,3 +21,6 @@ export LESS=eFRX;
 
 # Change nnn selection color
 export NNN_CONTEXT_COLORS='1234';
+
+# Change go path
+export GOPATH="$HOME/.go"

@@ -54,3 +54,6 @@ alias pumpitup="osascript -e 'set volume output volume 100'"
 
 # Print each PATH entry on a separate line
 alias path='echo -e ${PATH//:/\\n}'
+
+# AWS SSO refresh
+alias ssorefresh='unset AWS_ACCESS_KEY_ID && unset AWS_SECRET_ACCESS_KEY && aws-sso exec'

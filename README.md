@@ -9,7 +9,6 @@ Here's a short description of each script in this repository:
 - `local.sh` _interactively_ configure local settings unique to each machine, like the computer name and your git user details
 - `macos.sh` configure several macOS settings
 - `brew.sh` install command-line tools using Homebrew
-- `python.sh` configure python environment
 - `apps.sh` install fonts and macOS apps using Homebrew and Mac App Store
 - `dock.sh` configure macOS dock
 - `bootstrap.sh` install dotfiles for bash settings and command line layout
@@ -66,26 +65,6 @@ Most of these scripts rely on [Homebrew](https://brew.sh/), which is installed w
 
 ```bash
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-```
-
-### Private dotfiles
-
-In addition to this public repository, I also have a private repository where I store other settings that I don't want to be publicly viewable, like my [iStat Menus](https://bjango.com/mac/istatmenus/) license or my [Atom](https://atom.io/) preferences. At the end of the `setup.sh` script, this private repository is cloned and a `run.sh` script is called to install these settings.
-
-Of course, nothing else will be installed for you since you don't have access to this repository, but you can create your own private settings repository and add it to `setup.sh` if you wish.
-
-### Add custom commands
-
-If you want to add a few extra commands without creating your own fork or an additional private repository, you can add these to `.extra`. Since this file is in the `.gitignore`, any changes will remain local to your machine and will not be committed to a public repository.
-
-If `.extra` exists, it is sourced in `.bash_profile` after all other dotfiles, so it can also be used to override settings or functions.
-
-All settings that I do not want to sync are either generated using `local.sh` or stored in my private dotfiles repository, so I don't have anything in my `.extra` file. However, an example `.extra` could look something like this:
-
-```bash
-# Export Github token and gist ID for Atom sync-settings https://atom.io/packages/sync-settings
-export GITHUB_TOKEN=6a10cc207b88888888888888888888887a67e871
-export GIST_ID=b302588888888888888888888888c41c
 ```
 
 ## Contributing

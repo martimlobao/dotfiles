@@ -1,33 +1,7 @@
 #!/usr/bin/env bash
 
-# Bash traceback (from https://gist.github.com/Asher256/4c68119705ffa11adb7446f297a7beae)
-set -o errexit  # stop the script each time a command fails
-set -o nounset  # stop if you attempt to use an undef variable
-
-function bash_traceback() {
-	local lasterr="$?"
-	set +o xtrace
-	local code="-1"
-	local bash_command=${BASH_COMMAND}
-	echo "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]} ('$bash_command' exited with status $lasterr)" >&2
-	if [ ${#FUNCNAME[@]} -gt 2 ]; then
-		# Print out the stack trace described by $function_stack
-		echo "Traceback of ${BASH_SOURCE[1]} (most recent call last):" >&2
-		for ((i=0; i < ${#FUNCNAME[@]} - 1; i++)); do
-		local funcname="${FUNCNAME[$i]}"
-		[ "$i" -eq "0" ] && funcname=$bash_command
-		echo -e "  ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]}\\t$funcname" >&2
-		done
-	fi
-	echo "Exiting with status ${code}" >&2
-	exit "${code}"
-}
-
-# provide an error handler whenever a command exits nonzero
-trap 'bash_traceback' ERR
-
-# propagate ERR trap handler functions, expansions and subshells
-set -o errtrace
+# Source the bash_traceback.sh file
+source "$(dirname "$0")/bash_traceback.sh"
 
 # Ask for the administrator password upfront and keep alive until script has finished
 echo -e "🦸  \033[1;34mRequesting admin permissions...\033[0m"
@@ -62,10 +36,10 @@ fi
 echo -e "📝  \033[1;34mSetting up .gitconfig.private...\033[0m"
 USERNAME=$(op user get --me | grep 'Name:' | sed 's/Name: *//')
 	if [ -n "$USERNAME" ]; then
-	    git config --file=$HOME/.gitconfig.private user.name "$USERNAME"
+		git config --file=$HOME/.gitconfig.private user.name "$USERNAME"
 	else
-	    echo "Error: User name is empty."
-	    exit 1
+		echo "Error: User name is empty."
+		exit 1
 	fi
 git config --file=$HOME/.gitconfig.private user.email "$(op read "op://Private/Github/email")"
 git config --file=$HOME/.gitconfig.private user.signingKey "$(op read "op://Private/Github SSH Commit Signing Key/public key")"

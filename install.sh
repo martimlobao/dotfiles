@@ -101,20 +101,20 @@ brew_sync() {
 	local missing_apps=$(echo -e "$missing_formulae\n$missing_casks" | sort -u)
 
 	if [[ -n "$missing_apps" ]]; then
-		echo -e "\n❗️ \033[1;31mThe following Homebrew-installed formulae and casks are missing from apps.toml:\033[0m"
+		echo -e "❗️ \033[1;31mThe following Homebrew-installed formulae and casks are missing from apps.toml:\033[0m"
 		echo "$missing_formulae" | sed 's/^/  /'
 		echo "$missing_casks" | sed 's/^/  /'
 		read -rp $'❓  \e[1;31mDo you want to uninstall these apps? (y/n) \e[0m ' choice
 		if [[ "$choice" == "y" ]]; then
 			for app in $missing_apps; do
 				brew uninstall "$app"
-				echo -e "\n🚮 \033[1;35mUninstalled $app.\033[0m"
+				echo -e "🚮 \033[1;35mUninstalled $app.\033[0m"
 			done
 		else
-			echo -e "\n🆗 \033[1;35mNo apps were uninstalled.\033[0m"
+			echo -e "🆗 \033[1;35mNo apps were uninstalled.\033[0m"
 		fi
 	else
-		echo -e "\n✅ \033[1;32mAll Homebrew-installed formulae and casks are present in apps.toml.\033[0m"
+		echo -e "✅ \033[1;32mAll Homebrew-installed formulae and casks are present in apps.toml.\033[0m"
 	fi
 }
 
@@ -124,19 +124,19 @@ uv_sync() {
 	local missing_uv_apps=$(comm -23 <(uv tool list | awk '{print $1}' | grep -v '^-*$' | sort) <(echo "$toml_apps" | sort))
 
 	if [[ -n "$missing_uv_apps" ]]; then
-		echo -e "\n❗️ \033[1;31mThe following uv-installed apps are missing from apps.toml:\033[0m"
+		echo -e "❗️ \033[1;31mThe following uv-installed apps are missing from apps.toml:\033[0m"
 		echo "$missing_uv_apps" | sed 's/^/  /'
 		read -rp $'❓  \e[1;31mDo you want to uninstall these apps? (y/n) \e[0m ' choice
 		if [[ "$choice" == "y" ]]; then
 			for app in $missing_uv_apps; do
 				uv tool uninstall "$app"
-				echo -e "\n🚮 \033[1;35mUninstalled $app.\033[0m"
+				echo -e "🚮 \033[1;35mUninstalled $app.\033[0m"
 			done
 		else
-			echo -e "\n🆗 \033[1;35mNo apps were uninstalled.\033[0m"
+			echo -e "🆗 \033[1;35mNo apps were uninstalled.\033[0m"
 		fi
 	else
-		echo -e "\n✅ \033[1;32mAll uv-installed apps are present in apps.toml.\033[0m"
+		echo -e "✅ \033[1;32mAll uv-installed apps are present in apps.toml.\033[0m"
 	fi
 }
 
@@ -155,7 +155,7 @@ mas_sync() {
 	done <<< "$installed_mas_apps"
 
 	if [[ ${#missing_mas_apps[@]} -gt 0 ]]; then
-		echo -e "\n❗️ \033[1;31mThe following Mac App Store apps are missing from apps.toml:\033[0m"
+		echo -e "❗️ \033[1;31mThe following Mac App Store apps are missing from apps.toml:\033[0m"
 		for id in "${!missing_mas_apps[@]}"; do
 			echo -e "  ${missing_mas_apps[$id]} ($id)"
 		done
@@ -167,14 +167,14 @@ mas_sync() {
 				if ! mas uninstall "$id"; then
 					echo -e "❌ \033[1;31mFailed to uninstall $name ($id). Please uninstall it manually.\033[0m"
 				else
-					echo -e "\n🚮 \033[1;35mUninstalled $name ($id).\033[0m"
+					echo -e "🚮 \033[1;35mUninstalled $name ($id).\033[0m"
 				fi
 			done
 		else
-			echo -e "\n🆗 \033[1;35mNo apps were uninstalled.\033[0m"
+			echo -e "🆗 \033[1;35mNo apps were uninstalled.\033[0m"
 		fi
 	else
-		echo -e "\n✅ \033[1;32mAll Mac App Store apps are present in apps.toml.\033[0m"
+		echo -e "✅ \033[1;32mAll Mac App Store apps are present in apps.toml.\033[0m"
 	fi
 }
 
@@ -200,6 +200,7 @@ echo "$parsed_toml" | while IFS=$'\t' read -r category app method; do
 	install "$app" "$method"
 done
 
+echo -e "\n🔄 \033[1;35mSyncing installed apps to apps.toml...\033[0m"
 brew_sync
 uv_sync
 mas_sync
@@ -209,7 +210,10 @@ echo -e "\n🔼 \033[1;35mUpdating existing apps and packages...\033[0m"
 brew update
 brew upgrade
 uv tool upgrade --all
-mas upgrade
+read -rp $'❓ \e[1;31mUpdate Mac App Store apps (may be slightly buggy)? (y/n) \e[0m ' choice
+if [[ "$choice" == "y" ]]; then
+	mas upgrade
+fi
 
 # Remove outdated versions from the cellar
 brew cleanup
