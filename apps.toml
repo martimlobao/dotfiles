@@ -49,6 +49,7 @@ spotify = "cask"  # Music streaming service
 
 [productivity]
 chatgpt = "cask"  # OpenAI's official ChatGPT desktop app
+linear-linear = "cask"  # App to manage software development and track bugs
 notion = "cask"  # App to write, plan, collaborate, and get organised
 obsidian = "cask"  # Knowledge base that works on top of a local folder of plain text Markdown files
 slack = "cask"  # Team communication and collaboration software
@@ -71,9 +72,12 @@ google-drive = "cask"  # Client for the Google Drive storage service
 iina = "cask"  # Free and open-source media player [modern vlc alternative]
 istat-menus = "cask"  # System monitoring app
 notunes = "cask"  # Simple application that will prevent iTunes or Apple Music from launching
+rocket = "cask"  # Emoji picker optimised for blind people
 the-unarchiver = "cask"  # Unpacks archive files
 transmission = "cask"  # Open-source BitTorrent client
 937984704 = "mas"  # Amphetamine: Powerful keep-awake utility
+1355679052 = "mas"  # Dropover - Easier Drag & Drop: Speed up your workflow
+1503446680 = "mas"  # Clipboard Manager - PastePal: Copy Paste Keyboard History
 
 [utilities]
 chromedriver = "cask"  # Automated testing of webapps for Google Chrome
