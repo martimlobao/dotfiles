@@ -23,7 +23,7 @@ confirm_set () {
 }
 
 # Set computer name
-read -rp $'❓  \e[1;31mDo you want to (re)set the name for this computer? (y/n) \e[0m ' SETNAME
+read -rp $'❓ \e[1;31mDo you want to (re)set the name for this computer? (y/n)\e[0m ' SETNAME
 if [[ $SETNAME =~ ^[Yy]$ ]]; then
 	confirm_set "💻  Set the name for this computer: " COMPUTERNAME
 	sudo scutil --set ComputerName "$COMPUTERNAME"
@@ -36,17 +36,17 @@ fi
 echo -e "📝  \033[1;34mSetting up .gitconfig.private...\033[0m"
 USERNAME=$(op user get --me | grep 'Name:' | sed 's/Name: *//')
 	if [ -n "$USERNAME" ]; then
-		git config --file=$HOME/.gitconfig.private user.name "$USERNAME"
+		git config --file="$HOME"/.gitconfig.private user.name "$USERNAME"
 	else
 		echo "Error: User name is empty."
 		exit 1
 	fi
-git config --file=$HOME/.gitconfig.private user.email "$(op read "op://Private/Github/email")"
-git config --file=$HOME/.gitconfig.private user.signingKey "$(op read "op://Private/Github SSH Commit Signing Key/public key")"
-git config --file=$HOME/.gitconfig.private github.user "$(op read "op://Private/Github/username")"
+git config --file="$HOME"/.gitconfig.private user.email "$(op read "op://Private/Github/email")"
+git config --file="$HOME"/.gitconfig.private user.signingKey "$(op read "op://Private/Github SSH Commit Signing Key/public key")"
+git config --file="$HOME"/.gitconfig.private github.user "$(op read "op://Private/Github/username")"
 
 # Copy all files from manual/ to ~/
-read -rp $'❓  \e[1;31mDo you want to copy and overwrite all files from manual/ to $HOME? (y/n) \e[0m ' COPYMANUAL
+read -rp $'❓ \e[1;31mDo you want to copy and overwrite all files from manual/ to $HOME? (y/n)\e[0m ' COPYMANUAL
 if [[ $COPYMANUAL =~ ^[Yy]$ ]]; then
 	cp -r manual/ ~/
 fi
@@ -54,8 +54,8 @@ fi
 # iStat Menus
 if [[ -z "$(defaults read com.bjango.istatmenus license6 2>/dev/null || echo '')" ]]; then
 	echo -e "📝  \033[1;34mRegistering iStat Menus...\033[0m"
-	defaults write com.bjango.istatmenus _modelid -string $(sysctl hw.model | sed 's/hw.model: //')
-	defaults write com.bjango.istatmenus installDateV6 -int $(date -v +14d +%s)
+	defaults write com.bjango.istatmenus _modelid -string "$(sysctl hw.model | sed 's/hw.model: //')"
+	defaults write com.bjango.istatmenus installDateV6 -int "$(date -v +14d +%s)"
 
 	ISTAT_EMAIL=$(op read "op://Private/iStat Menus 6/registered email")
 	ISTAT_KEY=$(op read "op://Private/iStat Menus 6/license key")

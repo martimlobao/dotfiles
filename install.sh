@@ -93,18 +93,24 @@ install () {
 }
 
 brew_sync() {
-	local toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "cask" or .value == "formula") | .key)) | flatten | .[]' apps.toml)
+	local toml_apps
+	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "cask" or .value == "formula") | .key)) | flatten | .[]' apps.toml)
 	toml_apps=$(echo "$toml_apps" | sed -E 's|.*/||')  # get name from tapped apps (slashes in name)
 
-	local missing_formulae=$(comm -23 <(brew leaves | sort) <(echo "$toml_apps" | sort))
-	local missing_casks=$(comm -23 <(brew list --cask | sort) <(echo "$toml_apps" | sort))
-	local missing_apps=$(echo -e "$missing_formulae\n$missing_casks" | sort -u)
+	local missing_formulae
+	missing_formulae=$(comm -23 <(brew leaves | sort) <(echo "$toml_apps" | sort))
+	local missing_casks
+	missing_casks=$(comm -23 <(brew list --cask | sort) <(echo "$toml_apps" | sort))
+	local missing_apps
+	missing_apps=$(echo -e "$missing_formulae\n$missing_casks" | sort -u)
 
 	if [[ -n "$missing_apps" ]]; then
 		echo -e "❗️ \033[1;31mThe following Homebrew-installed formulae and casks are missing from apps.toml:\033[0m"
+		# shellcheck disable=SC2001
 		echo "$missing_formulae" | sed 's/^/  /'
+		  # shellcheck disable=SC2001
 		echo "$missing_casks" | sed 's/^/  /'
-		read -rp $'❓  \e[1;31mDo you want to uninstall these apps? (y/n) \e[0m ' choice
+		read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
 		if [[ "$choice" == "y" ]]; then
 			for app in $missing_apps; do
 				brew uninstall "$app"
@@ -119,14 +125,17 @@ brew_sync() {
 }
 
 uv_sync() {
-	local toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "uv") | .key)) | flatten | .[]' apps.toml)
+	local toml_apps
+	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "uv") | .key)) | flatten | .[]' apps.toml)
 
-	local missing_uv_apps=$(comm -23 <(uv tool list | awk '{print $1}' | grep -v '^-*$' | sort) <(echo "$toml_apps" | sort))
+	local missing_uv_apps
+	missing_uv_apps=$(comm -23 <(uv tool list | awk '{print $1}' | grep -v '^-*$' | sort) <(echo "$toml_apps" | sort))
 
 	if [[ -n "$missing_uv_apps" ]]; then
 		echo -e "❗️ \033[1;31mThe following uv-installed apps are missing from apps.toml:\033[0m"
+		  # shellcheck disable=SC2001
 		echo "$missing_uv_apps" | sed 's/^/  /'
-		read -rp $'❓  \e[1;31mDo you want to uninstall these apps? (y/n) \e[0m ' choice
+		read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n \e[0m ' choice
 		if [[ "$choice" == "y" ]]; then
 			for app in $missing_uv_apps; do
 				uv tool uninstall "$app"
@@ -141,9 +150,11 @@ uv_sync() {
 }
 
 mas_sync() {
-	local toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "mas") | .key)) | flatten | .[]' apps.toml)
+	local toml_apps
+	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "mas") | .key)) | flatten | .[]' apps.toml)
 
-	local installed_mas_apps=$(mas list | sed -E 's/^([0-9]+)[[:space:]]+(.*)[[:space:]]+\(.*/\1 \2/' | sort)
+	local installed_mas_apps
+	installed_mas_apps=$(mas list | sed -E 's/^([0-9]+)[[:space:]]+(.*)[[:space:]]+\(.*/\1 \2/' | sort)
 
 	# `-A` requires bash 4+, can't use Apple-provided bash which is 3.2
 	declare -A missing_mas_apps=()  # Ensure it's initialized as an empty associative array
@@ -159,7 +170,7 @@ mas_sync() {
 		for id in "${!missing_mas_apps[@]}"; do
 			echo -e "  ${missing_mas_apps[$id]} ($id)"
 		done
-		read -rp $'❓  \e[1;31mDo you want to uninstall these apps? (y/n) \e[0m ' choice
+		read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
 		if [[ "$choice" == "y" ]]; then
 			for id in "${!missing_mas_apps[@]}"; do
 				name="${missing_mas_apps[$id]}"
@@ -187,6 +198,7 @@ fi
 populate_installed_apps
 
 # Use yq to parse the TOML file and store the output in a variable
+# shellcheck disable=2016
 parsed_toml=$(yq e 'to_entries | .[] | .key as $category | .value | to_entries[] | [$category, .key, .value] | @tsv' apps.toml)
 
 # Install apps from each category in the apps.toml file
@@ -210,7 +222,7 @@ echo -e "\n🔼 \033[1;35mUpdating existing apps and packages...\033[0m"
 brew update
 brew upgrade
 uv tool upgrade --all
-read -rp $'❓ \e[1;31mUpdate Mac App Store apps (may be slightly buggy)? (y/n) \e[0m ' choice
+read -rp $'❓ \e[1;31mUpdate Mac App Store apps (may be slightly buggy)? (y/n)\e[0m ' choice
 if [[ "$choice" == "y" ]]; then
 	mas upgrade
 fi

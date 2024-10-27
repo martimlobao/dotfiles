@@ -132,11 +132,11 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 ###############################################################################
 
 # Set computer name (as done via System Preferences → Sharing)
-read -p "Set your computer name: " ComputerName
-sudo scutil --set ComputerName $ComputerName
-sudo scutil --set HostName $ComputerName
-sudo scutil --set LocalHostName $ComputerName
-sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string $ComputerName
+read -rp "Set your computer name: " ComputerName
+sudo scutil --set ComputerName "$ComputerName"
+sudo scutil --set HostName "$ComputerName"
+sudo scutil --set LocalHostName "$ComputerName"
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$ComputerName"
 
 
 
@@ -246,7 +246,7 @@ defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 # defaults write com.apple.screensaver askForPasswordDelay -int 0
 
 # Save screenshots to the Downloads folder
-defaults write com.apple.screencapture location -string "~/Downloads"
+defaults write com.apple.screencapture location -string "$HOME/Downloads"
 
 # Save screenshots in PNG format (other options: BMP, GIF, JPG, PDF, TIFF)
 # defaults write com.apple.screencapture type -string "png"
