@@ -4,7 +4,7 @@
 # UPDATE DOTFILES                                                             #
 ###############################################################################
 
-cd "$(dirname "${BASH_SOURCE}")" || exit 1;
+cd "$(dirname "${BASH_SOURCE:-$0}")" || exit 1;
 
 git pull origin main;
 
@@ -16,7 +16,8 @@ function bootstrap() {
 		--exclude ".gitignore" \
 		-f"- */" \
 		-avh --no-perms . ~;
-	source ~/.bash_profile;
+	# shellcheck source=/dev/null
+	source "$HOME"/.zprofile;
 }
 
 if [ "$1" == "--force" ] || [ "$1" == "-f" ]; then
