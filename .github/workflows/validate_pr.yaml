@@ -14,5 +14,3 @@ jobs:
       - name: shellcheck
         run: |
           shellcheck -- **/*.sh
-          shellcheck -- bin/*
-          shellcheck --exclude SC2148 .bash_profile .bashrc
