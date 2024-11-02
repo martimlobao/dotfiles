@@ -19,6 +19,8 @@ module.exports = {
         lineHeight: 1,
         // letter spacing as a relative unit
         letterSpacing: 0,
+        // the number of rows to be persisted in terminal buffer for scrolling
+        scrollback: 100_000,
         // terminal cursor background color and opacity (hex, rgb, hsl, hsv, hwb or cmyk)
         cursorColor: 'rgba(248,28,229,0.8)',
         // terminal text color under BLOCK cursor
@@ -101,9 +103,7 @@ module.exports = {
         // Supported Options:
         //  1. 'SOUND' -> Enables the bell as a sound
         //  2. false: turns off the bell
-        scrollback: 10000,
-        // the number of rows to be persisted in terminal buffer for scrolling
-        bell: 'SOUND',
+        bell: false,
         // An absolute file path to a sound file on the machine.
         // bellSoundURL: '/path/to/sound/file',
         // if `true` (without backticks and without quotes), selected text will automatically be copied to the clipboard
@@ -135,10 +135,6 @@ module.exports = {
         hyperStatusLine: {
             aheadColor: 'ivory',
         },
-        verminal: {
-            fontFamily: '"Source Code Pro", Menlo, "DejaVu Sans Mono", Consolas, "Lucida Console", monospace',
-            fontSize: 12,
-        },
     },
     // a list of plugins to fetch and install from npm
     // format: [@org/]project[#version]
@@ -147,9 +143,8 @@ module.exports = {
     //   `@company/project`
     //   `project#1.0.1`
     plugins: [
-        'hyper-statusline',
-        'verminal',
-        // 'hyper-chesterish',
+        "hyper-snazzy",
+        "hyper-statusline",
     ],
     // in development, you can create a directory under
     // `~/.hyper_plugins/local/` and include it here
