@@ -1,6 +1,6 @@
 # Martim's dotfiles
 
-![Screenshot of my shell prompt](https://i.imgur.com/3AroNRu.png)
+![Screenshot of my shell prompt](static/screenshot.png)
 
 This repository contains my personal dotfiles, as well as several scripts to install applications and configure settings. Although the bash configuration settings should (mostly) work on any Unix-based system, most of these scripts were only designed to run on macOS and likely won't run at all on any other OS.
 
@@ -75,9 +75,10 @@ Note that these are my personal dotfiles, so if you'd like to customize them to 
 
 ## Thanks
 
-- [@mathiasbyens](https://mathiasbynens.be/) for his [dotfiles repository](https://github.com/mathiasbynens/dotfiles), off of which this repository was based
+- [@mathiasbyens](https://mathiasbynens.be/) for his [dotfiles repository](https://github.com/mathiasbynens/dotfiles), off of which this repository was initially based
+- [@ikuwow](https://github.com/ikuwow) for his [dotfiles](https://github.com/ikuwow/dotfiles)
 - [@kennethreitz](https://www.kennethreitz.org/) for a few [functions and inspiration](https://github.com/kennethreitz/dotfiles)
 - [@kevinsuttle](https://kevinsuttle.com/) for a great compilation of [macOS defaults](https://github.com/kevinSuttle/macOS-Defaults)
-- [@coreyschafer](https://coreyms.com/) for his awesome [YouTube tutorials](https://www.youtube.com/user/schafer5) on multiple topics
-- [@henriquebastos](https://henriquebastos.net/) for [documentation](https://medium.com/@henriquebastos/the-definitive-guide-to-setup-my-python-workspace-628d68552e14) on getting Jupyter to run nicely with pyenv
 - [@ryanpavlick](https://github.com/rpavlick) for his [macOS dock customization functions](https://github.com/rpavlick/add_to_dock)
+- [@br3ndonland](https://github.com/br3ndonland) for his [dotfiles](https://github.com/br3ndonland/dotfiles)
+- [@pablopunk](https://github.com/pablopunk) for his [dotfiles](https://github.com/pablopunk/dotfiles)
