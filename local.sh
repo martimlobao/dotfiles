@@ -54,11 +54,11 @@ fi
 # iStat Menus
 if [[ -z "$(defaults read com.bjango.istatmenus license6 2>/dev/null || echo '')" ]]; then
 	echo -e "📝  \033[1;34mRegistering iStat Menus...\033[0m"
-	defaults write com.bjango.istatmenus _modelid -string "$(sysctl hw.model | sed 's/hw.model: //')"
-	defaults write com.bjango.istatmenus installDateV6 -int "$(date -v +14d +%s)"
-
 	ISTAT_EMAIL=$(op read "op://Private/iStat Menus 6/registered email")
 	ISTAT_KEY=$(op read "op://Private/iStat Menus 6/license key")
+
+	defaults write com.bjango.istatmenus _modelid -string "$(sysctl hw.model | sed 's/hw.model: //')"
+	defaults write com.bjango.istatmenus installDateV6 -int "$(date -v +14d +%s)"
 	/usr/libexec/PlistBuddy -c "Add :license6 dict" ~/Library/Preferences/com.bjango.istatmenus.plist
 	/usr/libexec/PlistBuddy -c "Add :license6:email string $ISTAT_EMAIL" ~/Library/Preferences/com.bjango.istatmenus.plist
 	/usr/libexec/PlistBuddy -c "Add :license6:serial string $ISTAT_KEY" ~/Library/Preferences/com.bjango.istatmenus.plist

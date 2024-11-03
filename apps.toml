@@ -76,8 +76,6 @@ rocket = "cask"  # Emoji picker optimised for blind people
 the-unarchiver = "cask"  # Unpacks archive files
 transmission = "cask"  # Open-source BitTorrent client
 937984704 = "mas"  # Amphetamine: Powerful keep-awake utility
-1355679052 = "mas"  # Dropover - Easier Drag & Drop: Speed up your workflow
-1503446680 = "mas"  # Clipboard Manager - PastePal: Copy Paste Keyboard History
 
 [utilities]
 chromedriver = "cask"  # Automated testing of webapps for Google Chrome
@@ -85,6 +83,7 @@ qlmarkdown = "cask"  # Quick Look generator for Markdown files
 qlstephen = "cask"  # Quick Look plugin for plaintext files without an extension
 qlvideo = "cask"  # Thumbnails, static previews, cover art and metadata for video files
 quicklook-json = "cask"  # Quick Look plugin for JSON files
+syntax-highlight = "cask"  # Quicklook extension for source files
 webpquicklook = "cask"  # Quick Look plugin for webp files
 
 [shell-tools]
@@ -131,7 +130,6 @@ wget = "formula"  # Internet file retriever
 yq = "formula"  # Process YAML, JSON, XML, CSV and properties documents from the CLI
 yt-dlp = "formula"  # Feature-rich command-line audio/video downloader
 # Fun stuff
-cowsay = "formula"  # Configurable talking characters in ASCII art
 lolcat = "formula"  # Rainbows and unicorns in your console!
 # Newer versions of system binaries
 bash = "formula"  # Bourne-Again SHell, a UNIX command interpreter
