@@ -1,17 +1,21 @@
 ---
 name: Validate Pull Request
 on:  # yamllint disable-line rule:truthy
-  pull_request:
-    branches: [main]
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: read
 
 jobs:
-  shellcheck:
+  main:
+    name: Validate PR title
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: shellcheck
-        uses: ludeeus/action-shellcheck@master
+      - uses: amannn/action-semantic-pull-request@v5
         env:
-          SHELLCHECK_OPTS: -x
-        with:
-          ignore_names: .zshrc .zprofile
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
