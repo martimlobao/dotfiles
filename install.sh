@@ -9,6 +9,11 @@ source "$(dirname "$0")/bash_traceback.sh"
 
 echo -e "📲 \033[1;36mInstalling apps and packages...\033[0m"
 
+# Ensure yq is installed to parse the apps.toml file
+if ! command -v yq &> /dev/null; then
+	brew install yq
+fi
+
 # Initialize arrays to store installed apps
 installed_casks=()
 installed_formulas=()
@@ -135,7 +140,7 @@ uv_sync() {
 		echo -e "❗️ \033[1;31mThe following uv-installed apps are missing from apps.toml:\033[0m"
 		  # shellcheck disable=SC2001
 		echo "$missing_uv_apps" | sed 's/^/  /'
-		read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n \e[0m ' choice
+		read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
 		if [[ "$choice" == "y" ]]; then
 			for app in $missing_uv_apps; do
 				uv tool uninstall "$app"
@@ -189,11 +194,6 @@ mas_sync() {
 	fi
 }
 
-# Ensure yq is installed
-if ! command -v yq &> /dev/null; then
-	brew install yq
-fi
-
 # Populate the arrays with installed apps
 populate_installed_apps
 
@@ -222,9 +222,13 @@ echo -e "\n🔼 \033[1;35mUpdating existing apps and packages...\033[0m"
 brew update
 brew upgrade
 uv tool upgrade --all
-read -rp $'❓ \e[1;31mUpdate Mac App Store apps (may be slightly buggy)? (y/n)\e[0m ' choice
-if [[ "$choice" == "y" ]]; then
-	mas upgrade
+if mas outdated | grep -q .; then
+	echo -e "❗️ \033[1;31mThe following Mac App Store apps are outdated:\033[0m"
+	mas outdated
+	read -rp $'❓ \e[1;31mUpdate Mac App Store apps (may be slightly buggy)? (y/n)\e[0m ' choice
+	if [[ "$choice" == "y" ]]; then
+		mas upgrade
+	fi
 fi
 
 # Remove outdated versions from the cellar
