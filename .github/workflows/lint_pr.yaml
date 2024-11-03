@@ -1,0 +1,39 @@
+---
+name: Lint PR
+on:  # yamllint disable-line rule:truthy
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: read
+
+jobs:
+  main:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Display shellcheck version
+        run: shellcheck --version
+      - name: shellcheck
+        run: shellcheck -x **/*.sh
+  yamllint:
+    name: yamllint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Display yamllint version
+        run: yamllint --version
+      - name: yamllint
+        run: yamllint .
