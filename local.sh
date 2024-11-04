@@ -45,10 +45,10 @@ git config --file="$HOME"/.gitconfig.private user.email "$(op read "op://Private
 git config --file="$HOME"/.gitconfig.private user.signingKey "$(op read "op://Private/Github SSH Commit Signing Key/public key")"
 git config --file="$HOME"/.gitconfig.private github.user "$(op read "op://Private/Github/username")"
 
-# Copy all files from manual/ to ~/
-read -rp $'❓ \e[1;31mDo you want to copy and overwrite all files from manual/ to $HOME? (y/n)\e[0m ' COPYMANUAL
-if [[ $COPYMANUAL =~ ^[Yy]$ ]]; then
-	cp -r manual/ ~/
+# Copy all files from copyme/ to $HOME
+read -rp $'❓ \e[1;31mDo you want to copy and overwrite all files from copyme/ to $HOME? (y/n)\e[0m ' COPYME
+if [[ $COPYME =~ ^[Yy]$ ]]; then
+	rsync -av --exclude='.DS_Store' copyme/ "$HOME"
 fi
 
 # iStat Menus
