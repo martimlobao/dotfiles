@@ -120,7 +120,6 @@ ffmpeg = "formula"  # Play, record, convert, and stream audio and video
 httpie = "formula"  # User-friendly cURL replacement (command-line HTTP client)
 imagemagick = "formula"  # Tools and libraries to manipulate images in many formats
 jq = "formula"  # Lightweight and flexible command-line JSON processor
-mackup = "formula"  # Keep your Mac's application settings in sync
 nano = "formula"  # Free (GNU) replacement for the Pico text editor
 nnn = "formula"  # Tiny, lightning fast, feature-packed file manager
 pandoc = "formula"  # Swiss-army knife of markup format conversion
