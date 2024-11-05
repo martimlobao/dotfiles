@@ -7,8 +7,6 @@ source "$(dirname "$0")/bash_traceback.sh"
 # UPDATE DOTFILES                                                             #
 ###############################################################################
 
-# echo -e "\033[1;34m🔗 Installing dotfiles...\033[0m"
-# sleep 1
 
 function dotlink() {
 	find "linkme" -type d -mindepth 1 | sed "s|^linkme/||" | \

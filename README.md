@@ -22,7 +22,13 @@ All these scripts are idempotent, meaning they can be run multiple times without
 On a fresh (or not so fresh) macOS install, run the following command to install Homebrew and run all scripts:
 
 ```bash
-curl -L http://dot.lobao.io | bash
+bash <(curl -L dot.lobao.io)
+```
+
+To run the script without interactive prompts, run the following command:
+
+```bash
+curl -L http://dot.lobao.io | bash -s -- --yes
 ```
 
 ### 1Password requirements
