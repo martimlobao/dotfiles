@@ -2,13 +2,13 @@
 
 ![Screenshot of my shell prompt](static/screenshot.png)
 
-This repository contains my personal dotfiles, as well as several scripts to install applications and configure settings. Although the bash configuration settings should (mostly) work on any Unix-based system, most of these scripts were only designed to run on macOS and likely won't run at all on any other OS.
+This repository contains my personal dotfiles, as well as several scripts to install applications and configure settings. Although the shell configuration settings should (mostly) work on any Unix-based system, most of these scripts were only designed to run on macOS and likely won't run at all on any other OS.
 
 Here's a short description of each script in this repository:
 
 - `local.sh` _interactively_ configure local settings unique to each machine, like the computer name and your git user details
 - `macos.sh` configure several macOS settings
-- `install.sh` install fonts, tools, and macOS apps using Homebrew, [`uv`](https://docs.astral.sh/uv/), and the Mac App Store
+- `install.sh` install fonts, tools, and apps using Homebrew, [`uv`](https://docs.astral.sh/uv/), and the Mac App Store
 - `dock.sh` configure macOS dock
 - `bootstrap.sh` bootstrap install everything, including cloning this repository
 - `run.sh` install Homebrew and run all scripts
@@ -19,7 +19,7 @@ All these scripts are idempotent, meaning they can be run multiple times without
 
 ## Installation
 
-On a fresh macOS install, run the following command to install Homebrew and run all scripts:
+On a fresh (or not so fresh) macOS install, run the following command to install Homebrew and run all scripts:
 
 ```bash
 curl -L http://dot.lobao.io | bash
@@ -30,10 +30,11 @@ curl -L http://dot.lobao.io | bash
 1Password is required to store secrets used by these scripts. These include:
 
 - `op user get --me` to set your git `user.name`
-- `op://Private/Github/email` and `op://Private/Github/username` to configure git and push to Github
-- `op://Private/Github SSH Commit Signing Key/public key` to configure SSH commit signing
+- `op://Private/GitHub/email` and `op://Private/GitHub/username` to configure git and push to Github
+- `op://Private/GitHub SSH Commit Signing Key/public key` to configure SSH commit signing
 - `op://Private/iStat Menus 6/registered email` and `op://Private/iStat Menus 6/license key` to register iStat Menus 6
 - `op://Private/Charles/registered name` and `op://Private/Charles/license key` to register Charles
+- SSH keys for AWS
 
 ## Thanks
 
