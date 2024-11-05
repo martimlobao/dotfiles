@@ -24,3 +24,6 @@ export NNN_CONTEXT_COLORS='1234';
 
 # Change go path
 export GOPATH="$HOME/.go"
+
+# Add dotfiles (should match the one in bootstrap.sh)
+export DOTPATH="$HOME/.dotfiles"

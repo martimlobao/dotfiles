@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# Run .install.sh
+function appsync () {
+	bash "$DOTPATH/install.sh"
+}
+
 # Start screensaver.
 function ss () {
 	open -a ScreenSaverEngine
