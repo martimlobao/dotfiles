@@ -3,6 +3,8 @@
 # Source the bash_traceback.sh file
 source "$(dirname "$0")/bash_traceback.sh"
 
+echo -e "\033[1;34m💻 Setting macOS preferences...\033[0m"
+
 # Ask for the administrator password upfront and keep alive until script has finished
 if ! sudo -n true 2>/dev/null; then
 	echo -e "🧙 \033[1;34mRequesting admin permissions...\033[0m"

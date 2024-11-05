@@ -6,22 +6,21 @@ set -eu
 
 DOTPATH=$HOME/.dotfiles
 
-BRANCH="${1:-main}"
-echo "Bootstrap with branch '${BRANCH}'"
+echo -e "\033[1;34m🥾 Bootstrapping dotfiles\033[0m"
 
 if [ ! -d "$DOTPATH" ]; then
-	git clone -b "$BRANCH" https://github.com/martimlobao/dotfiles.git "$DOTPATH"
+	git clone https://github.com/martimlobao/dotfiles.git "$DOTPATH"
+	echo -e "\033[1;32m✅ Cloned $DOTPATH\033[0m"
 else
-	echo "$DOTPATH already downloaded. Updating..."
-	cd "$DOTPATH"
-	git stash
-	git checkout "$BRANCH"
-	git pull origin "$BRANCH"
-	echo
+	echo -e "\033[1;34m✅ Dotfiles already downloaded to $DOTPATH\033[0m"
 fi
 
 cd "$DOTPATH"
 
-./run.sh
+if [[ "${1:-}" == "--yes" ]] || [[ "${1:-}" == "-y" ]]; then
+	./run.sh -y
+else
+	./run.sh
+fi
 
 } # Prevent script from running if partially downloaded

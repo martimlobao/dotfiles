@@ -7,7 +7,6 @@ source "$(dirname "$0")/bash_traceback.sh"
 # Install Homebrew                                                            #
 ###############################################################################
 echo -e "\033[1;34m🍺 Installing Homebrew...\033[0m"
-sleep 1
 if ! command -v brew &> /dev/null; then
 	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 	echo -e "🍻 \033[1;32mHomebrew installed.\033[0m"
@@ -16,32 +15,35 @@ else
 fi
 
 ###############################################################################
-# Install dotfiles                                                             #
+# Install dotfiles                                                            #
 ###############################################################################
-echo -e "\033[1;34m🔗 Installing dotfiles...\033[0m"
 sleep 1
-./dotsync.sh
+echo
+./dotsync.sh "${1:-}"
 
 ###############################################################################
 # Local settings and variables                                                #
 ###############################################################################
-echo -e "\033[1;34m🔑 Setting local settings and variables...\033[0m"
 sleep 1
-./local.sh
+echo
+./local.sh "${1:-}"
 
 ###############################################################################
 # macOS preferences                                                           #
 ###############################################################################
-# echo -e "\033[1;34m💻 Setting macOS preferences...\033[0m"
 # sleep 1
+# echo
 # sudo ./macos.sh
 
 ###############################################################################
 # Install apps and software                                                   #
 ###############################################################################
-echo -e "\033[1;34m📦 Installing apps and software...\033[0m"
 sleep 1
-./apps.sh
+echo
+./install.sh "${1:-}"
+sleep 1
+echo
 ./dock.sh
 
+echo
 echo -e "\033[1;32m🎉 Setup complete!\033[0m"

@@ -6,6 +6,9 @@ source "$(dirname "$0")/bash_traceback.sh"
 ###############################################################################
 # FUNCTIONS FOR MANIPULATING MACOS DOCK                                       #
 ###############################################################################
+
+echo -e "🔧 \033[1;34mConfiguring macOS Dock...\033[0m"
+
 function add_app_to_dock {
 	# adds an application to macOS Dock
 	# usage: add_app_to_dock "Application Name"
@@ -15,9 +18,9 @@ function add_app_to_dock {
 	app_path=$(${launchservices_path} -dump | grep -o "/.*${app_name}.app" | grep -v -E "Backups|Caches|TimeMachine|Temporary|/Volumes/${app_name}" | uniq | sort | head -n1)
 	if open -Ra "${app_path}"; then
 		defaults write com.apple.dock persistent-apps -array-add "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>${app_path}</string><key>_CFURLStringType</key><integer>0</integer></dict></dict></dict>"
-		echo "$app_path added to the Dock."
+		echo -e "✅ \033[1;32m$app_path added to the Dock.\033[0m"
 	else
-		echo "ERROR: $1 not found." 1>&2
+		echo -e "❌ \033[1;31mError: $1 not found.\033[0m" 1>&2
 	fi
 }
 
@@ -80,9 +83,9 @@ function add_folder_to_dock {
 				</dict>
 				<key>tile-type</key> <string>directory-tile</string>
 			</dict>"
-		echo "$folder_path added to the Dock."
+		echo -e "✅ \033[1;32m$folder_path added to the Dock.\033[0m"
 	else
-		echo "ERROR: $folder_path not found." 1>&2
+		echo -e "❌ \033[1;31mError: $folder_path not found.\033[0m" 1>&2
 	fi
 }
 
