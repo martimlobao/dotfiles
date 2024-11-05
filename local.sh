@@ -9,16 +9,6 @@ source "$(dirname "$0")/bash_traceback.sh"
 
 echo -e "\033[1;34m🔑 Setting local settings and variables...\033[0m"
 
-confirm_set () {
-	while true; do
-		read -rp "$1" "$2"
-		read -rp "Set to '${!2}'? (y/n) "
-		if [[ $REPLY =~ ^[Yy]$ ]]; then
-			break
-		fi
-	done
-}
-
 # ensure signed in to 1Password
 echo -e "🔐 \033[1;35mSigning in to 1Password...\033[0m"
 op signin
@@ -26,9 +16,9 @@ op signin
 # Set up .gitconfig.private
 echo -e "📝 \033[1;35mSetting up .gitconfig.private...\033[0m"
 USERNAME=$(op user get --me | grep 'Name:' | sed 's/Name: *//')
+GITHUB_USER=$(op read "op://Private/GitHub/username")
 EMAIL=$(op read "op://Private/GitHub/email")
 SIGNING_KEY=$(op read "op://Private/GitHub SSH Commit Signing Key/public key")
-GITHUB_USER=$(op read "op://Private/GitHub/username")
 if [ -n "$USERNAME" ] && [ -n "$EMAIL" ] && [ -n "$SIGNING_KEY" ] && [ -n "$GITHUB_USER" ]; then
 	git config --file="$HOME"/.gitconfig.private user.name "$USERNAME"
 	git config --file="$HOME"/.gitconfig.private user.email "$EMAIL"

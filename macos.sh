@@ -12,9 +12,19 @@ if ! sudo -n true 2>/dev/null; then
 	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 fi
 
+confirm_set () {
+	while true; do
+		read -rp "$1" "$2"
+		read -rp "Set to '${!2}'? (y/n) "
+		if [[ $REPLY =~ ^[Yy]$ ]]; then
+			break
+		fi
+	done
+}
+
 # Set computer name
-read -rp $'❓ \e[1;31mDo you want to (re)set the name for this computer? (currently set to '"$(scutil --get ComputerName)"') (y/n)'$(tput sgr0)' ' SETNAME
-if [[ $SETNAME =~ ^[Yy]$ ]]; then
+read -rp $'❓ \e[1;31mDo you want to (re)set the name for this computer? (currently set to '"$(scutil --get ComputerName)"') (y/n)'"$(tput sgr0)"' ' COMPUTERNAME
+if [[ $COMPUTERNAME =~ ^[Yy]$ ]]; then
 	confirm_set "💻  Set the name for this computer: " COMPUTERNAME
 	sudo scutil --set ComputerName "$COMPUTERNAME"
 	sudo scutil --set HostName "$COMPUTERNAME"
