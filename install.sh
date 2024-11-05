@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
+# Root is $DOTPATH if it exists, otherwise the directory of this script
+root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
+
 # Source the bash_traceback.sh file
-source "$(dirname "$0")/bash_traceback.sh"
+source "$root/bash_traceback.sh"
 
 ###############################################################################
 # INSTALL APPS AND PACKAGES                                                   #
@@ -17,8 +20,11 @@ fi
 
 # Ensure yq is installed to parse the apps.toml file
 if ! command -v yq &> /dev/null; then
+	echo -e "⬇️ \033[1;34mInstalling yq to parse apps.toml...\033[0m"
 	brew install yq
 fi
+
+apps_toml="$root/apps.toml"
 
 # Initialize arrays to store installed apps
 installed_casks=()
@@ -105,7 +111,7 @@ install () {
 
 brew_sync() {
 	local toml_apps
-	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "cask" or .value == "formula") | .key)) | flatten | .[]' apps.toml)
+	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "cask" or .value == "formula") | .key)) | flatten | .[]' "$apps_toml")
 	toml_apps=$(echo "$toml_apps" | sed -E 's|.*/||')  # get name from tapped apps (slashes in name)
 
 	local missing_formulae
@@ -141,7 +147,7 @@ brew_sync() {
 
 uv_sync() {
 	local toml_apps
-	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "uv") | .key)) | flatten | .[]' apps.toml)
+	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "uv") | .key)) | flatten | .[]' "$apps_toml")
 
 	local missing_uv_apps
 	missing_uv_apps=$(comm -23 <(uv tool list | awk '{print $1}' | grep -v '^-*$' | sort) <(echo "$toml_apps" | sort))
@@ -170,7 +176,7 @@ uv_sync() {
 
 mas_sync() {
 	local toml_apps
-	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "mas") | .key)) | flatten | .[]' apps.toml)
+	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "mas") | .key)) | flatten | .[]' "$apps_toml")
 
 	local installed_mas_apps
 	installed_mas_apps=$(mas list | sed -E 's/^([0-9]+)[[:space:]]+(.*)[[:space:]]+\(.*/\1 \2/' | sort)
@@ -216,7 +222,7 @@ populate_installed_apps
 
 # Use yq to parse the TOML file and store the output in a variable
 # shellcheck disable=2016
-parsed_toml=$(yq e 'to_entries | .[] | .key as $category | .value | to_entries[] | [$category, .key, .value] | @tsv' apps.toml)
+parsed_toml=$(yq e 'to_entries | .[] | .key as $category | .value | to_entries[] | [$category, .key, .value] | @tsv' "$apps_toml")
 
 # Install apps from each category in the apps.toml file
 current_category=""
