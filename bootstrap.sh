@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 { # Prevent script from running if partially downloaded
+
+set -euo pipefail
 
 DOTPATH=$HOME/.dotfiles
 

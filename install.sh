@@ -197,7 +197,6 @@ mas_sync() {
 		if [[ "$choice" == "y" ]]; then
 			for id in "${!missing_mas_apps[@]}"; do
 				name="${missing_mas_apps[$id]}"
-				# mas uninstall doesn't actually work so fall back to telling user to uninstall manually
 				if ! mas uninstall "$id"; then
 					echo -e "❌ \033[1;31mFailed to uninstall $name ($id). Please uninstall it manually.\033[0m"
 				else
