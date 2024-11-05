@@ -25,6 +25,12 @@ On a fresh (or not so fresh) macOS install, run the following command to install
 bash <(curl -L dot.lobao.io)
 ```
 
+To run the script without interactive prompts, run the following command:
+
+```bash
+curl -L http://dot.lobao.io | bash -s -- --yes
+```
+
 ### 1Password requirements
 
 1Password is required to store secrets used by these scripts. These include:
