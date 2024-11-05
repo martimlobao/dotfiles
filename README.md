@@ -2,83 +2,49 @@
 
 ![Screenshot of my shell prompt](static/screenshot.png)
 
-This repository contains my personal dotfiles, as well as several scripts to install applications and configure settings. Although the bash configuration settings should (mostly) work on any Unix-based system, most of these scripts were only designed to run on macOS and likely won't run at all on any other OS.
+This repository contains my personal dotfiles, as well as several scripts to install applications and configure settings. Although the shell configuration settings should (mostly) work on any Unix-based system, most of these scripts were only designed to run on macOS and likely won't run at all on any other OS.
 
 Here's a short description of each script in this repository:
 
 - `local.sh` _interactively_ configure local settings unique to each machine, like the computer name and your git user details
 - `macos.sh` configure several macOS settings
-- `brew.sh` install command-line tools using Homebrew
-- `apps.sh` install fonts and macOS apps using Homebrew and Mac App Store
+- `install.sh` install fonts, tools, and apps using Homebrew, [`uv`](https://docs.astral.sh/uv/), and the Mac App Store
 - `dock.sh` configure macOS dock
-- `bootstrap.sh` install dotfiles for bash settings and command line layout
-- `setup.sh` install Homebrew, run all scripts, and install private dotfiles from private repository
+- `bootstrap.sh` bootstrap install everything, including cloning this repository
+- `run.sh` install Homebrew and run all scripts
 
-**Attention:** Running these dotfiles blindly will overwrite settings and install apps and fonts that you probably don't need. Some care was taken to not overwrite non-transferable settings (e.g. [git user settings](https://github.com/martimlobao/dotfiles/blob/master/local.sh)), but unless your preferences are identical to mine, you should [fork this repository](https://github.com/martimlobao/dotfiles/fork), review the code, and remove things you don't want or need. Use at your own risk!
+All these scripts are idempotent, meaning they can be run multiple times without issue.
+
+**Attention:** Running these dotfiles blindly will overwrite settings and install apps and fonts that you probably don't need. Use at your own risk!
 
 ## Installation
 
-**Note:** If you fork this repository to create your own dotfiles, replace `https://git.io/dotinstall` with `https://github.com/<USER>/<REPO>/tarball/master` in the commands below.
-
-### Fresh install
-
-To download these dotfiles on a new Mac (without git):
+On a fresh (or not so fresh) macOS install, run the following command to install Homebrew and run all scripts:
 
 ```bash
-curl -L https://git.io/dotinstall | tar -xz
+curl -L http://dot.lobao.io | bash
 ```
 
-Then, open the downloaded folder and run `setup.sh`, `bootstrap.sh`, or any other script:
+### 1Password requirements
 
-```bash
-cd martim*
-./local.sh
-```
+1Password is required to store secrets used by these scripts. These include:
 
-### One-line everything install
-
-To run everything in a single command:
-
-```bash
-curl -L https://git.io/dotinstall | tar -xz; cd martim*; ./setup.sh
-```
-
-**Warning:** This will overwrite settings, any existing dotfiles in your home directory, and install apps and fonts. Don't run this unless you're me or you have my exact preferences!
-
-### One-line dotfiles install
-
-To _only_ install dotfiles without needing to install git or run any scripts:
-
-```bash
-cd; curl -L https://git.io/dotinstall | tar -xzv --strip-components 1 --exclude={*.sh,*.md}
-```
-
-**Warning:** This will overwrite any existing dotfiles in your home directory.
-
-### Terminal-free install!
-
-Go to [git.io/dotinstall](https://git.io/dotinstall) and open the downloaded file, then double-click on a script to run it.
-
-## Usage
-
-Most of these scripts rely on [Homebrew](https://brew.sh/), which is installed when running `setup.sh`. However, if you don't want to install everything in this repository, you can choose to install Homebrew by itself and pick and choose what you like:
-
-```bash
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-```
-
-## Contributing
-
-[Pull requests](https://github.com/martimlobao/dotfiles/pulls) are welcome. For non-minor changes, consider [opening an issue](https://github.com/martimlobao/dotfiles/issues) first to discuss what you would like to change.
-
-Note that these are my personal dotfiles, so if you'd like to customize them to your own taste, it might make more sense to [fork this repository](https://github.com/martimlobao/dotfiles/fork) instead.
+- `op user get --me` to set your git `user.name`
+- `op://Private/GitHub/email` and `op://Private/GitHub/username` to configure git and push to Github
+- `op://Private/GitHub SSH Commit Signing Key/public key` to configure SSH commit signing
+- `op://Private/iStat Menus 6/registered email` and `op://Private/iStat Menus 6/license key` to register iStat Menus 6
+- `op://Private/Charles/registered name` and `op://Private/Charles/license key` to register Charles
+- SSH keys for AWS
 
 ## Thanks
 
-- [@mathiasbyens](https://mathiasbynens.be/) for his [dotfiles repository](https://github.com/mathiasbynens/dotfiles), off of which this repository was initially based
-- [@ikuwow](https://github.com/ikuwow) for his [dotfiles](https://github.com/ikuwow/dotfiles)
-- [@kennethreitz](https://www.kennethreitz.org/) for a few [functions and inspiration](https://github.com/kennethreitz/dotfiles)
-- [@kevinsuttle](https://kevinsuttle.com/) for a great compilation of [macOS defaults](https://github.com/kevinSuttle/macOS-Defaults)
-- [@ryanpavlick](https://github.com/rpavlick) for his [macOS dock customization functions](https://github.com/rpavlick/add_to_dock)
-- [@br3ndonland](https://github.com/br3ndonland) for his [dotfiles](https://github.com/br3ndonland/dotfiles)
-- [@pablopunk](https://github.com/pablopunk) for his [dotfiles](https://github.com/pablopunk/dotfiles)
+Several people and repositories have contributed to or been a source of inspiration for this repository:
+
+- [@mathiasbyens](https://mathiasbynens.be/)/[dotfiles](https://github.com/mathiasbynens/dotfiles), off of which this repository was initially based
+- [@kevinsuttle](https://kevinsuttle.com/)/[macOS-Defaults](https://github.com/kevinSuttle/macOS-Defaults)
+- [@ryanpavlick](https://github.com/rpavlick)/[add_to_dock](https://github.com/rpavlick/add_to_dock)
+- [@ikuwow](https://github.com/ikuwow)/[dotfiles](https://github.com/ikuwow/dotfiles)
+- [@kennethreitz](https://www.kennethreitz.org/)/[dotfiles](https://github.com/kennethreitz/dotfiles)
+- [@br3ndonland](https://github.com/br3ndonland)/[dotfiles](https://github.com/br3ndonland/dotfiles)
+- [@pablopunk](https://github.com/pablopunk)/[dotfiles](https://github.com/pablopunk/dotfiles)
+- [@demophoon](https://github.com/demophoon)/[dotfiles](https://github.com/demophoon/dotfiles)

@@ -7,7 +7,13 @@ source "$(dirname "$0")/bash_traceback.sh"
 # INSTALL APPS AND PACKAGES                                                   #
 ###############################################################################
 
-echo -e "📲 \033[1;36mInstalling apps and packages...\033[0m"
+echo -e "📲 \033[1;34mInstalling apps and packages...\033[0m"
+
+# Check if the first argument is -y or --yes
+auto_yes=false
+if [[ "${1:-}" == "-y" ]] || [[ "${1:-}" == "--yes" ]]; then
+	auto_yes=true
+fi
 
 # Ensure yq is installed to parse the apps.toml file
 if ! command -v yq &> /dev/null; then
@@ -115,7 +121,11 @@ brew_sync() {
 		echo "$missing_formulae" | sed 's/^/  /'
 		  # shellcheck disable=SC2001
 		echo "$missing_casks" | sed 's/^/  /'
-		read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
+		if [[ "$auto_yes" == false ]]; then
+			read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
+		else
+			choice="y"
+		fi
 		if [[ "$choice" == "y" ]]; then
 			for app in $missing_apps; do
 				brew uninstall "$app"
@@ -140,7 +150,11 @@ uv_sync() {
 		echo -e "❗️ \033[1;31mThe following uv-installed apps are missing from apps.toml:\033[0m"
 		  # shellcheck disable=SC2001
 		echo "$missing_uv_apps" | sed 's/^/  /'
-		read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
+		if [[ "$auto_yes" == false ]]; then
+			read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
+		else
+			choice="y"
+		fi
 		if [[ "$choice" == "y" ]]; then
 			for app in $missing_uv_apps; do
 				uv tool uninstall "$app"
@@ -175,11 +189,14 @@ mas_sync() {
 		for id in "${!missing_mas_apps[@]}"; do
 			echo -e "  ${missing_mas_apps[$id]} ($id)"
 		done
-		read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
+		if [[ "$auto_yes" == false ]]; then
+			read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
+		else
+			choice="y"
+		fi
 		if [[ "$choice" == "y" ]]; then
 			for id in "${!missing_mas_apps[@]}"; do
 				name="${missing_mas_apps[$id]}"
-				# mas uninstall doesn't actually work so fall back to telling user to uninstall manually
 				if ! mas uninstall "$id"; then
 					echo -e "❌ \033[1;31mFailed to uninstall $name ($id). Please uninstall it manually.\033[0m"
 				else
@@ -222,14 +239,7 @@ echo -e "\n🔼 \033[1;35mUpdating existing apps and packages...\033[0m"
 brew update
 brew upgrade
 uv tool upgrade --all
-if mas outdated | grep -q .; then
-	echo -e "❗️ \033[1;31mThe following Mac App Store apps are outdated:\033[0m"
-	mas outdated
-	read -rp $'❓ \e[1;31mUpdate Mac App Store apps (may be slightly buggy)? (y/n)\e[0m ' choice
-	if [[ "$choice" == "y" ]]; then
-		mas upgrade
-	fi
-fi
+mas upgrade
 
 # Remove outdated versions from the cellar
 brew cleanup
