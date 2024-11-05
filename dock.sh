@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
+# Root is $DOTPATH if it exists, otherwise the directory of this script
+root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
+
 # Source the bash_traceback.sh file
-source "$(dirname "$0")/bash_traceback.sh"
+source "$root/bash_traceback.sh"
 
 ###############################################################################
 # FUNCTIONS FOR MANIPULATING MACOS DOCK                                       #
