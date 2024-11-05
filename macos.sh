@@ -1,8 +1,24 @@
 #!/usr/bin/env bash
 
+# Source the bash_traceback.sh file
+source "$(dirname "$0")/bash_traceback.sh"
+
 # Ask for the administrator password upfront and keep alive until script has finished
-sudo -v
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+if ! sudo -n true 2>/dev/null; then
+	echo -e "🧙 \033[1;34mRequesting admin permissions...\033[0m"
+	sudo -v
+	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+fi
+
+# Set computer name
+read -rp $'❓ \e[1;31mDo you want to (re)set the name for this computer? (currently set to '"$(scutil --get ComputerName)"') (y/n)'$(tput sgr0)' ' SETNAME
+if [[ $SETNAME =~ ^[Yy]$ ]]; then
+	confirm_set "💻  Set the name for this computer: " COMPUTERNAME
+	sudo scutil --set ComputerName "$COMPUTERNAME"
+	sudo scutil --set HostName "$COMPUTERNAME"
+	sudo scutil --set LocalHostName "$COMPUTERNAME"
+	sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$COMPUTERNAME"
+fi
 
 ###############################################################################
 # MACOS PREFERENCES                                                           #
