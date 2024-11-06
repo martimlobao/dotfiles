@@ -50,20 +50,19 @@ function add_folder_to_dock {
 	sortby="1"
 	displayas="0"
 	viewcontentas="0"
-	while [[ "$#" -gt 0 ]]
-	do
+	while [[ $# -gt 0 ]]; do
 		case $1 in
-			-s|--sortby)
+		-s | --sortby)
 			if [[ $2 =~ ^[1-5]$ ]]; then
 				sortby="${2}"
 			fi
 			;;
-			-d|--displayas)
+		-d | --displayas)
 			if [[ $2 =~ ^[0-1]$ ]]; then
 				displayas="${2}"
 			fi
 			;;
-			-v|--viewcontentas)
+		-v | --viewcontentas)
 			if [[ $2 =~ ^[0-3]$ ]]; then
 				viewcontentas="${2}"
 			fi
@@ -112,7 +111,6 @@ function reset_launchpad {
 	# resets Launchpad so that all apps appear in their default order
 	defaults write com.apple.dock ResetLaunchPad -bool true
 }
-
 
 ###############################################################################
 # CONFIGURE MACOS DOCK                                                        #

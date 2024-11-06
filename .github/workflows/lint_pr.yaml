@@ -16,6 +16,15 @@ jobs:
           SHELLCHECK_OPTS: -x
         with:
           ignore_names: .zshrc .zprofile
+  shfmt:
+    name: Run shfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shfmt
+        uses: luizm/action-sh-checker@master
+        env:
+          SHFMT_OPTS: -s
   yamllint:
     name: Run yamllint
     runs-on: ubuntu-latest

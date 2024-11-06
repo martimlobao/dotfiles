@@ -11,7 +11,7 @@ source "$root/bash_traceback.sh"
 ###############################################################################
 echo
 echo -e "\033[1;33m🍺 Installing Homebrew...\033[0m"
-if ! command -v brew &> /dev/null; then
+if ! command -v brew &>/dev/null; then
 	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 	echo -e "🍻 \033[1;32mHomebrew installed.\033[0m"
 else
