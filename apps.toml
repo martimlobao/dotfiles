@@ -21,6 +21,7 @@ hyper = "cask"  # Terminal built on web technologies
 jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
 "postgresql@14" = "formula"  # Object-relational database system
 shellcheck = "formula"  # Static analysis and lint tool, for (ba)sh scripts
+shfmt = "formula"  # Autoformat shell script source code
 redis = "formula"  # Persistent key-value database, with built-in net interface
 visual-studio-code = "cask"  # Open-source code editor
 warp = "cask"  # Rust-based terminal
