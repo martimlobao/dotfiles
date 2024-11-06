@@ -12,10 +12,14 @@ echo -e "\033[1;34m💻 Setting macOS preferences...\033[0m"
 if ! sudo -n true 2>/dev/null; then
 	echo -e "🧙 \033[1;34mRequesting admin permissions...\033[0m"
 	sudo -v
-	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+	while true; do
+		sudo -n true
+		sleep 60
+		kill -0 "$$" || exit
+	done 2>/dev/null &
 fi
 
-confirm_set () {
+confirm_set() {
 	while true; do
 		read -rp "$1" "$2"
 		read -rp "Set to '${!2}'? (y/n) "
@@ -45,7 +49,6 @@ echo "Please select your preferred display resolution."
 # osascript -e 'tell application "System Preferences"' -e 'set the current pane to pane id "com.apple.preference.displays"' -e 'tell application "System Events"' -e 'tell window 1 of application process "System Preferences"' -e 'click radio button "Display" of tab group 1' -e 'click radio button "Scaled" of radio group 1 of tab group 1' -e 'click radio button 4 of radio group 1 of group 2 of tab group 1' -e 'end tell' -e 'end tell' -e 'end tell' -e 'quit application "System Preferences"'
 osascript -e 'tell app "System Preferences"' -e 'activate' -e 'set the current pane to pane id "com.apple.preference.displays"' -e 'end tell'
 
-
 # PREFERENCES: swipe left/right with two fingers
 # Install updates from the app store automatically
 # show battey percentage
@@ -55,7 +58,6 @@ osascript -e 'tell app "System Preferences"' -e 'activate' -e 'set the current p
 # use Stacks in Desktop
 # add user folder to Finder sidebar
 # open new Finder window in user folder
-
 
 # finder list view larger
 # calculate all sizes
@@ -144,10 +146,6 @@ sudo systemsetup -setharddisksleep 10
 sudo systemsetup -setdisplaysleep 30
 sudo systemsetup -setcomputersleep Never
 
-
-
-
-
 # Close any open System Preferences panes, to prevent them from overriding
 # settings we’re about to change
 osascript -e 'tell application "System Preferences" to quit'
@@ -156,7 +154,11 @@ osascript -e 'tell application "System Preferences" to quit'
 sudo -v
 
 # Keep-alive: update existing `sudo` time stamp until `.macos` has finished
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+while true; do
+	sudo -n true
+	sleep 60
+	kill -0 "$$" || exit
+done 2>/dev/null &
 
 ###############################################################################
 # General UI/UX                                                               #
@@ -168,11 +170,6 @@ sudo scutil --set ComputerName "$ComputerName"
 sudo scutil --set HostName "$ComputerName"
 sudo scutil --set LocalHostName "$ComputerName"
 sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$ComputerName"
-
-
-
-
-
 
 # Set standby delay to 24 hours (default is 1 hour)
 # sudo pmset -a standbydelay 86400
@@ -799,6 +796,6 @@ for app in "Activity Monitor" \
 	"Tweetbot" \
 	"Twitter" \
 	"iCal"; do
-	killall "${app}" &> /dev/null
+	killall "${app}" &>/dev/null
 done
 echo "Done. Note that some of these changes require a logout/restart to take effect."

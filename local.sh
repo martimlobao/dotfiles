@@ -33,14 +33,14 @@ else
 fi
 
 # Copy all files from copyme/ to $HOME
-if [[ "${1:-}" != "--yes" ]] && [[ "${1:-}" != "-y" ]]; then
+if [[ ${1:-} != "--yes" ]] && [[ ${1:-} != "-y" ]]; then
 	read -rp $'❓ \e[1;31mDo you want to copy and overwrite all files from copyme/ to $HOME? (y/n)\e[0m ' COPYME
 else
 	COPYME="y"
 fi
 if [[ $COPYME =~ ^[Yy]$ ]]; then
-	rsync -av --exclude='.DS_Store' copyme/ "$HOME" | \
-		grep -v "building file list ... done" | \
+	rsync -av --exclude='.DS_Store' copyme/ "$HOME" |
+		grep -v "building file list ... done" |
 		awk '/^$/ { exit } !/\/$/ { printf "\033[1;32m📋 Copied %s\033[0m\n", $0; }'
 fi
 

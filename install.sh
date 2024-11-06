@@ -14,12 +14,12 @@ echo -e "📲 \033[1;34mInstalling apps and packages...\033[0m"
 
 # Check if the first argument is -y or --yes
 auto_yes=false
-if [[ "${1:-}" == "-y" ]] || [[ "${1:-}" == "--yes" ]]; then
+if [[ ${1:-} == "-y" ]] || [[ ${1:-} == "--yes" ]]; then
 	auto_yes=true
 fi
 
 # Ensure yq is installed to parse the apps.toml file
-if ! command -v yq &> /dev/null; then
+if ! command -v yq &>/dev/null; then
 	echo -e "⬇️ \033[1;34mInstalling yq to parse apps.toml...\033[0m"
 	brew install yq
 fi
@@ -57,45 +57,45 @@ in_array() {
 	shift
 	local item
 	for item; do
-		[[ "$item" == "$needle" ]] && return 0
+		[[ $item == "$needle" ]] && return 0
 	done
 	return 1
 }
 
 # Install function that uses the correct command based on the installation method
-install () {
+install() {
 	local app="$1"
-	local app_name="${app##*/}"  # Extract the part after the last slash
+	local app_name="${app##*/}" # Extract the part after the last slash
 	local method="$2"
 	local cmd=""
 	local is_installed=false
 
 	case "$method" in
-		"cask")
-			cmd="brew install --cask"
-			in_array "$app_name" "${installed_casks[@]}" && is_installed=true
-			;;
-		"formula")
-			cmd="brew install --formula"
-			in_array "$app_name" "${installed_formulas[@]}" && is_installed=true
-			;;
-		"mas")
-			if mas list | grep -q "$app "; then
-				is_installed=true
-				app_name=$(mas list | grep "$app " | sed -E 's/.*[0-9]+[[:space:]]+(.*)[[:space:]]+\(.*/\1/' | sed -E 's/[[:space:]]*$//')
-			else
-				app_name=$(mas info "$app" | head -n 1 | sed -E 's/(.*)[[:space:]]+[0-9\.]+ \[.*\]/\1/')
-				cmd="mas install"
-			fi
-			;;
-		"uv")
-			cmd="uv tool install"
-			in_array "$app" "${installed_uv[@]}" && is_installed=true
-			;;
-		*)
-			echo -e "❌ \033[1;31mUnknown installation method: $method for $app_name\033[0m"
-			return 1
-			;;
+	"cask")
+		cmd="brew install --cask"
+		in_array "$app_name" "${installed_casks[@]}" && is_installed=true
+		;;
+	"formula")
+		cmd="brew install --formula"
+		in_array "$app_name" "${installed_formulas[@]}" && is_installed=true
+		;;
+	"mas")
+		if mas list | grep -q "$app "; then
+			is_installed=true
+			app_name=$(mas list | grep "$app " | sed -E 's/.*[0-9]+[[:space:]]+(.*)[[:space:]]+\(.*/\1/' | sed -E 's/[[:space:]]*$//')
+		else
+			app_name=$(mas info "$app" | head -n 1 | sed -E 's/(.*)[[:space:]]+[0-9\.]+ \[.*\]/\1/')
+			cmd="mas install"
+		fi
+		;;
+	"uv")
+		cmd="uv tool install"
+		in_array "$app" "${installed_uv[@]}" && is_installed=true
+		;;
+	*)
+		echo -e "❌ \033[1;31mUnknown installation method: $method for $app_name\033[0m"
+		return 1
+		;;
 	esac
 
 	if ! $is_installed; then
@@ -112,7 +112,7 @@ install () {
 brew_sync() {
 	local toml_apps
 	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "cask" or .value == "formula") | .key)) | flatten | .[]' "$apps_toml")
-	toml_apps=$(echo "$toml_apps" | sed -E 's|.*/||')  # get name from tapped apps (slashes in name)
+	toml_apps=$(echo "$toml_apps" | sed -E 's|.*/||') # get name from tapped apps (slashes in name)
 
 	local missing_formulae
 	missing_formulae=$(comm -23 <(brew leaves | sort) <(echo "$toml_apps" | sort))
@@ -121,18 +121,18 @@ brew_sync() {
 	local missing_apps
 	missing_apps=$(echo -e "$missing_formulae\n$missing_casks" | sort -u)
 
-	if [[ -n "$missing_apps" ]]; then
+	if [[ -n $missing_apps ]]; then
 		echo -e "❗️ \033[1;31mThe following Homebrew-installed formulae and casks are missing from apps.toml:\033[0m"
 		# shellcheck disable=SC2001
 		echo "$missing_formulae" | sed 's/^/  /'
-		  # shellcheck disable=SC2001
+		# shellcheck disable=SC2001
 		echo "$missing_casks" | sed 's/^/  /'
-		if [[ "$auto_yes" == false ]]; then
+		if [[ $auto_yes == false ]]; then
 			read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
 		else
 			choice="y"
 		fi
-		if [[ "$choice" == "y" ]]; then
+		if [[ $choice == "y" ]]; then
 			for app in $missing_apps; do
 				brew uninstall "$app"
 				echo -e "🚮 \033[1;35mUninstalled $app.\033[0m"
@@ -152,16 +152,16 @@ uv_sync() {
 	local missing_uv_apps
 	missing_uv_apps=$(comm -23 <(uv tool list | awk '{print $1}' | grep -v '^-*$' | sort) <(echo "$toml_apps" | sort))
 
-	if [[ -n "$missing_uv_apps" ]]; then
+	if [[ -n $missing_uv_apps ]]; then
 		echo -e "❗️ \033[1;31mThe following uv-installed apps are missing from apps.toml:\033[0m"
-		  # shellcheck disable=SC2001
+		# shellcheck disable=SC2001
 		echo "$missing_uv_apps" | sed 's/^/  /'
-		if [[ "$auto_yes" == false ]]; then
+		if [[ $auto_yes == false ]]; then
 			read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
 		else
 			choice="y"
 		fi
-		if [[ "$choice" == "y" ]]; then
+		if [[ $choice == "y" ]]; then
 			for app in $missing_uv_apps; do
 				uv tool uninstall "$app"
 				echo -e "🚮 \033[1;35mUninstalled $app.\033[0m"
@@ -182,25 +182,25 @@ mas_sync() {
 	installed_mas_apps=$(mas list | sed -E 's/^([0-9]+)[[:space:]]+(.*)[[:space:]]+\(.*/\1 \2/' | sort)
 
 	# `-A` requires bash 4+, can't use Apple-provided bash which is 3.2
-	declare -A missing_mas_apps=()  # Ensure it's initialized as an empty associative array
+	declare -A missing_mas_apps=() # Ensure it's initialized as an empty associative array
 
 	while read -r id name; do
 		if ! echo "$toml_apps" | grep -q "^$id$"; then
-			missing_mas_apps["$id"]="$name"  # Store ID as key and app name as value
+			missing_mas_apps["$id"]="$name" # Store ID as key and app name as value
 		fi
-	done <<< "$installed_mas_apps"
+	done <<<"$installed_mas_apps"
 
 	if [[ ${#missing_mas_apps[@]} -gt 0 ]]; then
 		echo -e "❗️ \033[1;31mThe following Mac App Store apps are missing from apps.toml:\033[0m"
 		for id in "${!missing_mas_apps[@]}"; do
 			echo -e "  ${missing_mas_apps[$id]} ($id)"
 		done
-		if [[ "$auto_yes" == false ]]; then
+		if [[ $auto_yes == false ]]; then
 			read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
 		else
 			choice="y"
 		fi
-		if [[ "$choice" == "y" ]]; then
+		if [[ $choice == "y" ]]; then
 			for id in "${!missing_mas_apps[@]}"; do
 				name="${missing_mas_apps[$id]}"
 				if ! mas uninstall "$id"; then
@@ -227,8 +227,8 @@ parsed_toml=$(yq e 'to_entries | .[] | .key as $category | .value | to_entries[]
 # Install apps from each category in the apps.toml file
 current_category=""
 echo "$parsed_toml" | while IFS=$'\t' read -r category app method; do
-	if [[ "$category" != "$current_category" ]]; then
-		suffix=$([[ "$category" == *s ]] && echo "" || echo " apps")
+	if [[ $category != "$current_category" ]]; then
+		suffix=$([[ $category == *s ]] && echo "" || echo " apps")
 		echo -e "\n📦 \033[1;35mInstalling ${category}${suffix}...\033[0m"
 		current_category="$category"
 	fi
