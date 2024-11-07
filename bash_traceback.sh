@@ -9,14 +9,14 @@ function bash_traceback() {
 	set +o xtrace
 	local code="-1"
 	local bash_command=${BASH_COMMAND}
-	echo "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]} ('$bash_command' exited with status $lasterr)" >&2
-	if [ ${#FUNCNAME[@]} -gt 2 ]; then
+	echo "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]} ('${bash_command}' exited with status ${lasterr})" >&2
+	if [[ ${#FUNCNAME[@]} -gt 2 ]]; then
 		# Print out the stack trace described by $function_stack
 		echo "Traceback of ${BASH_SOURCE[1]} (most recent call last):" >&2
 		for ((i = 0; i < ${#FUNCNAME[@]} - 1; i++)); do
-			local funcname="${FUNCNAME[$i]}"
-			[ "$i" -eq "0" ] && funcname=$bash_command
-			echo -e "  ${BASH_SOURCE[i + 1]}:${BASH_LINENO[$i]}\\t$funcname" >&2
+			local funcname="${FUNCNAME[${i}]}"
+			[[ ${i} -eq "0" ]] && funcname=${bash_command}
+			echo -e "  ${BASH_SOURCE[i + 1]}:${BASH_LINENO[${i}]}\\t${funcname}" >&2
 		done
 	fi
 	echo "Exiting with status ${code}" >&2

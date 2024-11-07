@@ -4,7 +4,7 @@
 root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
 
 # Source the bash_traceback.sh file
-source "$root/bash_traceback.sh"
+source "${root}/bash_traceback.sh"
 
 ###############################################################################
 # FUNCTIONS FOR MANIPULATING MACOS DOCK                                       #
@@ -21,7 +21,7 @@ function add_app_to_dock {
 	app_path=$(${launchservices_path} -dump | grep -o "/.*${app_name}.app" | grep -v -E "Backups|Caches|TimeMachine|Temporary|/Volumes/${app_name}" | uniq | sort | head -n1)
 	if open -Ra "${app_path}"; then
 		defaults write com.apple.dock persistent-apps -array-add "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>${app_path}</string><key>_CFURLStringType</key><integer>0</integer></dict></dict></dict>"
-		echo -e "✅ \033[1;32m$app_path added to the Dock.\033[0m"
+		echo -e "✅ \033[1;32m${app_path} added to the Dock.\033[0m"
 	else
 		echo -e "❌ \033[1;31mError: $1 not found.\033[0m" 1>&2
 	fi
@@ -67,11 +67,15 @@ function add_folder_to_dock {
 				viewcontentas="${2}"
 			fi
 			;;
+		*)
+			echo >&2 "Invalid choice: $1"
+			exit 1
+			;;
 		esac
 		shift
 	done
 
-	if [ -d "$folder_path" ]; then
+	if [[ -d ${folder_path} ]]; then
 		defaults write com.apple.dock persistent-others -array-add "<dict>
 				<key>tile-data</key> <dict>
 					<key>arrangement</key> <integer>${sortby}</integer>
@@ -85,9 +89,9 @@ function add_folder_to_dock {
 				</dict>
 				<key>tile-type</key> <string>directory-tile</string>
 			</dict>"
-		echo -e "✅ \033[1;32m$folder_path added to the Dock.\033[0m"
+		echo -e "✅ \033[1;32m${folder_path} added to the Dock.\033[0m"
 	else
-		echo -e "❌ \033[1;31mError: $folder_path not found.\033[0m" 1>&2
+		echo -e "❌ \033[1;31mError: ${folder_path} not found.\033[0m" 1>&2
 	fi
 }
 
@@ -98,10 +102,10 @@ function add_spacer_to_dock {
 
 function clear_dock {
 	# removes all persistent icons from macOS Dock
-	if [ "$(defaults read com.apple.dock persistent-apps | wc -l)" -gt 0 ]; then
+	if [[ "$(defaults read com.apple.dock persistent-apps | wc -l)" -gt 0 ]]; then
 		defaults write com.apple.dock persistent-apps -array
 	fi
-	if [ "$(defaults read com.apple.dock persistent-others | wc -l)" -gt 0 ]; then
+	if [[ "$(defaults read com.apple.dock persistent-others | wc -l)" -gt 0 ]]; then
 		defaults write com.apple.dock persistent-others -array
 	fi
 	killall Dock

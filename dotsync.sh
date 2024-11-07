@@ -4,7 +4,7 @@
 root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
 
 # Source the bash_traceback.sh file
-source "$root/bash_traceback.sh"
+source "${root}/bash_traceback.sh"
 
 ###############################################################################
 # UPDATE DOTFILES                                                             #
@@ -12,36 +12,36 @@ source "$root/bash_traceback.sh"
 
 function dotlink() {
 	find "linkme" -type d -mindepth 1 | sed "s|^linkme/||" |
-		while read -r dir; do mkdir -p "$HOME/$dir"; done
+		while read -r dir; do mkdir -p "${HOME}/${dir}"; done
 	find "linkme" -type f -not -name '.DS_Store' | sed "s|^linkme/||" |
 		while read -r file; do
-			echo -e "\033[1;32m🔗 Linked $(pwd)/linkme/$file -> $HOME/$file\033[0m"
-			ln -fvns "$(pwd)/linkme/$file" "$HOME/$file" &>/dev/null
+			echo -e "\033[1;32m🔗 Linked $(pwd)/linkme/${file} -> ${HOME}/${file}\033[0m"
+			ln -fvns "$(pwd)/linkme/${file}" "${HOME}/${file}" &>/dev/null
 		done
 }
 
 function dotunlink() {
-	rsync -av --exclude='.DS_Store' linkme/ "$HOME" |
+	rsync -av --exclude='.DS_Store' linkme/ "${HOME}" |
 		grep -v "building file list ... done" |
 		awk '/^$/ { exit } !/\/$/ { printf "\033[1;32m🔙 Restored %s\033[0m\n", $0; }'
 }
 
 # Copy all files from copyme/ to $HOME
-if [ "${1:-}" == "unlink" ]; then
+if [[ ${1-} == "unlink" ]]; then
 	echo -e "\033[1;34m📋 Restoring dotfiles...\033[0m"
 	dotunlink
 else
 	echo -e "\033[1;34m🔗 Linking dotfiles...\033[0m"
-	if [[ ${1:-} != "-y" ]] && [[ ${1:-} != "--yes" ]]; then
+	if [[ ${1-} != "-y" ]] && [[ ${1-} != "--yes" ]]; then
 		read -rp $'❓ \e[1;31mOverwrite existing dotfiles with symlinks to stored dotfiles? (y/n)\e[0m ' LINK
 	else
 		LINK="y"
 	fi
 
-	if [[ $LINK =~ ^[Yy]$ ]]; then
+	if [[ ${LINK} =~ ^[Yy]$ ]]; then
 		dotlink
 	fi
 fi
 
 # shellcheck source=/dev/null
-source "$HOME"/.zprofile
+source "${HOME}/.zprofile"
