@@ -1,62 +1,63 @@
 #!/usr/bin/env bash
 
 # Run .install.sh
-function appsync () {
-	bash "$DOTPATH/install.sh"
+function appsync() {
+	bash "${DOTPATH}/install.sh"
 }
 
 # Start screensaver.
-function ss () {
+function ss() {
 	open -a ScreenSaverEngine
 }
 
 # Show battery percentage.
-function battery () {
+function battery() {
 	pmset -g batt | grep -E "([0-9]+\%).*" -o --colour=auto | cut -f1 -d';'
 	pmset -g batt | grep -E "([0-9]+\%).*" -o --colour=auto | cut -f3 -d';'
 }
 
 # Relaunch core audio when it stops working without having to restart macOS
-function audiokill () {
+function audiokill() {
 	# sudo killall coreaudiod
 	sudo pkill coreaudiod -i
 }
 
 # `o` with no arguments opens the current directory, otherwise opens the given location
-function o () {
-	if [ $# -eq 0 ]; then
-		open .;
+function o() {
+	if [[ $# -eq 0 ]]; then
+		open .
 	else
-		open "$@";
-	fi;
+		open "$@"
+	fi
 }
 
 # Create a new directory and enter it.
-function mkd () {
-	mkdir -p "$@" && cd "$_" || exit 1;
+function mkd() {
+	mkdir -p "$@" && cd "${_}" || exit 1
 }
 
 # Determine size of a file or total size of a directory.
 function fs() {
-	if du -b /dev/null > /dev/null 2>&1; then
-		local arg=-sbh;
+	if du -b /dev/null >/dev/null 2>&1; then
+		local arg=-sbh
 	else
-		local arg=-sh;
+		local arg=-sh
 	fi
-	if [[ -n "$*" ]]; then
-		du $arg -- "$@";
+	if [[ -n $* ]]; then
+		du "${arg}" -- "$@"
 	else
-		du $arg .[^.]* ./*;
-	fi;
+		du "${arg}" .[^.]* ./*
+	fi
 }
 
 # Create a data URL from a file.
-function dataurl () {
-	local mimeType=$(file -b --mime-type "$1");
-	if [[ $mimeType == text/* ]]; then
-		mimeType="${mimeType};charset=utf-8";
+function dataurl() {
+	local mimeType
+	mimeType=$(file -b --mime-type "$1")
+	if [[ ${mimeType} == text/* ]]; then
+		mimeType="${mimeType};charset=utf-8"
 	fi
-	echo "data:${mimeType};base64,$(openssl base64 -in "$1" | tr -d '\n')";
+	echo "data:${mimeType};base64,$(openssl base64 -in "$1" | tr -d '\n')"
 }
 
 # Weather checker
@@ -66,23 +67,23 @@ function weather {
 
 # Cursor jump
 function jc {
-	if [[ -z "$1" || "$1" == "." ]]; then
-		cursor .;
+	if [[ -z $1 || $1 == "." ]]; then
+		cursor .
 	else
-		cursor "$(j "$1")";
+		cursor "$(j "$1")"
 	fi
 }
 
 # Create a private github repo on github and copy the current repo to it under the remote 'personal'
-function copy-repo-to-personal () {
+function copy-repo-to-personal() {
 	REPO=$(basename "${PWD##*/}")
-	GHUSER=$(git config --get github.user);
-	GHTOKEN=$(git config --get github.token);
-	if [[ -z "$GHUSER" || -z "$GHTOKEN" ]]; then
+	GHUSER=$(git config --get github.user)
+	GHTOKEN=$(git config --get github.token)
+	if [[ -z ${GHUSER} || -z ${GHTOKEN} ]]; then
 		echo "ERROR: No Github user or token found."
 	else
-		curl -u "$GHUSER":"$GHTOKEN" https://api.github.com/user/repos -d {\\\"name\\\":\\\""$REPO"\\\"\\,\\\"private\\\":\\\"true\\\"} --fail;
-		git remote add personal git@github.com:"$GHUSER"/"$REPO".git;
+		curl -u "${GHUSER}":"${GHTOKEN}" https://api.github.com/user/repos -d {\\\"name\\\":\\\""${REPO}"\\\"\\,\\\"private\\\":\\\"true\\\"} --fail
+		git remote add personal git@github.com:"${GHUSER}"/"${REPO}".git
 		git push personal master
 	fi
 }
@@ -90,37 +91,37 @@ function copy-repo-to-personal () {
 # Clone remote branches to local repo, fetch all commits, and fast-forward new commits.
 function git-update() {
 	# https://stackoverflow.com/a/10312587/4760185
-	git branch -r | grep -v '\->' | while read -r remote; do git branch --track "${remote#origin/}" "$remote"; done
+	git branch -r | grep -v '\->' | while read -r remote; do git branch --track "${remote#origin/}" "${remote}"; done
 	git fetch --all
 	git pull --all
 
 	# https://stackoverflow.com/a/9076361/4760185
-	REMOTES="$*";
-	if [ -z "$REMOTES" ]; then
-		REMOTES=$(git remote);
+	REMOTES="$*"
+	if [[ -z ${REMOTES} ]]; then
+		REMOTES=$(git remote)
 	fi
-	REMOTES=$(echo "$REMOTES" | xargs -n1 echo)
-	CLB=$(git rev-parse --abbrev-ref HEAD);
-	echo "$REMOTES" | while read -r REMOTE; do
-		git remote update "$REMOTE"
-		git remote show "$REMOTE" -n \
-		| awk '/merges with remote/{print $5" "$1}' \
-		| while read -r RB LB; do
-			ARB="refs/remotes/$REMOTE/$RB";
-			ALB="refs/heads/$LB";
-			NBEHIND=$(( $(git rev-list --count "$ALB".."$ARB" 2>/dev/null) +0));
-			NAHEAD=$(( $(git rev-list --count "$ARB".."$ALB" 2>/dev/null) +0));
-			if [ "$NBEHIND" -gt 0 ]; then
-				if [ "$NAHEAD" -gt 0 ]; then
-					echo " branch $LB is $NBEHIND commit(s) behind and $NAHEAD commit(s) ahead of $REMOTE/$RB. could not be fast-forwarded";
-				elif [ "$LB" = "$CLB" ]; then
-					echo " branch $LB was $NBEHIND commit(s) behind of $REMOTE/$RB. fast-forward merge";
-					git merge -q "$ARB";
-				else
-					echo " branch $LB was $NBEHIND commit(s) behind of $REMOTE/$RB. resetting local branch to remote";
-					git branch -f "$LB" -t "$ARB" >/dev/null;
+	REMOTES=$(echo "${REMOTES}" | xargs -n1 echo)
+	CLB=$(git rev-parse --abbrev-ref HEAD)
+	echo "${REMOTES}" | while read -r REMOTE; do
+		git remote update "${REMOTE}"
+		git remote show "${REMOTE}" -n |
+			awk '/merges with remote/{print $5" "$1}' |
+			while read -r RB LB; do
+				ARB="refs/remotes/${REMOTE}/${RB}"
+				ALB="refs/heads/${LB}"
+				NBEHIND=$(($(git rev-list --count "${ALB}".."${ARB}" 2>/dev/null) + 0))
+				NAHEAD=$(($(git rev-list --count "${ARB}".."${ALB}" 2>/dev/null) + 0))
+				if [[ ${NBEHIND} -gt 0 ]]; then
+					if [[ ${NAHEAD} -gt 0 ]]; then
+						echo " branch ${LB} is ${NBEHIND} commit(s) behind and ${NAHEAD} commit(s) ahead of ${REMOTE}/${RB}. could not be fast-forwarded"
+					elif [[ ${LB} == "${CLB}" ]]; then
+						echo " branch ${LB} was ${NBEHIND} commit(s) behind of ${REMOTE}/${RB}. fast-forward merge"
+						git merge -q "${ARB}"
+					else
+						echo " branch ${LB} was ${NBEHIND} commit(s) behind of ${REMOTE}/${RB}. resetting local branch to remote"
+						git branch -f "${LB}" -t "${ARB}" >/dev/null
+					fi
 				fi
-			fi
-		done
+			done
 	done
 }

@@ -4,7 +4,7 @@
 root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
 
 # Source the bash_traceback.sh file
-source "$root/bash_traceback.sh"
+source "${root}/bash_traceback.sh"
 
 ###############################################################################
 # Install Homebrew                                                            #
@@ -24,7 +24,7 @@ fi
 echo
 echo -e "\033[1;33m🚀 Running dotsync.sh...\033[0m"
 sleep 1
-./dotsync.sh "${1:-}"
+./dotsync.sh "${1-}"
 
 ###############################################################################
 # Local settings and variables                                                #
@@ -32,7 +32,7 @@ sleep 1
 echo
 echo -e "\033[1;33m🚀 Running local.sh...\033[0m"
 sleep 1
-./local.sh "${1:-}"
+./local.sh "${1-}"
 
 ###############################################################################
 # macOS preferences                                                           #
@@ -47,7 +47,7 @@ sleep 1
 echo
 echo -e "\033[1;33m🚀 Running install.sh...\033[0m"
 sleep 1
-./install.sh "${1:-}"
+./install.sh "${1-}"
 echo
 echo -e "\033[1;33m🚀 Running dock.sh...\033[0m"
 sleep 1

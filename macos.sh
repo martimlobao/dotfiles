@@ -4,7 +4,7 @@
 root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
 
 # Source the bash_traceback.sh file
-source "$root/bash_traceback.sh"
+source "${root}/bash_traceback.sh"
 
 echo -e "\033[1;34m💻 Setting macOS preferences...\033[0m"
 
@@ -23,7 +23,7 @@ confirm_set() {
 	while true; do
 		read -rp "$1" "$2"
 		read -rp "Set to '${!2}'? (y/n) "
-		if [[ $REPLY =~ ^[Yy]$ ]]; then
+		if [[ ${REPLY} =~ ^[Yy]$ ]]; then
 			break
 		fi
 	done
@@ -31,12 +31,12 @@ confirm_set() {
 
 # Set computer name
 read -rp $'❓ \e[1;31mDo you want to (re)set the name for this computer? (currently set to '"$(scutil --get ComputerName)"') (y/n)'"$(tput sgr0)"' ' COMPUTERNAME
-if [[ $COMPUTERNAME =~ ^[Yy]$ ]]; then
+if [[ ${COMPUTERNAME} =~ ^[Yy]$ ]]; then
 	confirm_set "💻  Set the name for this computer: " COMPUTERNAME
-	sudo scutil --set ComputerName "$COMPUTERNAME"
-	sudo scutil --set HostName "$COMPUTERNAME"
-	sudo scutil --set LocalHostName "$COMPUTERNAME"
-	sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$COMPUTERNAME"
+	sudo scutil --set ComputerName "${COMPUTERNAME}"
+	sudo scutil --set HostName "${COMPUTERNAME}"
+	sudo scutil --set LocalHostName "${COMPUTERNAME}"
+	sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "${COMPUTERNAME}"
 fi
 
 ###############################################################################
@@ -164,13 +164,6 @@ done 2>/dev/null &
 # General UI/UX                                                               #
 ###############################################################################
 
-# Set computer name (as done via System Preferences → Sharing)
-read -rp "Set your computer name: " ComputerName
-sudo scutil --set ComputerName "$ComputerName"
-sudo scutil --set HostName "$ComputerName"
-sudo scutil --set LocalHostName "$ComputerName"
-sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$ComputerName"
-
 # Set standby delay to 24 hours (default is 1 hour)
 # sudo pmset -a standbydelay 86400
 
@@ -274,7 +267,7 @@ defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 # defaults write com.apple.screensaver askForPasswordDelay -int 0
 
 # Save screenshots to the Downloads folder
-defaults write com.apple.screencapture location -string "$HOME/Downloads"
+defaults write com.apple.screencapture location -string "${HOME}/Downloads"
 
 # Save screenshots in PNG format (other options: BMP, GIF, JPG, PDF, TIFF)
 # defaults write com.apple.screencapture type -string "png"

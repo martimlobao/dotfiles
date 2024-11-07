@@ -1,0 +1,12 @@
+---
+rules:
+  line-length:
+    max: 120
+  quoted-strings:
+    required: only-when-needed
+    extra-allowed: ["{|}"]
+  key-duplicates: {}
+  octal-values:
+    forbid-implicit-octal: true
+  comments:
+    min-spaces-from-content: 1

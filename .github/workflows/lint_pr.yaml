@@ -1,6 +1,7 @@
 ---
 name: Lint PR
-on:  # yamllint disable-line rule:truthy
+permissions: read-all
+on: # yamllint disable-line rule:truthy
   pull_request:
     branches: [main]
 
@@ -33,4 +34,4 @@ jobs:
       - name: Display yamllint version
         run: yamllint --version
       - name: yamllint
-        run: yamllint .
+        run: yamllint -c .trunk/configs/.yamllint.yaml .
