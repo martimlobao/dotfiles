@@ -47,6 +47,7 @@ function add_folder_to_dock {
 	# 2 -> Grid
 	# 3 -> List
 	folder_path="${1}"
+	shift # remove folder_path from args
 	sortby="1"
 	displayas="0"
 	viewcontentas="0"
@@ -72,6 +73,7 @@ function add_folder_to_dock {
 			exit 1
 			;;
 		esac
+		shift # shift to next arg
 		shift
 	done
 
