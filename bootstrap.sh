@@ -11,7 +11,7 @@
 		case "${flag}" in
 		b) BRANCH=${OPTARG} ;;
 		y) YES=true ;;
-		?) echo "Invalid option: -${OPTARG}" ;;
+		*) echo "Invalid option: -${OPTARG}" && exit 1 ;;
 		esac
 	done
 
