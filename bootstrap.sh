@@ -31,11 +31,11 @@
 		if [[ -z ${BRANCH} ]]; then
 			echo -e "\033[1;34m✅ Dotfiles already downloaded to ${DOTPATH}\033[0m"
 		else
+			echo -e "\033[1;34m✅ Dotfiles already downloaded to ${DOTPATH}, checking out branch ${BRANCH}\033[0m"
 			cd "${DOTPATH}"
 			git stash
 			git checkout "${BRANCH}"
 			git pull origin "${BRANCH}"
-			echo -e "\033[1;34m✅ Dotfiles already downloaded to ${DOTPATH} on branch ${BRANCH}\033[0m"
 		fi
 	fi
 
