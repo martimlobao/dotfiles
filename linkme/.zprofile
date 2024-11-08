@@ -1,4 +1,4 @@
-if [[ ${CI} == "true" ]]; then
+if [[ ${CI:-"false"} == "true" ]]; then
 	# Exit on error for CI
 	set -e
 fi

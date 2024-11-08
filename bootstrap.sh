@@ -19,11 +19,11 @@
 
 	if [[ ! -d ${DOTPATH} ]]; then
 		if [[ -z ${BRANCH} ]]; then
-			echo -e "\033[1;33m🔗 Cloning dotfiles...\033[0m"
+			echo -e "\033[1;33m📑 Cloning dotfiles...\033[0m"
 			git clone https://github.com/martimlobao/dotfiles.git "${DOTPATH}"
 			echo -e "\033[1;32m✅ Cloned Dotfiles to ${DOTPATH}\033[0m"
 		else
-			echo -e "\033[1;33m🔗 Cloning dotfiles on branch ${BRANCH}...\033[0m"
+			echo -e "\033[1;33m📑 Cloning dotfiles on branch ${BRANCH}...\033[0m"
 			git clone https://github.com/martimlobao/dotfiles.git --branch "${BRANCH}" "${DOTPATH}"
 			echo -e "\033[1;32m✅ Cloned Dotfiles to ${DOTPATH} on branch ${BRANCH}\033[0m"
 		fi
