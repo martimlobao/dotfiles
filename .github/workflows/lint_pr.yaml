@@ -26,6 +26,8 @@ jobs:
         uses: luizm/action-sh-checker@master
         env:
           SHFMT_OPTS: -s
+        with:
+          sh_checker_checkbashisms_enable: true
   yamllint:
     name: Run yamllint
     runs-on: ubuntu-latest

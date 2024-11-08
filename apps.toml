@@ -28,8 +28,8 @@ visual-studio-code = "cask" # Open-source code editor
 warp = "cask" # Rust-based terminal
 
 [work]
-awscli = "formula" # Official Amazon AWS command-line interface
 aws-sso-cli = "formula" # Securely manage AWS API credentials using AWS SSO
+awscli = "formula" # Official Amazon AWS command-line interface
 tunnelblick = "cask" # Free and open-source OpenVPN client
 
 [fonts]
