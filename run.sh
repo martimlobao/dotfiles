@@ -42,7 +42,20 @@ sleep 1
 
 # Linux is not supported after this point
 if [[ ${os} == "Linux" ]]; then
-	echo "Warning: Linux is not supported after this point."
+	echo -e "\033[1;33m ⛔️ Warning: Linux is not supported after this point.\033[0m"
+	exit 0
+fi
+
+###############################################################################
+# macOS preferences                                                           #
+###############################################################################
+# sleep 1
+# echo -e "\033[1;33m🚀 Running macos.sh...\033[0m"
+# sudo ./macos.sh
+
+# check if in GITHUB_ACTIONS is true and exit if it is
+if [[ ${GITHUB_ACTIONS} == "true" ]]; then
+	echo -e "\033[1;33m ⛔️ Warning: macOS is not supported in CI after this point.\033[0m"
 	exit 0
 fi
 
@@ -53,13 +66,6 @@ echo
 echo -e "\033[1;33m🚀 Running local.sh...\033[0m"
 sleep 1
 ./local.sh "${1-}"
-
-###############################################################################
-# macOS preferences                                                           #
-###############################################################################
-# sleep 1
-# echo -e "\033[1;33m🚀 Running macos.sh...\033[0m"
-# sudo ./macos.sh
 
 ###############################################################################
 # Install apps and software                                                   #

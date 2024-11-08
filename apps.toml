@@ -26,6 +26,7 @@ shfmt = "formula" # Autoformat shell script source code
 trunk-io = "cask" # Developer experience toolkit used to check, test, merge, and monitor code
 visual-studio-code = "cask" # Open-source code editor
 warp = "cask" # Rust-based terminal
+yamllint = "formula" # Linter for YAML files
 
 [work]
 aws-sso-cli = "formula" # Securely manage AWS API credentials using AWS SSO
