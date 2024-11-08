@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
+# Print installed apps in apps.toml
+function apps() {
+	bat -P "${DOTPATH}/apps.toml"
+}
+
 # Run .install.sh
-function appsync() {
+function syncapps() {
 	bash "${DOTPATH}/install.sh"
 }
 

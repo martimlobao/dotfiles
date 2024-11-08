@@ -1,0 +1,22 @@
+---
+name: Bootstrap
+permissions: read-all
+on: # yamllint disable-line rule:truthy
+  pull_request:
+    branches: [main]
+
+jobs:
+  bootstrap:
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Bootstrap
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          curl -L https://raw.githubusercontent.com/martimlobao/dotfiles/"${BRANCH}"/bootstrap.sh \
+            | bash -s -- -b "${BRANCH}" -y

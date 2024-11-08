@@ -28,7 +28,7 @@ bash <(curl -L dot.lobao.io)
 To run the script without interactive prompts, run the following command:
 
 ```bash
-curl -L http://dot.lobao.io | bash -s -- --yes
+curl -L http://dot.lobao.io | bash -s -- -y
 ```
 
 ### 1Password requirements
@@ -42,7 +42,7 @@ curl -L http://dot.lobao.io | bash -s -- --yes
 - `op://Private/Charles/registered name` and `op://Private/Charles/license key` to register Charles
 - SSH keys for AWS
 
-## Thanks
+## Thanks and inspiration
 
 Several people and repositories have contributed to or been a source of inspiration for this repository:
 

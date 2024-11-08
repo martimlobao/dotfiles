@@ -7,6 +7,20 @@ root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
 source "${root}/bash_traceback.sh"
 
 ###############################################################################
+# OS and architecture detection                                               #
+###############################################################################
+os="$(uname)"
+# If os is neither Linux or Darwin, exit 1
+if [[ ${os} != 'Darwin' ]] && [[ ${os} != 'Linux' ]]; then
+	echo -e "❌ \033[1;31mError: Unsupported OS: ${os}\033[0m"
+	exit 1
+fi
+echo -e "\033[1;33m💻 OS detected:\033[0m   ${os}"
+
+archname="$(arch)"
+echo -e "\033[1;33m💻 Arch detected:\033[0m ${archname}"
+
+###############################################################################
 # Install Homebrew                                                            #
 ###############################################################################
 echo
@@ -26,13 +40,11 @@ echo -e "\033[1;33m🚀 Running dotsync.sh...\033[0m"
 sleep 1
 ./dotsync.sh "${1-}"
 
-###############################################################################
-# Local settings and variables                                                #
-###############################################################################
-echo
-echo -e "\033[1;33m🚀 Running local.sh...\033[0m"
-sleep 1
-./local.sh "${1-}"
+# Linux is not supported after this point
+if [[ ${os} == "Linux" ]]; then
+	echo -e "\033[1;33m ⛔️ Warning: Linux is not supported after this point.\033[0m"
+	exit 0
+fi
 
 ###############################################################################
 # macOS preferences                                                           #
@@ -40,6 +52,20 @@ sleep 1
 # sleep 1
 # echo -e "\033[1;33m🚀 Running macos.sh...\033[0m"
 # sudo ./macos.sh
+
+# CI is not supported after this point
+if [[ ${GITHUB_ACTIONS} == "true" ]]; then
+	echo -e "\033[1;33m ⛔️ Warning: macOS is not supported in CI after this point.\033[0m"
+	exit 0
+fi
+
+###############################################################################
+# Local settings and variables                                                #
+###############################################################################
+echo
+echo -e "\033[1;33m🚀 Running local.sh...\033[0m"
+sleep 1
+./local.sh "${1-}"
 
 ###############################################################################
 # Install apps and software                                                   #
