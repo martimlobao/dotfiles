@@ -18,4 +18,4 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          bash <(curl -L https://raw.githubusercontent.com/martimlobao/dotfiles/main/bootstrap.sh) -- "${BRANCH}"
+          bash <(curl -L https://raw.githubusercontent.com/martimlobao/dotfiles/main/bootstrap.sh) -- -b "${BRANCH}" -y
