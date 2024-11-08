@@ -11,7 +11,7 @@ source "${root}/bash_traceback.sh"
 ###############################################################################
 os="$(uname)"
 # If os is neither Linux or Darwin, exit 1
-if [ "${os}" != 'Darwin' ] && [ "${os}" != 'Linux' ]; then
+if [[ ${os} != 'Darwin' ]] && [[ ${os} != 'Linux' ]]; then
 	echo -e "❌ \033[1;31mError: Unsupported OS: ${os}\033[0m"
 	exit 1
 fi
@@ -40,7 +40,8 @@ echo -e "\033[1;33m🚀 Running dotsync.sh...\033[0m"
 sleep 1
 ./dotsync.sh "${1-}"
 
-if [ "${os}" = "Linux" ]; then
+# Linux is not supported after this point
+if [[ ${os} == "Linux" ]]; then
 	echo "Warning: Linux is not supported after this point."
 	exit 0
 fi
