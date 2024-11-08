@@ -53,7 +53,7 @@ fi
 # echo -e "\033[1;33m🚀 Running macos.sh...\033[0m"
 # sudo ./macos.sh
 
-# check if in GITHUB_ACTIONS is true and exit if it is
+# CI is not supported after this point
 if [[ ${GITHUB_ACTIONS} == "true" ]]; then
 	echo -e "\033[1;33m ⛔️ Warning: macOS is not supported in CI after this point.\033[0m"
 	exit 0
