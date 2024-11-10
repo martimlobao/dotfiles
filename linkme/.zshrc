@@ -148,9 +148,11 @@ function command_end {
 			"vim"
 			"watch"
 		)
-		if [[ " ${notify_exclude[@]} " =~ " ${command} "* ]]; then
-			return
-		fi
+		for exclude in "${notify_exclude[@]}"; do
+			if [[ "$command" == "$exclude"* ]]; then
+				return
+			fi
+		done
 		local cmd_title="${command%% *}"
 		cmd_title="$(tr '[:lower:]' '[:upper:]' <<< ${cmd_title:0:1})${cmd_title:1}"
 		local message="'${zsh_last_command}' finished after ${duration}s"
