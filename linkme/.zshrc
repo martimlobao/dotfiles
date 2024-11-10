@@ -153,10 +153,8 @@ function command_end {
 				return
 			fi
 		done
-		local cmd_title="${command%% *}"
-		cmd_title="$(tr '[:lower:]' '[:upper:]' <<< ${cmd_title:0:1})${cmd_title:1}"
 		local message="'${zsh_last_command}' finished after ${duration}s"
-		local title="${cmd_title} Command Completed"
+		local title="Terminal Command Completed"
 		osascript -e "display notification \"$message\" with title \"$title\""
 	fi
 }

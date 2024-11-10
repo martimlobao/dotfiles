@@ -50,7 +50,7 @@ Several people and repositories have contributed to or been a source of inspirat
 - [@kevinsuttle](https://kevinsuttle.com/)/[macOS-Defaults](https://github.com/kevinSuttle/macOS-Defaults)
 - [@ryanpavlick](https://github.com/rpavlick)/[add_to_dock](https://github.com/rpavlick/add_to_dock)
 - [@MichaelAquilina](https://github.com/MichaelAquilina)/[zsh-auto-notify](https://github.com/MichaelAquilina/zsh-auto-notify)
-- [@kniraj](https://github.com/Niraj-Kamdar)/[macos-the-long-running-task-notifier](https://dev.to/kniraj/macos-the-long-running-task-notifier-35o1)
+- [@Niraj-Kamdar](https://github.com/Niraj-Kamdar)/[macos-the-long-running-task-notifier](https://dev.to/kniraj/macos-the-long-running-task-notifier-35o1)
 - [@ikuwow](https://github.com/ikuwow)/[dotfiles](https://github.com/ikuwow/dotfiles)
 - [@kennethreitz](https://www.kennethreitz.org/)/[dotfiles](https://github.com/kennethreitz/dotfiles)
 - [@br3ndonland](https://github.com/br3ndonland)/[dotfiles](https://github.com/br3ndonland/dotfiles)
