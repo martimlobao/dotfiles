@@ -28,7 +28,7 @@ jobs:
           SHFMT_OPTS: -s
         with:
           sh_checker_checkbashisms_enable: true
-          sh_checker_exclude: .zshrc .zprofile *.zsh
+          sh_checker_exclude: .zshrc .zprofile .zsh
   yamllint:
     name: Run yamllint
     runs-on: ubuntu-latest
