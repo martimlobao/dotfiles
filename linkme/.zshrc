@@ -82,6 +82,7 @@ source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zs
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
 	1password
+	auto-notify
 	autojump
 	git
 	thefuck
@@ -107,58 +108,3 @@ eval "$(starship init zsh)"
 # Shell completion for uv and uvx
 eval "$(uv generate-shell-completion zsh)"
 eval "$(uvx --generate-shell-completion zsh)"
-
-# Notify for long running commands
-# https://dev.to/kniraj/macos-the-long-running-task-notifier-35o1
-# https://github.com/MichaelAquilina/zsh-auto-notify
-function command_start {
-	zsh_command_start_time=$SECONDS
-	zsh_last_command=$1
-}
-
-function command_end {
-	local duration=$((SECONDS - zsh_command_start_time))
-	if (( duration > 30 )); then
-		# Split the command if its been piped one or more times
-		local command_list=("${(@s/|/)${zsh_last_command}}")
-		local command="${command_list[-1]}"
-		# Remove leading whitespace
-		command="$(echo "$command" | sed -e 's/^ *//')"
-		# Remove sudo prefix from command if detected
-		if [[ "$command" == "sudo "* ]]; then
-			command="${command/sudo /}"
-		fi
-
-		# Don't notify for SSH commands
-		if [[ -n ${SSH_CLIENT-} || -n ${SSH_TTY-} || -n ${SSH_CONNECTION-} ]]; then
-			return
-		fi
-		# Don't notify for these commands
-		local notify_exclude=(
-			"git diff"
-			"htop"
-			"ipython"
-			"less"
-			"man"
-			"more"
-			"nano"
-			"python"
-			"ssh"
-			"top"
-			"vim"
-			"watch"
-		)
-		for exclude in "${notify_exclude[@]}"; do
-			if [[ "$command" == "$exclude"* ]]; then
-				return
-			fi
-		done
-		local message="'${zsh_last_command}' finished after ${duration}s"
-		local title="Terminal Command Completed"
-		osascript -e "display notification \"$message\" with title \"$title\""
-	fi
-}
-
-autoload -U add-zsh-hook
-add-zsh-hook preexec command_start
-add-zsh-hook precmd command_end
