@@ -16,7 +16,7 @@ jobs:
         env:
           SHELLCHECK_OPTS: -x
         with:
-          ignore_names: .zshrc .zprofile
+          ignore_names: .zshrc .zprofile *.zsh
   shfmt:
     name: Run shfmt
     runs-on: ubuntu-latest
@@ -28,6 +28,7 @@ jobs:
           SHFMT_OPTS: -s
         with:
           sh_checker_checkbashisms_enable: true
+          sh_checker_exclude: .zshrc .zprofile .zsh
   yamllint:
     name: Run yamllint
     runs-on: ubuntu-latest
