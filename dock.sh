@@ -12,19 +12,47 @@ source "${root}/bash_traceback.sh"
 
 echo -e "🔧 \033[1;34mConfiguring macOS Dock...\033[0m"
 
+# Load the LaunchServices database into a variable
+launchservices_path="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+launchservices_dump=$(${launchservices_path} -dump)
+
 function add_app_to_dock {
 	# adds an application to macOS Dock
 	# usage: add_app_to_dock "Application Name"
 	# example add_app_to_dock "Terminal"
 	app_name="${1}"
-	launchservices_path="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
-	app_path=$(${launchservices_path} -dump | grep -o "/.*${app_name}.app" | grep -v -E "Backups|Caches|TimeMachine|Temporary|/Volumes/${app_name}" | uniq | sort | head -n1)
+	app_path=$(echo "${launchservices_dump}" | grep -o "/.*${app_name}.app" | grep -v -E "Backups|Caches|TimeMachine|Temporary|/Volumes/${app_name}" | uniq | sort | head -n1)
 	if open -Ra "${app_path}"; then
 		defaults write com.apple.dock persistent-apps -array-add "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>${app_path}</string><key>_CFURLStringType</key><integer>0</integer></dict></dict></dict>"
 		echo -e "✅ \033[1;32m${app_path} added to the Dock.\033[0m"
 	else
 		echo -e "❌ \033[1;31mError: $1 not found.\033[0m" 1>&2
+		return 1
 	fi
+}
+
+function get_app_position_in_dock {
+	# returns the 1-indexed position of an application in the macOS Dock
+	# usage: get_app_position_in_dock "Application Name"
+	# example: get_app_position_in_dock "Arc"
+	app_name="${1}"
+	persistent_apps=$(defaults read com.apple.dock persistent-apps)
+
+	# Initialize position counter
+	position=1
+
+	# Use a while loop to read each app entry
+	echo "${persistent_apps}" | grep -o '"file-label"[^;]*;' | while IFS= read -r app; do
+		if echo "${app}" | grep -q "\"file-label\" = \"\?${app_name}\"\?;"; then
+			echo "${position}"
+			return 0
+		fi
+		((position++))
+	done
+
+	# If the app is not found, return 0
+	echo "0"
+	return 1
 }
 
 function add_folder_to_dock {
@@ -94,6 +122,7 @@ function add_folder_to_dock {
 		echo -e "✅ \033[1;32m${folder_path} added to the Dock.\033[0m"
 	else
 		echo -e "❌ \033[1;31mError: ${folder_path} not found.\033[0m" 1>&2
+		return 1
 	fi
 }
 
@@ -133,6 +162,6 @@ add_app_to_dock "Visual Studio Code"
 add_app_to_dock "Cursor"
 add_app_to_dock "Hyper"
 add_app_to_dock "System Settings"
-add_folder_to_dock ~/Downloads --sortby 2 --displayas 1 --viewcontentas 1
+add_folder_to_dock "${HOME}/Downloads" --sortby 2 --displayas 1 --viewcontentas 1
 
 killall Dock
