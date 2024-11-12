@@ -12,3 +12,6 @@ fi
 
 # Add uv to PATH
 export PATH="$HOME/.local/bin:$PATH"
+
+# Add cargo to PATH
+export PATH="$HOME/.cargo/bin:$PATH"

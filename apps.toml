@@ -133,6 +133,7 @@ yq = "formula" # Process YAML, JSON, XML, CSV and properties documents from the 
 yt-dlp = "formula" # Feature-rich command-line audio/video downloader
 # Fun stuff
 lolcat = "formula" # Rainbows and unicorns in your console!
+lucky-commit = "formula" # Customize your git commit hashes!
 # Newer versions of system binaries
 bash = "formula" # Bourne-Again SHell, a UNIX command interpreter
 git = "formula" # Distributed revision control system
