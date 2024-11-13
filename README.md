@@ -6,20 +6,30 @@ This repository contains my personal dotfiles, as well as several scripts to ins
 
 Here's a short description of each script in this repository:
 
-- `local.sh` _interactively_ configure local settings unique to each machine, like the computer name and your git user details
+- `bootstrap.sh` bootstrap install everything, including cloning this repository
+- `run.sh` install Homebrew and run all the following scripts
+- `dotsync.sh` sync and symlink dotfiles from this repository to your home directory
 - `macos.sh` configure several macOS settings
 - `install.sh` install fonts, tools, and apps using Homebrew, [`uv`](https://docs.astral.sh/uv/), and the Mac App Store
 - `dock.sh` configure macOS dock
-- `bootstrap.sh` bootstrap install everything, including cloning this repository
-- `run.sh` install Homebrew and run all scripts
+- `local.sh` final local settings, like configuring git user details and registering apps using keys stored in 1Password
+- `bash_traceback.sh` helper script used by other scripts to print a more helpful traceback on failure (does nothing by itself)
 
 All these scripts are idempotent, meaning they can be run multiple times without issue.
 
-**Attention:** Running these dotfiles blindly will overwrite settings and install apps and fonts that you probably don't need. Use at your own risk!
+**Warning:** Running these dotfiles blindly will overwrite settings and install apps and fonts that you probably don't need. Use at your own risk!
 
 ## Installation
 
 On a fresh (or not so fresh) macOS install, run the following command to install Homebrew and run all scripts:
+
+```bash
+curl -L https://raw.githubusercontent.com/martimlobao/dotfiles/main/bootstrap.sh | bash -s
+```
+
+For my own convenience, I have a shorter `http://dot.lobao.io` URL that redirects to the same script. However, you probably shouldn't run arbitrary code from a stranger on the internet, so unless you're me or you fully trust me, it might be best to use the longer version.
+
+The easier-to-remember command is:
 
 ```bash
 bash <(curl -L dot.lobao.io)
