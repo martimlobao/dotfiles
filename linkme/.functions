@@ -10,6 +10,10 @@ function syncapps() {
 	bash "${DOTPATH}/install.sh"
 }
 
+function bootstrap() {
+	bash "${DOTPATH}/bootstrap.sh" -y
+}
+
 # Start screensaver.
 function ss() {
 	open -a ScreenSaverEngine
