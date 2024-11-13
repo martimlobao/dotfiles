@@ -24,10 +24,10 @@ All these scripts are idempotent, meaning they can be run multiple times without
 On a fresh (or not so fresh) macOS install, run the following command to install Homebrew and run all scripts:
 
 ```bash
-curl -L https://raw.githubusercontent.com/martimlobao/dotfiles/main/bootstrap.sh | bash -s
+bash <(curl -s https://raw.githubusercontent.com/martimlobao/dotfiles/main/bootstrap.sh)
 ```
 
-For my own convenience, I have a shorter `http://dot.lobao.io` URL that redirects to the same script. However, you probably shouldn't run arbitrary code from a stranger on the internet, so unless you're me or you fully trust me, it might be best to use the longer version.
+For my own convenience, I have a shorter `https://dot.lobao.io` URL that redirects to the same script. However, you probably shouldn't run arbitrary code from a stranger on the internet, so unless you're me or you fully trust me, it might be best to use the longer version.
 
 The easier-to-remember command is:
 
@@ -35,10 +35,10 @@ The easier-to-remember command is:
 bash <(curl -L dot.lobao.io)
 ```
 
-To run the script without interactive prompts, run the following command:
+To run the script without interactive prompts, just add `-y` to the end:
 
 ```bash
-curl -L http://dot.lobao.io | bash -s -- -y
+bash <(curl -sL https://dot.lobao.io) -y
 ```
 
 ### 1Password requirements
