@@ -66,3 +66,4 @@ Several people and repositories have contributed to or been a source of inspirat
 - [@br3ndonland](https://github.com/br3ndonland)/[dotfiles](https://github.com/br3ndonland/dotfiles)
 - [@pablopunk](https://github.com/pablopunk)/[dotfiles](https://github.com/pablopunk/dotfiles)
 - [@demophoon](https://github.com/demophoon)/[dotfiles](https://github.com/demophoon/dotfiles)
+- [@lupin3000](https://github.com/lupin3000)/[macOS-defaults](https://lupin3000.github.io/macOS/defaults/)
