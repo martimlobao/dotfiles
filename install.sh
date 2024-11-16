@@ -134,7 +134,7 @@ brew_sync() {
 		fi
 		if [[ ${choice} == "y" ]]; then
 			for app in ${missing_apps}; do
-				brew uninstall "${app}"
+				brew uninstall --zap "${app}"
 				echo -e "🚮 \033[1;35mUninstalled ${app}.\033[0m"
 			done
 		else
