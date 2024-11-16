@@ -1,0 +1,47 @@
+SSOConfig:
+  Revelio:
+    SSORegion: us-east-2
+    StartUrl: https://revelio.awsapps.com/start
+    DefaultRegion: us-east-2
+    AuthUrlAction: open
+DefaultSSO: Revelio
+DefaultRegion: us-east-2
+ConsoleDuration: 60
+CacheRefresh: 12
+Threads: 5
+MaxBackoff: 5
+MaxRetry: 10
+UrlAction: open
+ConfigProfilesUrlAction: open
+LogLevel: error
+HistoryLimit: 10
+HistoryMinutes: 1440
+ProfileFormat: "{{.AccountIdPad}}:{{.RoleName}}"
+AccountPrimaryTag:
+  - AccountName
+  - AccountAlias
+  - Email
+PromptColors:
+  descriptionbgcolor: Turquoise
+  descriptiontextcolor: Black
+  inputbgcolor: DefaultColor
+  inputtextcolor: DefaultColor
+  prefixbackgroundcolor: DefaultColor
+  prefixtextcolor: Blue
+  previewsuggestionbgcolor: DefaultColor
+  previewsuggestiontextcolor: Green
+  scrollbarbgcolor: Cyan
+  scrollbarthumbcolor: LightGrey
+  selecteddescriptionbgcolor: DarkGray
+  selecteddescriptiontextcolor: White
+  selectedsuggestionbgcolor: DarkGray
+  selectedsuggestiontextcolor: White
+  suggestionbgcolor: Cyan
+  suggestiontextcolor: White
+ListFields:
+  - AccountIdPad
+  - AccountAlias
+  - RoleName
+  - Profile
+  - Expires
+FullTextSearch: true
