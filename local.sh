@@ -7,7 +7,7 @@ root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
 source "${root}/bash_traceback.sh"
 
 ###############################################################################
-# LOCAL SETTINGS AND VARIABLES                                                #
+# Local settings and variables                                                #
 ###############################################################################
 
 echo -e "\033[1;34m🔑 Setting local settings and variables...\033[0m"

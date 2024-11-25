@@ -7,7 +7,7 @@ root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
 source "${root}/bash_traceback.sh"
 
 ###############################################################################
-# FUNCTIONS FOR MANIPULATING MACOS DOCK                                       #
+# Functions for manipulating macOS Dock                                       #
 ###############################################################################
 
 echo -e "🔧 \033[1;34mConfiguring macOS Dock...\033[0m"
@@ -148,7 +148,7 @@ function reset_launchpad {
 }
 
 ###############################################################################
-# CONFIGURE MACOS DOCK                                                        #
+# Configure macOS Dock                                                        #
 ###############################################################################
 reset_launchpad
 clear_dock

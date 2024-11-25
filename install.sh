@@ -7,7 +7,7 @@ root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
 source "${root}/bash_traceback.sh"
 
 ###############################################################################
-# INSTALL APPS AND PACKAGES                                                   #
+# Install apps and packages                                                   #
 ###############################################################################
 
 echo -e "📲 \033[1;34mInstalling apps and packages...\033[0m"

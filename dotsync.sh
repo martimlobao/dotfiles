@@ -7,7 +7,7 @@ root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
 source "${root}/bash_traceback.sh"
 
 ###############################################################################
-# UPDATE DOTFILES                                                             #
+# Update dotfiles                                                             #
 ###############################################################################
 
 function dotlink() {
