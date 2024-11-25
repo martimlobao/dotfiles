@@ -6,8 +6,6 @@ preview = true
 select = ["ALL"]
 fixable = ["ALL"]
 ignore = [
-  "ANN101", # missing-type-self, deprecated
-  "ANN102", # missing-type-cls, deprecated
   "CPY001", # missing-copyright-notice
   "D104", # undocumented-public-package
   "D107", # undocumented-public-init
