@@ -93,6 +93,7 @@ eval "$(op completion zsh)"; compdef _op op
 # Starship complettion
 eval "$(starship init zsh)"
 
-# Shell completion for uv and uvx
+# Shell completion for uv, uvx, and ruff
 eval "$(uv generate-shell-completion zsh)"
 eval "$(uvx --generate-shell-completion zsh)"
+eval "$(ruff generate-shell-completion zsh)"
