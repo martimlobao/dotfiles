@@ -7,7 +7,7 @@ root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
 source "${root}/bash_traceback.sh"
 
 ###############################################################################
-# Functions for manipulating macOS Dock                                   #
+# Functions for manipulating macOS Dock                                       #
 ###############################################################################
 
 echo -e "🔧 \033[1;34mConfiguring macOS Dock...\033[0m"
