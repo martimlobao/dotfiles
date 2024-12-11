@@ -4,6 +4,11 @@
 # Inserts a blank line between shell prompts
 add_newline = true
 
+[battery]
+full_symbol = '🔋 '
+charging_symbol = '⚡️ '
+discharging_symbol = '🪫 '
+
 [directory]
 truncation_length = 5
 truncation_symbol = "…/"

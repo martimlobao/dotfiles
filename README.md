@@ -43,7 +43,7 @@ bash <(curl -sL https://dot.lobao.io) -y
 
 ### 1Password requirements
 
-1Password is required to store secrets used by these scripts. These include:
+1Password is required to store secrets used by these scripts. These include but are not limited to:
 
 - `op user get --me` to set your git `user.name`
 - `op://Private/GitHub/email` and `op://Private/GitHub/username` to configure git and push to Github
@@ -51,6 +51,18 @@ bash <(curl -sL https://dot.lobao.io) -y
 - `op://Private/iStat Menus 6/registered email` and `op://Private/iStat Menus 6/license key` to register iStat Menus 6
 - `op://Private/Charles/registered name` and `op://Private/Charles/license key` to register Charles
 - SSH keys for AWS
+
+## Features
+
+- Symlink dotfiles from this repository to your home directory
+- Install apps, fonts, and tools using Homebrew, [`uv`](https://docs.astral.sh/uv/), and the Mac App Store
+- Set up straightforward Python configuration using `uv`
+- Set up macOS Dock with most used apps
+- Register and configure iStat Menus 6, Charles, 1Password, AWS CLI, and GitHub CLI
+- TouchID for sudo
+- Configure git user details
+- Configure SSH client
+- Configure GPG client
 
 ## Thanks and inspiration
 
