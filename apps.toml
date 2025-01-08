@@ -35,6 +35,7 @@ awscli = "formula" # Official Amazon AWS command-line interface
 tunnelblick = "cask" # Free and open-source OpenVPN client
 
 [fonts]
+font-doto = "cask" # Doto
 font-eb-garamond = "cask" # EB Garamond
 font-fira-code = "cask" # Fira Code
 font-humor-sans = "cask" # Humor Sans
