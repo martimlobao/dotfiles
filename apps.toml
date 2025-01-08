@@ -27,7 +27,6 @@ shellcheck = "formula" # Static analysis and lint tool, for (ba)sh scripts
 shfmt = "formula" # Autoformat shell script source code
 trunk-io = "cask" # Developer experience toolkit used to check, test, merge, and monitor code
 visual-studio-code = "cask" # Open-source code editor
-warp = "cask" # Rust-based terminal
 yamllint = "formula" # Linter for YAML files
 
 [work]
