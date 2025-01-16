@@ -1,0 +1,37 @@
+[display]
+theme = "light"
+default_width = "medium"
+dataframes = "rich"
+code_editor_font_size = 14
+cell_output = "above"
+
+[keymap]
+preset = "default"
+
+[keymap.overrides]
+
+[save]
+autosave = "after_delay"
+format_on_save = true
+autosave_delay = 1000
+
+[server]
+follow_symlink = false
+browser = "default"
+
+[package_management]
+manager = "uv"
+
+[formatting]
+line_length = 99
+
+[experimental]
+
+[runtime]
+auto_reload = "off"
+on_cell_change = "autorun"
+auto_instantiate = true
+
+[completion]
+activate_on_typing = true
+copilot = "github"
