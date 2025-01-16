@@ -40,6 +40,8 @@ else
 
 	if [[ ${LINK} =~ ^[Yy]$ ]]; then
 		dotlink
+		# 1Password needs the permissions to be set to 700
+		chmod 700 "${HOME}/.config/op"
 	fi
 fi
 
