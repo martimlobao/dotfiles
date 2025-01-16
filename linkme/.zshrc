@@ -87,8 +87,9 @@ for file in ~/.{aliases,exports,functions,extra}; do
 done;
 unset file;
 
-# 1Password completion
+# 1Password completion and plugins
 eval "$(op completion zsh)"; compdef _op op
+source "$HOME/.config/op/plugins.sh"
 
 # Starship complettion
 eval "$(starship init zsh)"
