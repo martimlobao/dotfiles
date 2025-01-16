@@ -82,6 +82,7 @@ raycast = "cask" # Control your tools with a few keystrokes
 rocket = "cask" # Emoji picker optimised for blind people
 the-unarchiver = "cask" # Unpacks archive files
 transmission = "cask" # Open-source BitTorrent client
+1193539993 = "mas" # Brother iPrint&Scan
 937984704 = "mas" # Amphetamine: Powerful keep-awake utility
 
 [utilities]
