@@ -5,6 +5,9 @@ alias python='uv run python'
 # Search command history
 alias hgrep='history | grep --color=auto '
 
+# f
+alias f='fuck'
+
 # Easier navigation: .., ..., ...., ....., ~ and -
 alias ..="cd .."
 alias ...="cd ../.."
