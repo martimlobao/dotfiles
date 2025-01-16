@@ -5,7 +5,7 @@
 	export AUTO_NOTIFY_EXPIRE_TIME=8000
 # Threshold in seconds for when to automatically show a notification
 [[ -z "$AUTO_NOTIFY_THRESHOLD" ]] &&
-	export AUTO_NOTIFY_THRESHOLD=30
+	export AUTO_NOTIFY_THRESHOLD=60
 # Threshold in seconds for when to automatically show a notification
 [[ -z "$AUTO_NOTIFY_TRUNCATE_COMMAND" ]] &&
 	export AUTO_NOTIFY_TRUNCATE_COMMAND=40
