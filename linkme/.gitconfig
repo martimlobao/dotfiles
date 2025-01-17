@@ -19,6 +19,12 @@
 	sort = -committerdate
 	autoSetupMerge = simple
 
+[branch "main"]
+	pushRemote = you_have_disabled_push_for_this_branch_in_your_global_gitconfig
+
+[branch "master"]
+	pushRemote = you_have_disabled_push_for_this_branch_in_your_global_gitconfig
+
 [diff]
 	# Detect copies as well as renames.
 	renames = copies
