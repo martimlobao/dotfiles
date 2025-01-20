@@ -40,6 +40,7 @@ font-eb-garamond = "cask" # EB Garamond
 font-fira-code = "cask" # Fira Code
 font-humor-sans = "cask" # Humor Sans
 font-new-york = "cask" # New York, NY
+font-pixel-code = "cask" # Pixel Code
 font-sauce-code-pro-nerd-font = "cask" # SauceCodePro Nerd Font (Source Code Pro)
 font-sf-mono = "cask" # San Francisco Mono, SF Mono
 font-sf-pro = "cask" # San Francisco Pro, SF Pro
