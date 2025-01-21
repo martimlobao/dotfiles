@@ -42,6 +42,9 @@ if [[ ${COPYME} =~ ^[Yy]$ ]]; then
 	rsync -av --exclude='.DS_Store' copyme/ "${HOME}" |
 		grep -v "building file list ... done" |
 		awk '/^$/ { exit } !/\/$/ { printf "\033[1;32m📋 Copied %s\033[0m\n", $0; }'
+	# 1Password needs the permissions to be set to 700
+	chmod 700 "${HOME}/.config/op"
+	chmod 700 "${HOME}/.config/op/plugins/used_items"
 fi
 
 # iStat Menus
