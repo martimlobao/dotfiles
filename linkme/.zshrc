@@ -35,7 +35,7 @@ zstyle ':omz:update' frequency 14
 DISABLE_AUTO_TITLE="true"
 precmd() {
 	FOLDER=$( [[ "$PWD" == "$HOME" ]] && echo '~' || basename "$PWD" )
-	eval "echo -ne '\033]0;${USER}@${HOST}:${FOLDER}\007'"
+	eval "echo -ne '\033]0;${FOLDER}\007'"
 }
 
 
