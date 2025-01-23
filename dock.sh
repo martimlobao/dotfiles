@@ -159,7 +159,7 @@ add_app_to_dock "Todoist"
 add_app_to_dock "Linear"
 add_app_to_dock "Slack"
 add_app_to_dock "Cursor"
-add_app_to_dock "Hyper"
+add_app_to_dock "Ghostty"
 add_app_to_dock "System Settings"
 add_folder_to_dock "${HOME}/Downloads" --sortby 2 --displayas 1 --viewcontentas 1
 

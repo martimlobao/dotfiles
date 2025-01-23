@@ -32,7 +32,12 @@ zstyle ':omz:update' frequency 14
 # DISABLE_LS_COLORS="true"
 
 # Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
+DISABLE_AUTO_TITLE="true"
+precmd() {
+	FOLDER=$( [[ "$PWD" == "$HOME" ]] && echo '~' || basename "$PWD" )
+	eval "echo -ne '\033]0;${USER}@${HOST}:${FOLDER}\007'"
+}
+
 
 # Uncomment the following line to enable command auto-correction.
 # ENABLE_CORRECTION="true"
