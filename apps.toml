@@ -17,6 +17,7 @@ charles = "cask" # Web debugging Proxy application
 cursor = "cask" # Write, edit, and chat about your code with AI
 docker = "cask" # App to build and share containerised applications and microservices
 gh = "formula" # GitHub command-line tool
+ghostty = "cask" # Terminal emulator that uses platform-native UI and GPU acceleration
 hyper = "cask" # Terminal built on web technologies
 jupyter-notebook-viewer = "cask" # Utility to render Jupyter notebooks
 lm-studio = "cask" # Discover, download, and run local LLMs

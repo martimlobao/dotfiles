@@ -1,0 +1,43 @@
+# title = " "
+confirm-close-surface = false
+quit-after-last-window-closed = true
+shell-integration = none
+shell-integration-features = no-cursor
+scrollback-limit = 10000000
+clipboard-read = allow
+copy-on-select = false
+window-colorspace = display-p3
+window-padding-x = 16
+window-padding-y = 8
+window-padding-balance = true
+theme = Snazzy Soft
+background = #282a36
+foreground = #eff0eb
+selection-background = #92bcd0
+selection-foreground = #000000
+cursor-color = #eaeaea
+cursor-text = #282a36
+cursor-style = block
+cursor-style-blink = false
+palette = 0=#000000
+palette = 1=#ff5c57
+palette = 2=#5af78e
+palette = 3=#f3f99d
+palette = 4=#57c7ff
+palette = 5=#ff6ac1
+palette = 6=#9aedfe
+palette = 7=#f1f1f0
+palette = 8=#686868
+palette = 9=#ff5c57
+palette = 10=#5af78e
+palette = 11=#f3f99d
+palette = 12=#57c7ff
+palette = 13=#ff6ac1
+palette = 14=#9aedfe
+palette = 15=#f1f1f0
+font-size = 12
+font-thicken = true
+font-family = Source Code Pro
+keybind = cmd+backspace=esc:w
+macos-titlebar-style = tabs
+macos-titlebar-proxy-icon = hidden
