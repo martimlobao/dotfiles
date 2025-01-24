@@ -52,7 +52,7 @@ font-source-sans-3 = "cask" # Source Sans 3
 minecraft = "cask" # Sandbox construction video game
 sonos = "cask" # Control your Sonos system
 spotify = "cask" # Music streaming service
-# 1048524688 = "mas"  # Delta - Game Emulator: All-in-One GBA4iOS Successor
+# 1048524688 = "mas" # Delta - Game Emulator: All-in-One GBA4iOS Successor
 
 [productivity]
 chatgpt = "cask" # OpenAI's official ChatGPT desktop app
@@ -112,7 +112,6 @@ rust = "formula" # Safe, concurrent, practical language
 ipython = "uv" # Interactive computing in Python
 marimo = "uv" # Reactive notebook for Python [Jupyter alternative]
 mypy = "uv" # Experimental optional static type checker for Python
-open-interpreter = "uv" # A natural language interface for computers
 "pantsbuild/tap/pants" = "cask" # Fast, scalable, user-friendly build system for codebases of all sizes
 poetry = "uv" # Python package management tool
 ruff = "uv" # Extremely fast Python linter, written in Rust
@@ -127,6 +126,7 @@ temurin = "cask" # JDK from the Eclipse Foundation (Adoptium) [simpler setup tha
 ack = "formula" # Search tool like grep, but optimized for programmers
 bat = "formula" # Clone of cat(1) with syntax highlighting and Git integration
 exiftool = "formula" # Perl lib for reading and writing EXIF metadata
+fastfetch = "formula" # Like neofetch, but much faster because written mostly in C
 ffmpeg = "formula" # Play, record, convert, and stream audio and video
 httpie = "formula" # User-friendly cURL replacement (command-line HTTP client)
 imagemagick = "formula" # Tools and libraries to manipulate images in many formats

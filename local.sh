@@ -83,9 +83,7 @@ fi
 echo -e "📝 \033[1;35mSetting up GitHub CLI...\033[0m"
 if [[ -z $(gh auth status 2>/dev/null || echo '') ]]; then
 	gh auth login --git-protocol ssh --hostname github.com --skip-ssh-key --web
-	gh extension install github/gh-copilot --force
-	# Usage: gh copilot suggest "Undo the last commit"
-	echo -e "✅ \033[1;32mGitHub CLI is authenticated and extensions installed.\033[0m"
+	echo -e "✅ \033[1;32mGitHub CLI is authenticated.\033[0m"
 else
 	echo -e "✅ \033[1;32mGitHub CLI is already authenticated.\033[0m"
 fi

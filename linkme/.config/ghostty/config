@@ -1,4 +1,3 @@
-# title = " "
 confirm-close-surface = false
 quit-after-last-window-closed = true
 shell-integration = none
@@ -7,9 +6,15 @@ scrollback-limit = 10000000
 clipboard-read = allow
 copy-on-select = false
 window-colorspace = display-p3
-window-padding-x = 16
-window-padding-y = 8
+window-padding-x = 12
+window-padding-y = 6
 window-padding-balance = true
+# for screenshot
+# window-height = 18
+# window-width = 69
+# for regular use
+window-height = 40
+window-width = 100
 theme = Snazzy Soft
 background = #282a36
 foreground = #eff0eb
