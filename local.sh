@@ -34,7 +34,7 @@ fi
 
 # Inject secrets into files using 1Password
 if [[ ${1-} != "--yes" ]] && [[ ${1-} != "-y" ]]; then
-	read -rp $'❓ \e[1;31mDo you want to inject secrets and overwrite all files from injectme/ to $HOME? (y/n)\e[0m ' INJECTME
+	read -rp $'❓ \e[1;31mDo you want to inject secrets and overwrite all files from injectme/ to your home directory? (y/n)\e[0m ' INJECTME
 else
 	INJECTME="y"
 fi
@@ -53,20 +53,21 @@ if [[ ${INJECTME} =~ ^[Yy]$ ]]; then
 
 		# Inject the template
 		op inject --in-file "$(pwd)/${template}" --out-file "${output}" --force &>/dev/null
-		echo -e "✅ \033[1;32mInjected $(pwd)/${template} -> ${output}\033[0m"
+		echo -e "✅ \033[1;32mInjected ${template} -> ${output/#${HOME}/\~}\033[0m"
 	done
 fi
 
 # Copy all files from copyme/ to $HOME
 if [[ ${1-} != "--yes" ]] && [[ ${1-} != "-y" ]]; then
-	read -rp $'❓ \e[1;31mDo you want to copy and overwrite all files from copyme/ to $HOME? (y/n)\e[0m ' COPYME
+	read -rp $'❓ \e[1;31mDo you want to copy and overwrite all files from copyme/ to your home directory? (y/n)\e[0m ' COPYME
 else
 	COPYME="y"
 fi
 if [[ ${COPYME} =~ ^[Yy]$ ]]; then
+	echo -e "📝 \033[1;35mCopying files from copyme/ to ${HOME}...\033[0m"
 	rsync -av --exclude='.DS_Store' copyme/ "${HOME}" |
 		grep -v "building file list ... done" |
-		awk '/^$/ { exit } !/\/$/ { printf "\033[1;32m📋 Copied %s\033[0m\n", $0; }'
+		awk '/^$/ { exit } !/\/$/ { printf "\033[1;32m✅ Copied copyme/%s -> ~/%s\033[0m\n", $0, $0; }'
 	# 1Password needs the permissions to be set to 700
 	chmod 700 "${HOME}/.config/op"
 	chmod 700 "${HOME}/.config/op/plugins/used_items"
@@ -111,4 +112,68 @@ if [[ -z $(gh auth status 2>/dev/null || echo '') ]]; then
 	echo -e "✅ \033[1;32mGitHub CLI is authenticated.\033[0m"
 else
 	echo -e "✅ \033[1;32mGitHub CLI is already authenticated.\033[0m"
+fi
+
+# Set computer name
+confirm_set() {
+	while true; do
+		read -rp "$1" "$2"
+		read -rp "❓ Set to '${!2}'? (y/n) "
+		if [[ ${REPLY} =~ ^[Yy]$ ]]; then
+			break
+		fi
+	done
+}
+
+set_computer_name() {
+	local interactive=$1
+
+	local uuid
+	local serial
+	local model
+	uuid=$(system_profiler SPHardwareDataType | awk '/Hardware UUID/ {print $3}')
+	serial=$(system_profiler SPHardwareDataType | awk '/Serial Number/ {print $4}')
+	model=$(sysctl hw.model | sed 's/hw.model: //')
+
+	echo -e "🔍 \033[1;35mLooking up computer name on 1Password for ${uuid}...\033[0m"
+	local name
+	name=$(op read "op://Private/Computers/${uuid}/name" 2>/dev/null || echo '')
+	if [[ -z ${name} ]]; then
+		echo -e "🤔 \033[1;33mNew computer, who dis? (UUID: ${uuid})\033[0m"
+		if [[ ${interactive} != "true" ]]; then
+			echo -e "💡 \033[1;33mRun in interactive mode to set a name for this computer\033[0m"
+			return 0
+		fi
+		confirm_set "💻 Set the name for this computer: " name
+		echo -e "💾 \033[1;35mSaving computer name to 1Password...\033[0m"
+		op item edit --vault Private Computers "${uuid}.name[text]=${name}" &>/dev/null
+		op item edit --vault Private Computers "${uuid}.serial number[text]=${serial}" &>/dev/null
+		op item edit --vault Private Computers "${uuid}.model[text]=${model}" &>/dev/null
+		echo -e "✅ \033[1;32mComputer name set and saved to 1Password\033[0m"
+	fi
+
+	current_name=$(scutil --get ComputerName)
+	if [[ ${current_name} == "${name}" ]]; then
+		echo -e "✅ \033[1;32mComputer name is already set to '${name}'.\033[0m"
+		return 0
+	fi
+
+	echo -e "💾 \033[1;35mSetting computer name to '${name}'...\033[0m"
+	sudo scutil --set ComputerName "${name}"
+	sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "${name}"
+	# Replace spaces with underscores for host names
+	name=$(echo "${name}" | tr ' ' '_')
+	sudo scutil --set LocalHostName "${name}"
+	sudo scutil --set HostName "${name}"
+	echo -e "✅ \033[1;32mComputer name set\033[0m"
+}
+
+# Set interactive mode based on command line args
+INTERACTIVE="true"
+if [[ ${1-} == "-y" ]] || [[ ${1-} == "--yes" ]]; then
+	INTERACTIVE="false"
+fi
+
+if [[ $(uname) == "Darwin" ]]; then
+	set_computer_name "${INTERACTIVE}"
 fi

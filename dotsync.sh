@@ -15,8 +15,8 @@ function dotlink() {
 		while read -r dir; do mkdir -p "${HOME}/${dir}"; done
 	find "linkme" -type f -not -name '.DS_Store' | sed "s|^linkme/||" |
 		while read -r file; do
-			echo -e "\033[1;32m🔗 Linked $(pwd)/linkme/${file} -> ${HOME}/${file}\033[0m"
-			ln -fvns "$(pwd)/linkme/${file}" "${HOME}/${file}" &>/dev/null
+			echo -e "\033[1;32m✅ Linked linkme/${file} -> ~/${file}\033[0m"
+			ln -fvns "$(pwd)/linkme/${file}" "${HOME}/${file}" 1>/dev/null
 		done
 }
 
