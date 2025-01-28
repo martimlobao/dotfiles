@@ -62,10 +62,11 @@ set_computer_name() {
 
 	echo -e "💾 \033[1;35mSetting computer name to '${name}'...\033[0m"
 	sudo scutil --set ComputerName "${name}"
-	# Replace spaces with hyphens for LocalHostName
-	sudo scutil --set LocalHostName "$(echo "${name}" | tr ' ' '-')"
-	sudo scutil --set HostName "${name}"
 	sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "${name}"
+	# Replace spaces with underscores for host names
+	name=$(echo "${name}" | tr ' ' '_')
+	sudo scutil --set LocalHostName "${name}"
+	sudo scutil --set HostName "${name}"
 	echo -e "✅ \033[1;32mComputer name set\033[0m"
 }
 
