@@ -45,7 +45,7 @@ function c() {
 	if [[ $# -eq 0 ]]; then
 		cursor .
 	else
-		open "$@"
+		cursor "$@"
 	fi
 }
 
