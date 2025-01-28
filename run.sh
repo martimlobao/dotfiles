@@ -21,13 +21,22 @@ echo -e "\033[1;33m💻 Arch detected:\033[0m ${archname}"
 
 # Get hardware identifier
 if [[ ${os} == "Darwin" ]]; then
-	HARDWARE_UUID=$(system_profiler SPHardwareDataType | awk '/Hardware UUID/ {print $3}')
+	uuid=$(system_profiler SPHardwareDataType | awk '/Hardware UUID/ {print $3}')
+	serial=$(system_profiler SPHardwareDataType | awk '/Serial Number/ {print $4}')
+	model=$(sysctl hw.model | sed 's/hw.model: //')
 else
-	HARDWARE_UUID=$(cat /sys/class/dmi/id/product_uuid 2>/dev/null ||
+	uuid=$(cat /sys/class/dmi/id/product_uuid 2>/dev/null ||
 		cat /etc/machine-id 2>/dev/null ||
-		cat /var/lib/dbus/machine-id 2>/dev/null)
+		cat /var/lib/dbus/machine-id 2>/dev/null || echo '')
+	serial=$(cat /sys/class/dmi/id/serial_number 2>/dev/null ||
+		cat /sys/devices/virtual/dmi/id/product_serial 2>/dev/null ||
+		cat /sys/devices/virtual/dmi/id/product_uuid 2>/dev/null || echo '')
+	model=$(cat /sys/devices/virtual/dmi/id/product_name 2>/dev/null ||
+		cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null || echo '')
 fi
-echo -e "\033[1;33m💻 Hardware UUID:\033[0m ${HARDWARE_UUID}"
+echo -e "\033[1;33m💻 Hardware UUID:\033[0m ${uuid}"
+echo -e "\033[1;33m💻 Serial Number:\033[0m ${serial:-N/A}"
+echo -e "\033[1;33m💻 Model:\033[0m         ${model:-N/A}"
 
 ###############################################################################
 # Install Homebrew                                                            #
@@ -62,6 +71,7 @@ fi
 # macOS preferences                                                           #
 ###############################################################################
 sleep 1
+echo
 echo -e "\033[1;33m🚀 Running macos.sh...\033[0m"
 ./macos.sh "${1-}"
 
