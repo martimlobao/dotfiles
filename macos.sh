@@ -60,6 +60,12 @@ set_computer_name() {
 		echo -e "✅ \033[1;32mComputer name set and saved to 1Password\033[0m"
 	fi
 
+	current_name=$(scutil --get ComputerName)
+	if [[ ${current_name} == "${name}" ]]; then
+		echo -e "✅ \033[1;32mComputer name is already set to '${name}'.\033[0m"
+		return 0
+	fi
+
 	echo -e "💾 \033[1;35mSetting computer name to '${name}'...\033[0m"
 	sudo scutil --set ComputerName "${name}"
 	sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "${name}"
