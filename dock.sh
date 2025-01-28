@@ -145,6 +145,8 @@ function clear_dock {
 function reset_launchpad {
 	# resets Launchpad so that all apps appear in their default order
 	defaults write com.apple.dock ResetLaunchPad -bool true
+	# this is needed on macOS 15.2 and above
+	rm -rf /private"$(getconf DARWIN_USER_DIR)"com.apple.dock.launchpad
 }
 
 ###############################################################################
