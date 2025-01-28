@@ -32,6 +32,31 @@ else
 	exit 1
 fi
 
+# Inject secrets into files using 1Password
+if [[ ${1-} != "--yes" ]] && [[ ${1-} != "-y" ]]; then
+	read -rp $'❓ \e[1;31mDo you want to inject secrets and overwrite all files from injectme/ to $HOME? (y/n)\e[0m ' INJECTME
+else
+	INJECTME="y"
+fi
+if [[ ${INJECTME} =~ ^[Yy]$ ]]; then
+	echo -e "💉 \033[1;35mInjecting secrets into files using 1Password...\033[0m"
+	find injectme -type f -name "*.tpl" | while read -r template; do
+		# Get the output path by:
+		# 1. Removing 'injectme/' prefix
+		# 2. Removing '.tpl' suffix
+		# 3. Prepending $HOME
+		output="${HOME}/${template#injectme/}"
+		output="${output%.tpl}"
+
+		# Create the output directory if it doesn't exist
+		mkdir -p "$(dirname "${output}")"
+
+		# Inject the template
+		op inject --in-file "$(pwd)/${template}" --out-file "${output}" --force &>/dev/null
+		echo -e "✅ \033[1;32mInjected $(pwd)/${template} -> ${output}\033[0m"
+	done
+fi
+
 # Copy all files from copyme/ to $HOME
 if [[ ${1-} != "--yes" ]] && [[ ${1-} != "-y" ]]; then
 	read -rp $'❓ \e[1;31mDo you want to copy and overwrite all files from copyme/ to $HOME? (y/n)\e[0m ' COPYME
