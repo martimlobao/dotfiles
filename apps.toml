@@ -33,7 +33,7 @@ yamllint = "formula" # Linter for YAML files
 [work]
 aws-sso-cli = "formula" # Securely manage AWS API credentials using AWS SSO
 awscli = "formula" # Official Amazon AWS command-line interface
-tunnelblick = "cask" # Free and open-source OpenVPN client
+openvpn-connect = "cask" # OpenVPN Connect client
 
 [fonts]
 font-doto = "cask" # Doto
@@ -52,7 +52,7 @@ font-source-sans-3 = "cask" # Source Sans 3
 minecraft = "cask" # Sandbox construction video game
 sonos = "cask" # Control your Sonos system
 spotify = "cask" # Music streaming service
-# 1048524688 = "mas" # Delta - Game Emulator: All-in-One GBA4iOS Successor
+# 1048524688 = "mas" # Delta - Game Emulator: All-in-One GBA4iOS Successor [not working, see: https://github.com/mas-cli/mas/issues/321]
 
 [productivity]
 chatgpt = "cask" # OpenAI's official ChatGPT desktop app
@@ -114,6 +114,7 @@ marimo = "uv" # Reactive notebook for Python [Jupyter alternative]
 mypy = "uv" # Experimental optional static type checker for Python
 "pantsbuild/tap/pants" = "cask" # Fast, scalable, user-friendly build system for codebases of all sizes
 poetry = "uv" # Python package management tool
+pylint = "uv" # It's not just a linter that annoys you!
 ruff = "uv" # Extremely fast Python linter, written in Rust
 sqlfluff = "uv" # SQL linter and auto-formatter for Humans
 
@@ -126,7 +127,6 @@ temurin = "cask" # JDK from the Eclipse Foundation (Adoptium) [simpler setup tha
 ack = "formula" # Search tool like grep, but optimized for programmers
 bat = "formula" # Clone of cat(1) with syntax highlighting and Git integration
 exiftool = "formula" # Perl lib for reading and writing EXIF metadata
-fastfetch = "formula" # Like neofetch, but much faster because written mostly in C
 ffmpeg = "formula" # Play, record, convert, and stream audio and video
 httpie = "formula" # User-friendly cURL replacement (command-line HTTP client)
 imagemagick = "formula" # Tools and libraries to manipulate images in many formats
@@ -139,10 +139,13 @@ tree = "formula" # Display directories as trees (with optional color/HTML output
 wget = "formula" # Internet file retriever
 yq = "formula" # Process YAML, JSON, XML, CSV and properties documents from the CLI
 yt-dlp = "formula" # Feature-rich command-line audio/video downloader
-# Fun stuff
+
+[fun]
+fastfetch = "formula" # Like neofetch, but much faster because written mostly in C
 lolcat = "formula" # Rainbows and unicorns in your console!
 lucky-commit = "formula" # Customize your git commit hashes!
-# Newer versions of system binaries
+
+[system-binaries]
 bash = "formula" # Bourne-Again SHell, a UNIX command interpreter
 git = "formula" # Distributed revision control system
 grep = "formula" # GNU grep, egrep and fgrep [command: ggrep]
