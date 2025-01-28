@@ -25,7 +25,7 @@ fi
 confirm_set() {
 	while true; do
 		read -rp "$1" "$2"
-		read -rp "Set to '${!2}'? (y/n) "
+		read -rp "❓ Set to '${!2}'? (y/n) "
 		if [[ ${REPLY} =~ ^[Yy]$ ]]; then
 			break
 		fi
@@ -33,15 +33,46 @@ confirm_set() {
 }
 
 # Set computer name
-if [[ ${1-} == "-y" ]] || [[ ${1-} == "--yes" ]]; then
-	echo -e "⏩ \033[1;34mRunning in non-interactive mode, skipping setting computer name.\033[0m"
-else
-	read -rp $'❓ \e[1;31mDo you want to (re)set the name for this computer? (currently set to '"$(scutil --get ComputerName)"') (y/n)'"$(tput sgr0)"' ' COMPUTERNAME
-	if [[ ${COMPUTERNAME} =~ ^[Yy]$ ]]; then
-		confirm_set "💻  Set the name for this computer: " COMPUTERNAME
-		sudo scutil --set ComputerName "${COMPUTERNAME}"
-		sudo scutil --set HostName "${COMPUTERNAME}"
-		sudo scutil --set LocalHostName "${COMPUTERNAME}"
-		sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "${COMPUTERNAME}"
+set_computer_name() {
+	local interactive=$1
+
+	local uuid
+	local serial
+	local model
+	uuid=$(system_profiler SPHardwareDataType | awk '/Hardware UUID/ {print $3}')
+	serial=$(system_profiler SPHardwareDataType | awk '/Serial Number/ {print $4}')
+	model=$(sysctl hw.model | sed 's/hw.model: //')
+
+	echo -e "🔍 \033[1;35mLooking up computer name on 1Password for ${uuid}...\033[0m"
+	local name
+	name=$(op read "op://Private/Computers/${uuid}/name" 2>/dev/null || echo '')
+	if [[ -z ${name} ]]; then
+		echo -e "🤔 \033[1;33mNew computer, who dis? (UUID: ${uuid})\033[0m"
+		if [[ ${interactive} != "true" ]]; then
+			echo -e "💡 \033[1;33mRun in interactive mode to set a name for this computer\033[0m"
+			return 0
+		fi
+		confirm_set "💻 Set the name for this computer: " name
+		echo -e "💾 \033[1;35mSaving computer name to 1Password...\033[0m"
+		op item edit --vault Private Computers "${uuid}.name[text]=${name}" &>/dev/null
+		op item edit --vault Private Computers "${uuid}.serial number[text]=${serial}" &>/dev/null
+		op item edit --vault Private Computers "${uuid}.model[text]=${model}" &>/dev/null
+		echo -e "✅ \033[1;32mComputer name set and saved to 1Password\033[0m"
 	fi
+
+	echo -e "💾 \033[1;35mSetting computer name to '${name}'...\033[0m"
+	sudo scutil --set ComputerName "${name}"
+	# Replace spaces with hyphens for LocalHostName
+	sudo scutil --set LocalHostName "$(echo "${name}" | tr ' ' '-')"
+	sudo scutil --set HostName "${name}"
+	sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "${name}"
+	echo -e "✅ \033[1;32mComputer name set\033[0m"
+}
+
+# Set interactive mode based on command line args
+INTERACTIVE="true"
+if [[ ${1-} == "-y" ]] || [[ ${1-} == "--yes" ]]; then
+	INTERACTIVE="false"
 fi
+
+set_computer_name "${INTERACTIVE}"
