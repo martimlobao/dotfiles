@@ -19,6 +19,16 @@ echo -e "\033[1;33m💻 OS detected:\033[0m   ${os}"
 archname="$(arch)"
 echo -e "\033[1;33m💻 Arch detected:\033[0m ${archname}"
 
+# Get hardware identifier
+if [[ ${os} == "Darwin" ]]; then
+	HARDWARE_UUID=$(system_profiler SPHardwareDataType | awk '/Hardware UUID/ {print $3}')
+else
+	HARDWARE_UUID=$(cat /sys/class/dmi/id/product_uuid 2>/dev/null ||
+		cat /etc/machine-id 2>/dev/null ||
+		cat /var/lib/dbus/machine-id 2>/dev/null)
+fi
+echo -e "\033[1;33m💻 Hardware UUID:\033[0m ${HARDWARE_UUID}"
+
 ###############################################################################
 # Install Homebrew                                                            #
 ###############################################################################

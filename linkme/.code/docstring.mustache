@@ -1,0 +1,42 @@
+{{summaryPlaceholder}}
+
+{{#placeholder}}[extended_summary]{{/placeholder}}
+
+{{#parametersExist}}
+Args:
+{{#args}}
+    {{var}} ({{typePlaceholder}}): {{descriptionPlaceholder}}
+{{/args}}
+{{#kwargs}}
+    {{var}} ({{typePlaceholder}}, optional): {{descriptionPlaceholder}}. Defaults to {{&default}}.
+{{/kwargs}}
+{{/parametersExist}}
+
+{{#returnsExist}}
+Returns:
+{{#returns}}
+    {{typePlaceholder}}: {{descriptionPlaceholder}}
+{{/returns}}
+{{/returnsExist}}
+
+{{#exceptionsExist}}
+Raises:
+{{#exceptions}}
+    {{type}}: {{descriptionPlaceholder}}
+{{/exceptions}}
+{{/exceptionsExist}}
+
+Examples:
+    >>> {{name}}({{#args}}{{var}}, {{/args}}{{#kwargs}}{{var}}, {{/kwargs}})
+    {{#placeholder}}[output]{{/placeholder}}
+    >>> {{name}}({{#args}}{{var}}, {{/args}}{{#kwargs}}{{var}}, {{/kwargs}})
+    {{#placeholder}}[output]{{/placeholder}}
+
+Notes:
+    {{#placeholder}}[notes]{{/placeholder}}
+
+TODO (D-{{#placeholder}}[ticket_number]{{/placeholder}}):
+    {{#placeholder}}[todo]{{/placeholder}}
+
+.. {{#placeholder}}[reference_name]{{/placeholder}}:
+    {{#placeholder}}[url]{{/placeholder}}
