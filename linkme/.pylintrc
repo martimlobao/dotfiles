@@ -73,7 +73,7 @@ ignored-modules=
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
 # avoid hangs.
-jobs=1
+jobs=0
 
 # Control the amount of potential inferred values when inferring a single
 # object. This can help the performance when dealing with large functions or
@@ -93,7 +93,7 @@ prefer-stubs=no
 
 # Minimum Python version to use for version dependent checks. Will default to
 # the version used to run pylint.
-py-version=3.13
+py-version=3.11
 
 # Discover python modules and packages in the file system subtree.
 recursive=no
@@ -195,7 +195,8 @@ good-names=i,
            k,
            ex,
            Run,
-           _
+           _,
+           db
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted
@@ -290,10 +291,10 @@ exclude-too-few-public-methods=
 ignored-parents=
 
 # Maximum number of arguments for function / method.
-max-args=5
+max-args=10
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=7
+max-attributes=15
 
 # Maximum number of boolean expressions in an if statement (see R0916).
 max-bool-expr=5
@@ -302,7 +303,7 @@ max-bool-expr=5
 max-branches=12
 
 # Maximum number of locals for function / method body.
-max-locals=15
+max-locals=25
 
 # Maximum number of parents for a class (see R0901).
 max-parents=7
@@ -311,13 +312,13 @@ max-parents=7
 max-positional-arguments=5
 
 # Maximum number of public methods for a class (see R0904).
-max-public-methods=20
+max-public-methods=25
 
 # Maximum number of return / yield for function / method body.
-max-returns=6
+max-returns=10
 
 # Maximum number of statements in function / method body.
-max-statements=50
+max-statements=100
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=2
@@ -345,7 +346,7 @@ indent-after-paren=4
 indent-string='    '
 
 # Maximum number of characters on a single line.
-max-line-length=100
+max-line-length=119
 
 # Maximum number of lines in a module.
 max-module-lines=1000
@@ -402,7 +403,7 @@ preferred-modules=
 
 # The type of string formatting that logging methods do. `old` means using %
 # formatting, `new` is for `{}` formatting.
-logging-format-style=old
+logging-format-style=new
 
 # Logging modules to check that the string format arguments are in logging
 # function parameter format.
@@ -429,16 +430,24 @@ confidence=HIGH,
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=raw-checker-failed,
-        bad-inline-option,
-        locally-disabled,
-        file-ignored,
-        suppressed-message,
-        useless-suppression,
-        deprecated-pragma,
-        use-symbolic-message-instead,
-        use-implicit-booleaness-not-comparison-to-string,
-        use-implicit-booleaness-not-comparison-to-zero
+disable=missing-module-docstring,  # C0114
+        missing-class-docstring,  # C0115
+        missing-function-docstring,  # C0116
+        duplicate-code,  # R0801
+        too-many-ancestors, # R0901
+        too-many-instance-attributes, # R0902
+        too-few-public-methods,  # R0903
+        too-many-public-methods, # R0904
+        too-many-return-statements,  # R0911
+        too-many-branches,  # R0912
+        too-many-arguments, # R0913
+        too-many-locals, # R0914
+        too-many-statements,  # R0915
+        too-many-boolean-expressions,  # R0916
+        too-many-nested-blocks,  # R1702
+        use-dict-literal, # R1735
+        fixme,  # W0511
+        logging-fstring-interpolation,  # W1202
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
