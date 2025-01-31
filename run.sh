@@ -14,10 +14,10 @@ if [[ ${os} != 'Darwin' ]] && [[ ${os} != 'Linux' ]]; then
 	echo -e "❌ \033[1;31mError: Unsupported OS: ${os}\033[0m"
 	exit 1
 fi
-echo -e "\033[1;33m💻 OS detected:\033[0m   ${os}"
+echo -e "💻 \033[1;33mOS detected:\033[0m   ${os}"
 
 archname="$(arch)"
-echo -e "\033[1;33m💻 Arch detected:\033[0m ${archname}"
+echo -e "💻 \033[1;33mArch detected:\033[0m ${archname}"
 
 # Get hardware identifier
 if [[ ${os} == "Darwin" ]]; then
@@ -34,15 +34,15 @@ else
 	model=$(cat /sys/devices/virtual/dmi/id/product_name 2>/dev/null ||
 		cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null || echo '')
 fi
-echo -e "\033[1;33m💻 Hardware UUID:\033[0m ${uuid}"
-echo -e "\033[1;33m💻 Serial Number:\033[0m ${serial:-N/A}"
-echo -e "\033[1;33m💻 Model:\033[0m         ${model:-N/A}"
+echo -e "💻 \033[1;33mHardware UUID:\033[0m ${uuid}"
+echo -e "💻 \033[1;33mSerial Number:\033[0m ${serial:-N/A}"
+echo -e "💻 \033[1;33mModel:\033[0m         ${model:-N/A}"
 
 ###############################################################################
 # Install Homebrew                                                            #
 ###############################################################################
 echo
-echo -e "\033[1;33m🍺 Installing Homebrew...\033[0m"
+echo -e "🍺 \033[1;33mInstalling Homebrew...\033[0m"
 if ! command -v brew &>/dev/null; then
 	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 	echo -e "🍻 \033[1;32mHomebrew installed.\033[0m"
@@ -54,7 +54,7 @@ fi
 # Install dotfiles                                                            #
 ###############################################################################
 echo
-echo -e "\033[1;33m🚀 Running dotsync.sh...\033[0m"
+echo -e "🚀 \033[1;33mRunning dotsync.sh...\033[0m"
 sleep 1
 ./dotsync.sh "${1-}"
 
@@ -63,7 +63,7 @@ sleep 1
 ###############################################################################
 if [[ ${os} == "Linux" ]]; then
 	echo
-	echo -e "\033[1;33m ⛔️ Warning: Linux is not supported after this point.\033[0m"
+	echo -e "⛔️ \033[1;33mWarning: Linux is not supported after this point.\033[0m"
 	exit 0
 fi
 
@@ -72,7 +72,7 @@ fi
 ###############################################################################
 sleep 1
 echo
-echo -e "\033[1;33m🚀 Running macos.sh...\033[0m"
+echo -e "🚀 \033[1;33mRunning macos.sh...\033[0m"
 ./macos.sh "${1-}"
 
 ###############################################################################
@@ -80,7 +80,7 @@ echo -e "\033[1;33m🚀 Running macos.sh...\033[0m"
 ###############################################################################
 if [[ ${CI-} == "true" ]]; then
 	echo
-	echo -e "\033[1;33m ⛔️ Warning: macOS is not supported in CI after this point.\033[0m"
+	echo -e "⛔️ \033[1;33mWarning: macOS is not supported in CI after this point.\033[0m"
 	exit 0
 fi
 
@@ -88,11 +88,11 @@ fi
 # Install apps and software                                                   #
 ###############################################################################
 echo
-echo -e "\033[1;33m🚀 Running install.sh...\033[0m"
+echo -e "🚀 \033[1;33mRunning install.sh...\033[0m"
 sleep 1
 ./install.sh "${1-}"
 echo
-echo -e "\033[1;33m🚀 Running dock.sh...\033[0m"
+echo -e "🚀 \033[1;33mRunning dock.sh...\033[0m"
 sleep 1
 ./dock.sh
 
@@ -100,9 +100,9 @@ sleep 1
 # Local settings and variables                                                #
 ###############################################################################
 echo
-echo -e "\033[1;33m🚀 Running local.sh...\033[0m"
+echo -e "🚀 \033[1;33mRunning local.sh...\033[0m"
 sleep 1
 ./local.sh "${1-}"
 
 echo
-echo -e "\033[1;32m🎉 Setup complete!\033[0m"
+echo -e "🎉 \033[1;32mSetup complete!\033[0m"
