@@ -28,10 +28,10 @@ function dotunlink() {
 
 # Copy all files from copyme/ to $HOME
 if [[ ${1-} == "unlink" ]]; then
-	echo -e "\033[1;34m📋 Restoring dotfiles...\033[0m"
+	echo -e "📋 \033[1;34mRestoring dotfiles...\033[0m"
 	dotunlink
 else
-	echo -e "\033[1;34m🔗 Linking dotfiles...\033[0m"
+	echo -e "🔗 \033[1;34mLinking dotfiles...\033[0m"
 	if [[ ${1-} != "-y" ]] && [[ ${1-} != "--yes" ]]; then
 		read -rp $'❓ \e[1;31mOverwrite existing dotfiles with symlinks to stored dotfiles? (y/n)\e[0m ' LINK
 	else

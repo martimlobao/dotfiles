@@ -20,7 +20,7 @@ fi
 
 # Ensure yq is installed to parse the apps.toml file
 if ! command -v yq &>/dev/null; then
-	echo -e "⬇️ \033[1;34mInstalling yq to parse apps.toml...\033[0m"
+	echo -e "⬇️  \033[1;34mInstalling yq to parse apps.toml...\033[0m" # needs 2 spaces after emoji
 	brew install yq
 fi
 
@@ -99,7 +99,7 @@ install() {
 	esac
 
 	if ! ${is_installed}; then
-		echo -e "⬇️ \033[1;34mInstalling ${app_name}...\033[0m"
+		echo -e "⬇️  \033[1;34mInstalling ${app_name}...\033[0m" # needs 2 spaces after emoji
 		if ! ${cmd} "${app}"; then
 			echo -e "❌ \033[1;31mFailed to install ${app_name}. Please check manually.\033[0m"
 			return 1
@@ -112,7 +112,6 @@ install() {
 brew_sync() {
 	local toml_apps
 	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "cask" or .value == "formula") | .key)) | flatten | .[]' "${apps_toml}")
-	toml_apps=$(echo "${toml_apps}" | sed -E 's|.*/||') # get name from tapped apps (slashes in name)
 
 	local missing_formulae
 	missing_formulae=$(comm -23 <(brew leaves | sort) <(echo "${toml_apps}" | sort))
@@ -134,7 +133,7 @@ brew_sync() {
 		fi
 		if [[ ${choice} == "y" ]]; then
 			for app in ${missing_apps}; do
-				echo -e "🗑️ \033[1;35mUninstalling ${app}...\033[0m"
+				echo -e "🗑️  \033[1;35mUninstalling ${app}...\033[0m" # needs 2 spaces after emoji
 				brew uninstall --zap "${app}"
 				echo -e "🚮 \033[1;35mUninstalled ${app}.\033[0m"
 			done

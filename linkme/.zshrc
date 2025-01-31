@@ -6,7 +6,7 @@ export ZSH="$HOME/.oh-my-zsh"
 
 # Install oh-my-zsh if it isn't installed yet
 if [ ! -d "$ZSH" ]; then
-	echo -e "⬇️  \033[1;34mInstalling oh-my-zsh...\033[0m"
+	echo -e "⬇️  \033[1;34mInstalling oh-my-zsh...\033[0m" # needs 2 spaces after emoji
 	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
 
