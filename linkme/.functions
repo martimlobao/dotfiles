@@ -83,6 +83,18 @@ function weather {
 	curl -s "wttr.in/${1-lisbon}?format=3"
 }
 
+# Animated globe ASCII art
+function animate() {
+	local animation=${1:-movglobe}
+	local speed=${2:-9600}
+	# More examples: http://artscene.textfiles.com/vt100/
+	curl -s "http://artscene.textfiles.com/vt100/${animation}.vt" | pv -q -L "${speed}"
+}
+
+function starwars() {
+	telnet towel.blinkenlights.nl
+}
+
 # Cursor jump
 function jc {
 	if [[ -z $1 || $1 == "." ]]; then
