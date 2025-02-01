@@ -1,0 +1,45 @@
+// Place your key bindings in this file to override the defaults
+[
+  // {
+  //     "key": "ctrl+tab",
+  //     "command": "workbench.action.nextEditor"
+  // },
+  // {
+  //     "key": "ctrl+shift+tab",
+  //     "command": "workbench.action.previousEditor"
+  // },
+  {
+    "command": "workbench.action.terminal.clear",
+    "key": "cmd+k",
+    "when": "terminalFocus"
+  },
+  {
+    "command": "editor.action.inlineSuggest.commit",
+    "key": "tab",
+    "when": "inlineSuggestionVisible && !editorTabMovesFocus && !inlineSuggestionHasIndentation"
+  },
+  {
+    "command": "-editor.action.inlineSuggest.commit",
+    "key": "tab",
+    "when": "inlineSuggestionVisible && !editorTabMovesFocus && !inlineSuggestionHasIndentation"
+  },
+  {
+    "command": "-markdown.extension.checkTaskList",
+    "key": "alt+c",
+    "when": "editorTextFocus && editorLangId =~ /^markdown$|^rmd$|^quarto$/"
+  },
+  {
+    "command": "-gitlens.showQuickCommitFileDetails",
+    "key": "alt+c",
+    "when": "editorTextFocus && !gitlens:disabled && config.gitlens.keymap == 'alternate'"
+  },
+  {
+    "command": "-aws.codeWhisperer",
+    "key": "alt+c",
+    "when": "editorTextFocus"
+  },
+  {
+    "command": "-aichat.insertselectionintochat",
+    "key": "shift+cmd+l"
+  }
+]

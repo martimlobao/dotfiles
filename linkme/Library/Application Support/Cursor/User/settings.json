@@ -1,0 +1,207 @@
+{
+  "[css]": {
+    "editor.defaultFormatter": "vscode.css-language-features"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "yzhang.markdown-all-in-one",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "other": "off",
+      "strings": "off"
+    },
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 100
+  },
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnType": true
+  },
+  "[sql]": {
+    "editor.defaultFormatter": "dorzey.vscode-sqlfluff"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "autoDocstring.customTemplatePath": "~/.config/code/docstring.mustache",
+  "autoDocstring.docstringFormat": "google",
+  "breadcrumbs.enabled": true,
+  "clock.dateFormat": "ddd, d mmm, HH:MM",
+  "code-runner.executorMap": {
+    "python": "python3"
+  },
+  "cSpell.userWords": [
+    "Databricks",
+    "dataset",
+    "dedupe",
+    "docstring",
+    "falsey",
+    "lxml",
+    "numpy",
+    "pulumi",
+    "pylint",
+    "pytest",
+    "reputational",
+    "serializable",
+    "sklearn",
+    "spammy",
+    "standardizer",
+    "standardizers",
+    "strftime",
+    "strptime",
+    "submodule",
+    "submodules",
+    "tzinfo",
+    "unenroll",
+    "unenrollments",
+    "unhashable",
+    "unparsable",
+    "untrusted"
+  ],
+  "editor.acceptSuggestionOnEnter": "on",
+  "editor.accessibilitySupport": "off",
+  "editor.columnSelection": false,
+  "editor.cursorBlinking": "phase",
+  "editor.fontFamily": "Source Code Pro, Menlo, Consolas, DejaVu Sans Mono, monospace",
+  "editor.fontSize": 12,
+  "editor.fontWeight": "500",
+  "editor.inlineSuggest.enabled": true,
+  "editor.largeFileOptimizations": false,
+  "editor.minimap.maxColumn": 100,
+  "editor.minimap.showSlider": "always",
+  "editor.multiCursorModifier": "ctrlCmd",
+  "editor.renderWhitespace": "all",
+  "editor.rulers": [99, 119],
+  "editor.snippetSuggestions": "top",
+  "editor.stickyScroll.enabled": true,
+  "editor.suggest.preview": true,
+  "editor.suggest.showMethods": true,
+  "editor.suggestSelection": "first",
+  "eslint.format.enable": true,
+  "eslint.run": "onType",
+  "evenBetterToml.formatter.alignComments": false,
+  "evenBetterToml.formatter.alignEntries": false,
+  "evenBetterToml.formatter.allowedBlankLines": 1,
+  "evenBetterToml.formatter.arrayAutoCollapse": true,
+  "evenBetterToml.formatter.arrayTrailingComma": true,
+  "evenBetterToml.formatter.columnWidth": 119,
+  "evenBetterToml.formatter.trailingNewline": false,
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+  "files.associations": {
+    "*.jsonl": "json",
+    "*.plist": "plist",
+    "*.py": "python",
+    "*.sql": "sql",
+    "BUILD": "python",
+    "PANTS": "python",
+    "PANTS.root": "python"
+  },
+  "files.autoSave": "off",
+  "files.exclude": {
+    "**/.git": false
+  },
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "git.autofetch": true,
+  "github.copilot.editor.enableAutoCompletions": true,
+  "github.copilot.enable": {
+    "*": true,
+    "markdown": true,
+    "plaintext": true,
+    "yaml": true
+  },
+  "githubPullRequests.pullBranch": "never",
+  "githubPullRequests.terminalLinksHandler": "github",
+  "go.toolsManagement.autoUpdate": true,
+  "json.schemas": [],
+  "markdownlint.config": {
+    "MD024": {
+      "siblings_only": true
+    }
+  },
+  "notebook.cellToolbarLocation": {
+    "default": "right",
+    "jupyter-notebook": "left"
+  },
+  "notebook.output.textLineLimit": 100,
+  "powermode.enabled": false,
+  "Prettier-SQL.expressionWidth": 100,
+  "Prettier-SQL.keywordCase": "upper",
+  "Prettier-SQL.SQLFlavourOverride": "snowflake",
+  "python.languageServer": "Pylance",
+  "python.terminal.activateEnvironment": false,
+  "redhat.telemetry.enabled": true,
+  "rewrap.wrappingColumn": 79,
+  "snowflake.connectionsConfigFile": "~/.snowflake/connections.toml",
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.env.osx": {
+    "FIG_NEW_SESSION": "1"
+  },
+  "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+  "window.autoDetectColorScheme": true,
+  "workbench.colorCustomizations": {
+    "[Andromeda Colorizer]": {
+      "activityBar.background": "#1e1f29",
+      "editor.background": "#22242e",
+      "editorGroupHeader.noTabsBackground": "#16171e",
+      "editorGroupHeader.tabsBackground": "#282a36",
+      "input.background": "#1e1f29",
+      "list.hoverBackground": "#22242e",
+      "list.inactiveSelectionBackground": "#1e1f29",
+      "quickInput.background": "#282a36",
+      "settings.checkboxBackground": "#1e1f29",
+      "settings.dropdownBackground": "#1e1f29",
+      "settings.numberInputBackground": "#1e1f29",
+      "settings.textInputBackground": "#1e1f29",
+      "sideBar.background": "#282a36",
+      "sideBarSectionHeader.background": "#1e1f29",
+      "statusBar.background": "#282a36",
+      "tab.inactiveBackground": "#2d2f3c",
+      "titleBar.activeBackground": "#282a36"
+    },
+    "terminal.ansiBlack": "#282a36",
+    "terminal.ansiBlue": "#57c7ff",
+    "terminal.ansiBrightBlack": "#686868",
+    "terminal.ansiBrightBlue": "#57c7ff",
+    "terminal.ansiBrightCyan": "#9aedfe",
+    "terminal.ansiBrightGreen": "#5af78e",
+    "terminal.ansiBrightMagenta": "#ff6ac1",
+    "terminal.ansiBrightRed": "#ff5c57",
+    "terminal.ansiBrightWhite": "#eff0eb",
+    "terminal.ansiBrightYellow": "#f3f99d",
+    "terminal.ansiCyan": "#9aedfe",
+    "terminal.ansiGreen": "#5af78e",
+    "terminal.ansiMagenta": "#ff6ac1",
+    "terminal.ansiRed": "#ff5c57",
+    "terminal.ansiWhite": "#f1f1f0",
+    "terminal.ansiYellow": "#f3f99d",
+    "terminal.foreground": "#eff0eb",
+    "terminal.selectionBackground": "#97979b33",
+    "terminalCursor.background": "#282a36",
+    "terminalCursor.foreground": "#97979b"
+  },
+  "workbench.colorTheme": "Andromeda Colorizer",
+  "workbench.editor.pinnedTabSizing": "compact",
+  "workbench.editorAssociations": {
+    "*.ipynb": "jupyter-notebook",
+    "*.plist": "default"
+  },
+  "workbench.preferredDarkColorTheme": "Andromeda Colorizer",
+  "workbench.preferredLightColorTheme": "Quiet Light",
+  "workbench.statusBar.visible": true,
+  "yaml.format.enable": true,
+  "yaml.schemas": {}
+}

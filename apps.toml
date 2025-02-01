@@ -24,7 +24,6 @@ redis = "formula" # Persistent key-value database, with built-in net interface
 shellcheck = "formula" # Static analysis and lint tool, for (ba)sh scripts
 shfmt = "formula" # Autoformat shell script source code
 trunk-io = "cask" # Developer experience toolkit used to check, test, merge, and monitor code
-visual-studio-code = "cask" # Open-source code editor
 yamllint = "formula" # Linter for YAML files
 
 [work]

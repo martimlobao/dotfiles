@@ -16,7 +16,7 @@ function dotlink() {
 	find "linkme" -type f -not -name '.DS_Store' | sed "s|^linkme/||" |
 		while read -r file; do
 			echo -e "\033[1;32m✅ Linked linkme/${file} -> ~/${file}\033[0m"
-			ln -fvns "$(pwd)/linkme/${file}" "${HOME}/${file}" 1>/dev/null
+			ln -fvns "${root}/linkme/${file}" "${HOME}/${file}" 1>/dev/null
 		done
 }
 

@@ -52,7 +52,7 @@ if [[ ${INJECTME} =~ ^[Yy]$ ]]; then
 		mkdir -p "$(dirname "${output}")"
 
 		# Inject the template
-		op inject --in-file "$(pwd)/${template}" --out-file "${output}" --force &>/dev/null
+		op inject --in-file "${root}/${template}" --out-file "${output}" --force &>/dev/null
 		echo -e "✅ \033[1;32mInjected ${template} -> ${output/#${HOME}/\~}\033[0m"
 	done
 fi
