@@ -5,9 +5,11 @@
 export ZSH="$HOME/.oh-my-zsh"
 
 # Install oh-my-zsh if it isn't installed yet
-if [ ! -d "$ZSH" ]; then
+if [ ! -f "$ZSH/oh-my-zsh.sh" ]; then
 	echo -e "⬇️  \033[1;34mInstalling oh-my-zsh...\033[0m" # needs 2 spaces after emoji
-	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+	echo -e "❗️  \033[1;31mDeleting ${ZSH}, please sync dotfiles after finishing.\033[0m"
+	rm -r $ZSH
+	ZSH= sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
 
 # Uncomment the following line to use case-sensitive completion.
