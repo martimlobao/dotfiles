@@ -14,7 +14,13 @@ echo -e "🔑 \033[1;34mSetting local settings and variables...\033[0m"
 
 # ensure signed in to 1Password
 echo -e "🔐 \033[1;35mSigning in to 1Password...\033[0m"
-op signin
+if [[ -z $(op account get) ]]; then
+	eval $(op account add --address my.1password.com)
+	eval $(op signin --help)
+	echo "Also set up SSH Agent"
+	open /Applications/1Password.app
+fi
+eval $(op signin)
 
 # Set up .gitconfig.private
 echo -e "📝 \033[1;35mSetting up .gitconfig.private...\033[0m"
