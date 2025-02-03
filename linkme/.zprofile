@@ -5,7 +5,12 @@ fi
 
 # Homebrew on macOS or Linux
 if [[ "$(uname)" == "Darwin" ]]; then
-	eval "$(/opt/homebrew/bin/brew shellenv)"
+	if [[ -f /opt/homebrew/bin/brew ]]; then
+		eval "$(/opt/homebrew/bin/brew shellenv)"
+	else
+		# for old versions of macOS
+		eval "$(/usr/local/bin/brew shellenv)"
+	fi
 else
 	eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi

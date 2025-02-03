@@ -5,9 +5,14 @@
 export ZSH="$HOME/.oh-my-zsh"
 
 # Install oh-my-zsh if it isn't installed yet
-if [ ! -d "$ZSH" ]; then
+if [ ! -f "$ZSH/oh-my-zsh.sh" ]; then
 	echo -e "⬇️  \033[1;34mInstalling oh-my-zsh...\033[0m" # needs 2 spaces after emoji
-	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+	if [ -d "$ZSH" ]; then
+		echo -e "❗️ \033[1;31mMoving ${ZSH} to ${ZSH}.bak, please sync dotfiles after finishing.\033[0m"
+		cp -r $ZSH $ZSH.bak
+		rm -rf $ZSH
+	fi
+	ZSH= sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
 
 # Uncomment the following line to use case-sensitive completion.
@@ -38,7 +43,6 @@ precmd() {
 	printf '\033]0;%s\007' "${FOLDER}"
 }
 
-
 # Uncomment the following line to enable command auto-correction.
 # ENABLE_CORRECTION="true"
 
@@ -64,10 +68,6 @@ HIST_STAMPS="yyyy-mm-dd"
 # Would you like to use another custom folder than $ZSH/custom?
 ZSH_CUSTOM=$ZSH/custom
 
-# Activate Homebrew-installed plugins
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
@@ -79,9 +79,11 @@ plugins=(
 	autojump
 	git
 	thefuck
-	zsh-autosuggestions
-	zsh-syntax-highlighting
 )
+
+# Activate Homebrew-installed plugins
+source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 source $ZSH/oh-my-zsh.sh
 

@@ -112,6 +112,9 @@ install() {
 brew_sync() {
 	local toml_apps
 	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "cask" or .value == "formula") | .key)) | flatten | .[]' "${apps_toml}")
+	toml_apps_without_taps=$(echo "${toml_apps}" | sed -E 's|.*/||') # get name from tapped apps (slashes in name)
+	# combine toml_apps_without_taps with toml_apps
+	toml_apps=$(echo -e "${toml_apps_without_taps}\n${toml_apps}" | sort -u)
 
 	local missing_formulae
 	missing_formulae=$(comm -23 <(brew leaves | sort) <(echo "${toml_apps}" | sort))
