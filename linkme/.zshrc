@@ -74,18 +74,29 @@ ZSH_CUSTOM=$ZSH/custom
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-	1password
 	auto-notify
 	autojump
 	git
 	thefuck
 )
 
+source $ZSH/oh-my-zsh.sh
+
 # Activate Homebrew-installed plugins
 source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-source $ZSH/oh-my-zsh.sh
+# 1Password completion and plugins
+eval "$(op completion zsh)"; compdef _op op
+source "$HOME/.config/op/plugins.sh"
+
+# Starship completion
+eval "$(starship init zsh)"
+
+# Shell completion for uv, uvx, and ruff
+eval "$(uv generate-shell-completion zsh)"
+eval "$(uvx --generate-shell-completion zsh)"
+eval "$(ruff generate-shell-completion zsh)"
 
 # Load the shell dotfiles, and then some:
 # * ~/.extra can be used for other settings you don't want to commit.
@@ -93,15 +104,3 @@ for file in ~/.{aliases,exports,functions,extra}; do
 	[ -r "$file" ] && [ -f "$file" ] && source "$file";
 done;
 unset file;
-
-# 1Password completion and plugins
-eval "$(op completion zsh)"; compdef _op op
-source "$HOME/.config/op/plugins.sh"
-
-# Starship complettion
-eval "$(starship init zsh)"
-
-# Shell completion for uv, uvx, and ruff
-eval "$(uv generate-shell-completion zsh)"
-eval "$(uvx --generate-shell-completion zsh)"
-eval "$(ruff generate-shell-completion zsh)"

@@ -12,6 +12,7 @@ Here's a short description of each script in this repository:
 - `macos.sh` configure several macOS settings
 - `install.sh` install fonts, tools, and apps using Homebrew, [`uv`](https://docs.astral.sh/uv/), and the Mac App Store
 - `dock.sh` configure macOS dock
+- `code.sh` install Cursor extensions
 - `local.sh` final local settings, like configuring git user details and registering apps using keys stored in 1Password
 - `bash_traceback.sh` helper script used by other scripts to print a more helpful traceback on failure (does nothing by itself)
 
