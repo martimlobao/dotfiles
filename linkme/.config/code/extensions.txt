@@ -1,5 +1,4 @@
 1password.op-vscode
-ban.spellright
 batisteo.vscode-django
 bierner.emojisense
 bierner.markdown-mermaid
@@ -10,14 +9,12 @@ davidanson.vscode-markdownlint
 dbaeumer.vscode-eslint
 dnicolson.binary-plist
 donjayamanne.githistory
-donjayamanne.python-environment-manager
 donjayamanne.python-extension-pack
 dorzey.vscode-sqlfluff
 dotjoshjohnson.xml
 eamodio.gitlens
 eliverlara.andromeda
 esbenp.prettier-vscode
-file-icons.file-icons
 formulahendry.code-runner
 github.remotehub
 github.vscode-github-actions
@@ -63,7 +60,6 @@ njpwerner.autodocstring
 pnp.polacode
 redhat.vscode-yaml
 richie5um2.vscode-sort-json
-searking.preview-vscode
 snowflake.snowflake-vsc
 stkb.rewrap
 streetsidesoftware.code-spell-checker

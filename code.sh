@@ -23,13 +23,13 @@ done
 extensions_file="${root}/linkme/.config/code/extensions.txt"
 
 export_extensions() {
-	printf "\n📲 \033[1;34mExporting extensions from %s to extensions.txt...\033[0m\n\n" "$2"
+	printf "📲 \033[1;34mExporting extensions from %s to extensions.txt...\033[0m\n\n" "$2"
 	$1 --list-extensions >"${extensions_file}"
 	printf "✅ \033[1;32mExtensions exported to extensions.txt\033[0m\n"
 }
 
 sync_extensions() {
-	printf "\n📲 \033[1;34mSyncing extensions for %s...\033[0m\n\n" "$2"
+	printf "📲 \033[1;34mSyncing extensions for %s...\033[0m\n\n" "$2"
 	local installed to_remove=()
 
 	# Get currently installed extensions
