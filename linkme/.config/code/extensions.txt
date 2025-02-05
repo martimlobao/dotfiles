@@ -1,4 +1,3 @@
-1password.op-vscode
 batisteo.vscode-django
 bierner.emojisense
 bierner.markdown-mermaid

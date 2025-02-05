@@ -39,7 +39,7 @@
   "breadcrumbs.enabled": true,
   "clock.dateFormat": "ddd, d mmm, HH:MM",
   "code-runner.executorMap": {
-    "python": "python3"
+    "python": "python"
   },
   "cSpell.userWords": [
     "Databricks",
