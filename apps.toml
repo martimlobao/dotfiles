@@ -108,10 +108,6 @@ pylint = "uv" # It's not just a linter that annoys you!
 ruff = "uv" # Extremely fast Python linter, written in Rust
 sqlfluff = "uv" # SQL linter and auto-formatter for Humans
 
-[apache-spark-tools]
-apache-spark = "formula" # Engine for large-scale data processing
-temurin = "cask" # JDK from the Eclipse Foundation (Adoptium) [simpler setup than installing openjdk@11 and symlinking]
-
 [cli-tools]
 ack = "formula" # Search tool like grep, but optimized for programmers
 bat = "formula" # Clone of cat(1) with syntax highlighting and Git integration
