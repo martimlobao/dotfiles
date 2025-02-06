@@ -9,7 +9,6 @@ uv = "formula" # Extremely fast Python package installer and resolver, written i
 
 [design]
 licecap = "cask" # Animated screen capture application
-1351639930 = "mas" # Gifski: Convert videos to quality GIFs
 
 [developer]
 charles = "cask" # Web debugging Proxy application
