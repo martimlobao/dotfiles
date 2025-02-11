@@ -23,13 +23,13 @@ done
 extensions_file="${root}/linkme/.config/code/extensions.txt"
 
 export_extensions() {
-	printf "📲 \033[1;34mExporting extensions from %s to extensions.txt...\033[0m\n\n" "$2"
+	echo -e "📲 \033[1;34mExporting extensions from $2 to extensions.txt...\033[0m"
 	$1 --list-extensions >"${extensions_file}"
-	printf "✅ \033[1;32mExtensions exported to extensions.txt\033[0m\n"
+	echo -e "✅ \033[1;32mExtensions exported to extensions.txt\033[0m"
 }
 
 sync_extensions() {
-	printf "📲 \033[1;34mSyncing extensions for %s...\033[0m\n\n" "$2"
+	echo -e "📲 \033[1;34mSyncing extensions for $2...\033[0m"
 	local installed to_remove=()
 
 	# Get currently installed extensions
@@ -38,9 +38,9 @@ sync_extensions() {
 	# Install missing extensions
 	while read -r extension; do
 		if printf '%s\n' "${installed[@]}" | grep -q "^${extension}$"; then
-			printf "✅ \033[1;32mExtension '%s' already installed.\033[0m\n" "${extension}"
+			echo -e "✅ \033[1;32mExtension ${extension} already installed.\033[0m"
 		else
-			printf "⬇️  \033[1;34mInstalling extension '%s'...\033[0m\n" "${extension}"
+			echo -e "⬇️  \033[1;34mInstalling extension ${extension}...\033[0m"
 			$1 --install-extension "${extension}"
 		fi
 	done <"${extensions_file}"
@@ -54,27 +54,27 @@ sync_extensions() {
 
 	# If there are extensions to remove, ask for confirmation
 	if [[ ${#to_remove[@]} -gt 0 ]]; then
-		printf "\n❗️ \033[1;31mThe following extensions are not in extensions.txt:\033[0m\n"
+		echo -e "\n❗️ \033[1;31mThe following extensions are not in extensions.txt:\033[0m"
 		printf "  %s\n" "${to_remove[@]}"
 
 		if [[ ${auto_yes} == false ]]; then
 			read -rp $'❓ \033[1;31mDo you want to uninstall these extensions? (y/n)\033[0m ' choice
 		else
 			choice="y"
-			printf "🔄 \033[1;35mAuto-confirming removal due to -y flag\033[0m\n"
+			echo -e "🔄 \033[1;35mAuto-confirming removal due to -y flag\033[0m"
 		fi
 
 		if [[ ${choice} == "y" ]]; then
 			for extension in "${to_remove[@]}"; do
-				printf "🗑️  \033[1;35mUninstalling extension '%s'...\033[0m\n" "${extension}"
+				echo -e "🗑️  \033[1;35mUninstalling extension '${extension}'...\033[0m"
 				$1 --uninstall-extension "${extension}"
-				printf "🚮 \033[1;35mUninstalled '%s'.\033[0m\n" "${extension}"
+				echo -e "🚮 \033[1;35mUninstalled '${extension}'.\033[0m"
 			done
 		else
-			printf "🆗 \033[1;35mNo extensions were uninstalled.\033[0m\n"
+			echo -e "🆗 \033[1;35mNo extensions were uninstalled.\033[0m"
 		fi
 	else
-		printf "✅ \033[1;32mAll installed extensions are present in extensions.txt.\033[0m\n"
+		echo -e "✅ \033[1;32mAll installed extensions are present in extensions.txt.\033[0m"
 	fi
 }
 
@@ -99,8 +99,8 @@ for arg in "$@"; do
 done
 
 if [[ -z ${action} ]]; then
-	printf "\n❌ \033[1;31mError: Invalid action. Use --export or --sync\033[0m\n"
-	printf "Usage: %s [editor] [--export|--sync] [-y|--yes]\n" "$0"
+	echo -e "\n❌ \033[1;31mError: Invalid action. Use --export or --sync\033[0m"
+	echo -e "Usage: $0 [editor] [--export|--sync] [-y|--yes]"
 	exit 1
 fi
 
@@ -112,7 +112,7 @@ code-insiders) editor_name="Visual Studio Code - Insiders" ;;
 codium) editor_name="VSCodium" ;;
 cursor) editor_name="Cursor" ;;
 *)
-	printf "\n❌ \033[1;31mError: Invalid editor specified.\033[0m\n"
+	echo -e "\n❌ \033[1;31mError: Invalid editor specified.\033[0m"
 	exit 1
 	;;
 esac
@@ -123,14 +123,14 @@ if [[ "$(uname -s)" == "Darwin" ]] && [[ -d ${MACOS_BIN} ]]; then
 fi
 
 if ! type "${editor}" &>/dev/null; then
-	printf "\n❌ \033[1;31mError: %s command not on PATH.\033[0m\n" "${editor}" >&2
+	echo -e "\n❌ \033[1;31mError: ${editor} command not on PATH.\033[0m" >&2
 	exit 1
 else
 	case ${action} in
 	--export) export_extensions "${editor}" "${editor_name}" ;;
 	--sync) sync_extensions "${editor}" "${editor_name}" ;;
 	*)
-		printf "\n❌ \033[1;31mError: Invalid action\033[0m\n"
+		echo -e "\n❌ \033[1;31mError: Invalid action\033[0m"
 		exit 1
 		;;
 	esac
