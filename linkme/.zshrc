@@ -6,7 +6,7 @@ export ZSH="$HOME/.oh-my-zsh"
 
 # Install oh-my-zsh if it isn't installed yet
 if [ ! -f "$ZSH/oh-my-zsh.sh" ]; then
-	echo -e "⬇️  \033[1;34mInstalling oh-my-zsh...\033[0m" # needs 2 spaces after emoji
+	echo -e "⬇️ \033[1;34mInstalling oh-my-zsh...\033[0m"
 	if [ -d "$ZSH" ]; then
 		echo -e "❗️ \033[1;31mMoving ${ZSH} to ${ZSH}.bak, please sync dotfiles after finishing.\033[0m"
 		cp -r $ZSH $ZSH.bak
