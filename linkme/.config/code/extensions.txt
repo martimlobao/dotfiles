@@ -1,3 +1,4 @@
+anysphere.pyright
 batisteo.vscode-django
 bierner.emojisense
 bierner.markdown-mermaid
@@ -52,6 +53,7 @@ ms-vscode.remote-repositories
 ms-vscode.vscode-github-issue-notebooks
 ms-vsliveshare.vsliveshare
 mtxr.sqltools
+mtxr.sqltools-driver-mysql
 mushan.vscode-paste-image
 naumovs.color-highlight
 nhoizey.gremlins
