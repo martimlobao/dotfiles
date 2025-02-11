@@ -54,7 +54,6 @@ obsidian = "cask" # Knowledge base that works on top of a local folder of plain 
 slack = "cask" # Team communication and collaboration software
 todoist = "cask" # To-do list
 zoom = "cask" # Video communication and virtual meeting platform
-1423210932 = "mas" # Flow - Focus & Pomodoro Timer: Productivity for work & study
 
 [social]
 telegram = "cask" # Messaging app with a focus on speed and security
