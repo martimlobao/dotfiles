@@ -16,6 +16,7 @@ cursor = "cask" # Write, edit, and chat about your code with AI
 docker = "cask" # App to build and share containerised applications and microservices
 gh = "formula" # GitHub command-line tool
 ghostty = "cask" # Terminal emulator that uses platform-native UI and GPU acceleration
+git-who = "formula" # Git blame for file trees
 jupyter-notebook-viewer = "cask" # Utility to render Jupyter notebooks
 "postgresql@14" = "formula" # Object-relational database system
 redis = "formula" # Persistent key-value database, with built-in net interface
@@ -48,10 +49,12 @@ spotify = "cask" # Music streaming service
 # 1048524688 = "mas" # Delta - Game Emulator: All-in-One GBA4iOS Successor [not working, see: https://github.com/mas-cli/mas/issues/321]
 
 [productivity]
+claude = "cask" # Anthropic's official Claude AI desktop app
 linear-linear = "cask" # App to manage software development and track bugs
 notion = "cask" # App to write, plan, collaborate, and get organised
 obsidian = "cask" # Knowledge base that works on top of a local folder of plain text Markdown files
 slack = "cask" # Team communication and collaboration software
+superwhisper = "cask" # Dictation tool including LLM reformatting
 todoist = "cask" # To-do list
 zoom = "cask" # Video communication and virtual meeting platform
 
