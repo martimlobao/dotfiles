@@ -100,6 +100,7 @@
   "explorer.confirmDelete": false,
   "explorer.confirmDragAndDrop": false,
   "files.associations": {
+    "*.hcl": "terraform",
     "*.jsonl": "json",
     "*.plist": "plist",
     "*.py": "python",
