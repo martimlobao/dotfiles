@@ -7,9 +7,6 @@ uv = "formula" # Extremely fast Python package installer and resolver, written i
 [apple]
 409203825 = "mas" # Numbers: Create impressive spreadsheets
 
-[design]
-licecap = "cask" # Animated screen capture application
-
 [developer]
 charles = "cask" # Web debugging Proxy application
 cursor = "cask" # Write, edit, and chat about your code with AI
