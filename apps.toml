@@ -67,7 +67,6 @@ arc = "cask" # Chromium based browser
 calibre = "cask" # E-books management software
 dropbox = "cask" # Client for the Dropbox cloud storage service
 expressvpn = "cask" # VPN client for secure internet access and private browsing
-google-chrome = "cask" # Web browser
 google-drive = "cask" # Client for the Google Drive storage service
 iina = "cask" # Free and open-source media player [modern vlc alternative]
 istat-menus = "cask" # System monitoring app

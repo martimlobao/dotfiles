@@ -14,6 +14,10 @@ function bootstrap() {
 	bash "${DOTPATH}/bootstrap.sh" -y
 }
 
+function chrome() {
+	uvx --with "selenium" python -c "from selenium import webdriver; driver = webdriver.Chrome(); input('Press Enter to exit...')"
+}
+
 # Start screensaver.
 function ss() {
 	open -a ScreenSaverEngine
