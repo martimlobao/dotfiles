@@ -80,7 +80,6 @@
   "editor.largeFileOptimizations": false,
   "editor.minimap.maxColumn": 100,
   "editor.minimap.showSlider": "always",
-  "editor.multiCursorModifier": "ctrlCmd",
   "editor.renderWhitespace": "all",
   "editor.rulers": [99, 119],
   "editor.snippetSuggestions": "top",
