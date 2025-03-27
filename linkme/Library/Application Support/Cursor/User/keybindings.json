@@ -1,12 +1,12 @@
 // Place your key bindings in this file to override the defaults
 [
   // {
-  //     "key": "ctrl+tab",
-  //     "command": "workbench.action.nextEditor"
+  //     "command": "workbench.action.nextEditor",
+  //     "key": "ctrl+tab"
   // },
   // {
-  //     "key": "ctrl+shift+tab",
-  //     "command": "workbench.action.previousEditor"
+  //     "command": "workbench.action.previousEditor",
+  //     "key": "ctrl+shift+tab"
   // },
   {
     "command": "workbench.action.terminal.clear",
@@ -43,23 +43,43 @@
     "key": "shift+cmd+l"
   },
   {
-    "key": "ctrl+cmd+p",
     "command": "workbench.action.unpinEditor",
-    "when": "activeEditorIsPinned"
-  },
-  {
-    "key": "cmd+r shift+enter",
-    "command": "-workbench.action.unpinEditor",
-    "when": "activeEditorIsPinned"
-  },
-  {
     "key": "ctrl+cmd+p",
+    "when": "activeEditorIsPinned"
+  },
+  {
+    "command": "-workbench.action.unpinEditor",
+    "key": "cmd+r shift+enter",
+    "when": "activeEditorIsPinned"
+  },
+  {
     "command": "workbench.action.pinEditor",
+    "key": "ctrl+cmd+p",
     "when": "!activeEditorIsPinned"
   },
   {
-    "key": "cmd+r shift+enter",
     "command": "-workbench.action.pinEditor",
+    "key": "cmd+r shift+enter",
     "when": "!activeEditorIsPinned"
+  },
+  {
+    "command": "jupyter.runcurrentcell",
+    "key": "cmd+enter",
+    "when": "editorTextFocus && isWorkspaceTrusted && jupyter.hascodecells && !editorHasSelection && !isCompositeNotebook && !notebookEditorFocused"
+  },
+  {
+    "command": "-jupyter.runcurrentcell",
+    "key": "ctrl+enter",
+    "when": "editorTextFocus && isWorkspaceTrusted && jupyter.hascodecells && !editorHasSelection && !isCompositeNotebook && !notebookEditorFocused"
+  },
+  {
+    "command": "notebook.cell.executeAndSelectBelow",
+    "key": "cmd+enter",
+    "when": "notebookCellListFocused && !interactiveEditorFocused && notebookCellType == 'code' || editorTextFocus && inputFocus && notebookEditorFocused && !interactiveEditorFocused"
+  },
+  {
+    "command": "-notebook.cell.executeAndSelectBelow",
+    "key": "shift+enter",
+    "when": "notebookCellListFocused && !interactiveEditorFocused && notebookCellType == 'code' || editorTextFocus && inputFocus && notebookEditorFocused && !interactiveEditorFocused"
   }
 ]
