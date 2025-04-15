@@ -81,5 +81,13 @@
     "command": "-notebook.cell.executeAndSelectBelow",
     "key": "shift+enter",
     "when": "notebookCellListFocused && !interactiveEditorFocused && notebookCellType == 'code' || editorTextFocus && inputFocus && notebookEditorFocused && !interactiveEditorFocused"
+  },
+  {
+    "command": "composerMode.agent",
+    "key": "cmd+i"
+  },
+  {
+    "command": "sqltools.executeCurrentQuery",
+    "key": "cmd+enter"
   }
 ]
