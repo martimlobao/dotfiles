@@ -88,6 +88,7 @@
   },
   {
     "command": "sqltools.executeCurrentQuery",
-    "key": "cmd+enter"
+    "key": "cmd+enter",
+    "when": "editorTextFocus && editorLangId == 'sql' && !config.sqltools.disableChordKeybindings"
   }
 ]
