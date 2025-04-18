@@ -146,6 +146,7 @@
   "redhat.telemetry.enabled": true,
   "rewrap.wrappingColumn": 79,
   "snowflake.connectionsConfigFile": "~/.snowflake/connections.toml",
+  "sqltools.results.reuseTabs": "connection",
   "terminal.integrated.defaultProfile.osx": "zsh",
   "terminal.integrated.env.osx": {
     "FIG_NEW_SESSION": "1"
