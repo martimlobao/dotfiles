@@ -6,12 +6,15 @@
 # Threshold in seconds for when to automatically show a notification
 [[ -z "$AUTO_NOTIFY_THRESHOLD" ]] &&
 	export AUTO_NOTIFY_THRESHOLD=60
-# Threshold in seconds for when to automatically show a notification
+# Threshold for truncating long commands
 [[ -z "$AUTO_NOTIFY_TRUNCATE_COMMAND" ]] &&
 	export AUTO_NOTIFY_TRUNCATE_COMMAND=40
 # Sound to play when a notification is shown
 [[ -z "$AUTO_NOTIFY_SOUND" ]] &&
 	export AUTO_NOTIFY_SOUND='Frog'
+# Sound to play if the command fails
+[[ -z "$AUTO_NOTIFY_SOUND_ERROR" ]] &&
+	export AUTO_NOTIFY_SOUND_ERROR='Sosumi'
 
 # List of commands/programs to ignore sending notifications for
 [[ -z "$AUTO_NOTIFY_IGNORE" ]] &&
@@ -78,12 +81,16 @@ function _auto_notify_message() {
 
 		local arguments=("$title" "$body" "--app-name=zsh" "$transient" "--urgency=$urgency" "--expire-time=$AUTO_NOTIFY_EXPIRE_TIME")
 
-	if [[ -n "$icon" ]]; then
-			arguments+=("--icon=$icon")
-	fi
+		if [[ -n "$icon" ]]; then
+				arguments+=("--icon=$icon")
+		fi
 		notify-send ${arguments[@]}
 		if [[ -n "$AUTO_NOTIFY_SOUND" ]]; then
-			paplay "$AUTO_NOTIFY_SOUND"
+			if [[ "$exit_code" != "0" ]]; then
+				paplay "$AUTO_NOTIFY_SOUND_ERROR"
+			else
+				paplay "$AUTO_NOTIFY_SOUND"
+			fi
 		fi
 
 	elif [[ "$platform" == "Darwin" ]]; then
@@ -91,7 +98,11 @@ function _auto_notify_message() {
 		notification_body=($body $title)
 		if [[ ! -z "$AUTO_NOTIFY_SOUND" ]]; then
 			notification_command+=" sound name (item 3 of argv)"
-			notification_body+=("$AUTO_NOTIFY_SOUND")
+			if [[ "$exit_code" != "0" ]]; then
+				notification_body+=("$AUTO_NOTIFY_SOUND_ERROR")
+			else
+				notification_body+=("$AUTO_NOTIFY_SOUND")
+			fi
 		fi
 		osascript \
 			-e 'on run argv' \
