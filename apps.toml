@@ -19,8 +19,9 @@ jupyter-notebook-viewer = "cask" # Utility to render Jupyter notebooks
 redis = "formula" # Persistent key-value database, with built-in net interface
 shellcheck = "formula" # Static analysis and lint tool, for (ba)sh scripts
 shfmt = "formula" # Autoformat shell script source code
+sqlfluff = "uv" # SQL linter and auto-formatter for Humans
 trunk-io = "cask" # Developer experience toolkit used to check, test, merge, and monitor code
-yamllint = "formula" # Linter for YAML files
+yamllint = "uv" # Linter for YAML files
 
 [work]
 aws-sso-cli = "formula" # Securely manage AWS API credentials using AWS SSO
@@ -104,14 +105,13 @@ mypy = "uv" # Experimental optional static type checker for Python
 poetry = "uv" # Python package management tool
 pylint = "uv" # It's not just a linter that annoys you!
 ruff = "uv" # Extremely fast Python linter, written in Rust
-sqlfluff = "uv" # SQL linter and auto-formatter for Humans
 
 [cli-tools]
 ack = "formula" # Search tool like grep, but optimized for programmers
 bat = "formula" # Clone of cat(1) with syntax highlighting and Git integration
 exiftool = "formula" # Perl lib for reading and writing EXIF metadata
 ffmpeg = "formula" # Play, record, convert, and stream audio and video
-httpie = "formula" # User-friendly cURL replacement (command-line HTTP client)
+httpie = "uv" # User-friendly cURL replacement (command-line HTTP client)
 imagemagick = "formula" # Tools and libraries to manipulate images in many formats
 jq = "formula" # Lightweight and flexible command-line JSON processor
 nano = "formula" # Free (GNU) replacement for the Pico text editor
@@ -123,7 +123,7 @@ telnet = "formula" # User interface to the TELNET protocol
 tree = "formula" # Display directories as trees (with optional color/HTML output)
 wget = "formula" # Internet file retriever
 yq = "formula" # Process YAML, JSON, XML, CSV and properties documents from the CLI
-yt-dlp = "formula" # Feature-rich command-line audio/video downloader
+yt-dlp = "uv" # Feature-rich command-line audio/video downloader
 
 [fun]
 fastfetch = "formula" # Like neofetch, but much faster because written mostly in C
