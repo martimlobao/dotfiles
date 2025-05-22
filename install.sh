@@ -135,9 +135,14 @@ brew_sync() {
 			choice="y"
 		fi
 		if [[ ${choice} == "y" ]]; then
-			for app in ${missing_apps}; do
+			for app in ${missing_formulae}; do
 				echo -e "🗑️ \033[1;35mUninstalling ${app}...\033[0m"
 				brew uninstall --zap "${app}"
+				echo -e "🚮 \033[1;35mUninstalled ${app}.\033[0m"
+			done
+			for app in ${missing_casks}; do
+				echo -e "🗑️ \033[1;35mUninstalling ${app}...\033[0m"
+				brew uninstall --cask --zap "${app}"
 				echo -e "🚮 \033[1;35mUninstalled ${app}.\033[0m"
 			done
 		else
