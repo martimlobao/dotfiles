@@ -30,6 +30,13 @@ awscli = "formula" # Official Amazon AWS command-line interface
 openvpn-connect = "cask" # OpenVPN Connect client
 
 [fonts]
+"martimlobao/nyt-fonts/font-cheltenham" = "cask" # Cheltenham NYT font
+"martimlobao/nyt-fonts/font-franklin" = "cask" # Franklin NYT font
+"martimlobao/nyt-fonts/font-imperial" = "cask" # Imperial NYT font
+"martimlobao/nyt-fonts/font-karnak" = "cask" # Karnak NYT font
+"martimlobao/nyt-fonts/font-mag" = "cask" # NYT Magazine font
+"martimlobao/nyt-fonts/font-stymie" = "cask" # Stymie NYT font
+font-chomsky = "cask" # Chomsky (a font in the style of the New York Times masthead)
 font-doto = "cask" # Doto
 font-eb-garamond = "cask" # EB Garamond
 font-fira-code = "cask" # Fira Code
