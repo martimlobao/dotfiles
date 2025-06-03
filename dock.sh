@@ -158,7 +158,6 @@ clear_dock
 add_app_to_dock "Arc"
 add_app_to_dock "Obsidian"
 add_app_to_dock "Todoist"
-add_app_to_dock "Slack"
 add_app_to_dock "Cursor"
 add_app_to_dock "Ghostty"
 add_app_to_dock "System Settings"
