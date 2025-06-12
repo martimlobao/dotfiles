@@ -76,7 +76,6 @@ google-drive = "cask" # Client for the Google Drive storage service
 iina = "cask" # Free and open-source media player [modern vlc alternative]
 istat-menus = "cask" # System monitoring app
 localsend = "cask" # Open-source cross-platform alternative to AirDrop
-raycast = "cask" # Control your tools with a few keystrokes
 rocket = "cask" # Emoji picker optimised for blind people
 the-unarchiver = "cask" # Unpacks archive files
 transmission = "cask" # Open-source BitTorrent client
