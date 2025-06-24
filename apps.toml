@@ -35,6 +35,7 @@ openvpn-connect = "cask" # OpenVPN Connect client
 "martimlobao/nyt-fonts/font-imperial" = "cask" # Imperial NYT font
 "martimlobao/nyt-fonts/font-karnak" = "cask" # Karnak NYT font
 "martimlobao/nyt-fonts/font-mag" = "cask" # NYT Magazine font
+"martimlobao/nyt-fonts/font-schnyder" = "cask" # Schnyder NYT font
 "martimlobao/nyt-fonts/font-stymie" = "cask" # Stymie NYT font
 font-chomsky = "cask" # Chomsky (a font in the style of the New York Times masthead)
 font-doto = "cask" # Doto
