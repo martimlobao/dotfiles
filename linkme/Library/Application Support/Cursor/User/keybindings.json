@@ -90,5 +90,46 @@
     "command": "sqltools.executeCurrentQuery",
     "key": "cmd+enter",
     "when": "editorTextFocus && editorLangId == 'sql' && !config.sqltools.disableChordKeybindings"
+  },
+  {
+    "key": "ctrl+q",
+    "command": "-workbench.action.quickOpenNavigateNextInViewPicker",
+    "when": "inQuickOpen && inViewsPicker"
+  },
+  {
+    "key": "ctrl+q",
+    "command": "-workbench.action.quickOpenView"
+  },
+  {
+    "key": "ctrl+q",
+    "command": "workbench.action.debug.prevConsole",
+    "when": "inDebugRepl"
+  },
+  {
+    "key": "ctrl+q",
+    "command": "workbench.action.terminal.focusPrevious",
+    "when": "terminalFocus && terminalHasBeenCreated && !terminalEditorFocus || terminalFocus && terminalProcessSupported && !terminalEditorFocus"
+  },
+  {
+    "key": "ctrl+q",
+    "command": "workbench.action.previousEditor"
+  },
+  {
+    "key": "ctrl+w",
+    "command": "-workbench.action.switchWindow"
+  },
+  {
+    "key": "ctrl+w",
+    "command": "workbench.action.debug.nextConsole",
+    "when": "inDebugRepl"
+  },
+  {
+    "key": "ctrl+w",
+    "command": "workbench.action.terminal.focusNext",
+    "when": "terminalFocus && terminalHasBeenCreated && !terminalEditorFocus || terminalFocus && terminalProcessSupported && !terminalEditorFocus"
+  },
+  {
+    "key": "ctrl+w",
+    "command": "workbench.action.nextEditor"
   }
 ]
