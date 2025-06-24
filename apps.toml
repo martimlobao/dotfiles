@@ -10,7 +10,7 @@ uv = "formula" # Extremely fast Python package installer and resolver, written i
 [developer]
 charles = "cask" # Web debugging Proxy application
 cursor = "cask" # Write, edit, and chat about your code with AI
-docker = "cask" # App to build and share containerised applications and microservices
+docker-desktop = "cask" # App to build and share containerised applications and microservices
 gh = "formula" # GitHub command-line tool
 ghostty = "cask" # Terminal emulator that uses platform-native UI and GPU acceleration
 git-who = "formula" # Git blame for file trees
@@ -60,7 +60,7 @@ notion = "cask" # App to write, plan, collaborate, and get organised
 obsidian = "cask" # Knowledge base that works on top of a local folder of plain text Markdown files
 slack = "cask" # Team communication and collaboration software
 superwhisper = "cask" # Dictation tool including LLM reformatting
-todoist = "cask" # To-do list
+todoist-app = "cask" # To-do list
 zoom = "cask" # Video communication and virtual meeting platform
 
 [social]
