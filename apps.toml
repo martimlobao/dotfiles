@@ -30,6 +30,7 @@ awscli = "formula" # Official Amazon AWS command-line interface
 openvpn-connect = "cask" # OpenVPN Connect client
 
 [fonts]
+"martimlobao/fonts/font-neacademia" = "cask" # Neacademia font
 "martimlobao/nyt-fonts/font-cheltenham" = "cask" # Cheltenham NYT font
 "martimlobao/nyt-fonts/font-franklin" = "cask" # Franklin NYT font
 "martimlobao/nyt-fonts/font-imperial" = "cask" # Imperial NYT font
