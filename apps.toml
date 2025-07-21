@@ -70,7 +70,6 @@ telegram = "cask" # Messaging app with a focus on speed and security
 whatsapp = "cask" # Native desktop client for WhatsApp
 
 [tools]
-arc = "cask" # Chromium based browser
 calibre = "cask" # E-books management software
 dropbox = "cask" # Client for the Dropbox cloud storage service
 expressvpn = "cask" # VPN client for secure internet access and private browsing
