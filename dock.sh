@@ -152,7 +152,7 @@ function reset_launchpad {
 ###############################################################################
 # Configure macOS Dock                                                        #
 ###############################################################################
-reset_launchpad  # not needed on macOS 26 and above because Launchpad no longer exists
+reset_launchpad # not needed on macOS 26 and above because Launchpad no longer exists
 clear_dock
 
 add_app_to_dock "Dia"
