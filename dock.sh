@@ -152,7 +152,7 @@ function reset_launchpad {
 ###############################################################################
 # Configure macOS Dock                                                        #
 ###############################################################################
-reset_launchpad
+reset_launchpad  # not needed on macOS 26 and above because Launchpad no longer exists
 clear_dock
 
 add_app_to_dock "Dia"
@@ -161,6 +161,7 @@ add_app_to_dock "Todoist"
 add_app_to_dock "Cursor"
 add_app_to_dock "Ghostty"
 add_app_to_dock "System Settings"
+add_folder_to_dock "/Applications" --sortby 1 --displayas 1 --viewcontentas 2
 add_folder_to_dock "${HOME}/Downloads" --sortby 2 --displayas 1 --viewcontentas 1
 
 killall Dock
