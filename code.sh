@@ -40,7 +40,7 @@ sync_extensions() {
 		if printf '%s\n' "${installed[@]}" | grep -q "^${extension}$"; then
 			echo -e "✅ \033[1;32mExtension ${extension} already installed.\033[0m"
 		else
-			echo -e "⬇️  \033[1;34mInstalling extension ${extension}...\033[0m"
+			echo -e "⬇️ \033[1;34mInstalling extension ${extension}...\033[0m"
 			$1 --install-extension "${extension}"
 		fi
 	done <"${extensions_file}"
@@ -66,7 +66,7 @@ sync_extensions() {
 
 		if [[ ${choice} == "y" ]]; then
 			for extension in "${to_remove[@]}"; do
-				echo -e "🗑️  \033[1;35mUninstalling extension '${extension}'...\033[0m"
+				echo -e "🗑️ \033[1;35mUninstalling extension '${extension}'...\033[0m"
 				$1 --uninstall-extension "${extension}"
 				echo -e "🚮 \033[1;35mUninstalled '${extension}'.\033[0m"
 			done
