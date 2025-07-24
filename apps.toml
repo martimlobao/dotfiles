@@ -21,13 +21,11 @@ shellcheck = "formula" # Static analysis and lint tool, for (ba)sh scripts
 shfmt = "formula" # Autoformat shell script source code
 sqlfluff = "uv" # SQL linter and auto-formatter for Humans
 trunk-io = "cask" # Developer experience toolkit used to check, test, merge, and monitor code
-windsurf = "cask" # Agentic IDE powered by AI Flow paradigm
 yamllint = "uv" # Linter for YAML files
 
 [work]
 aws-sso-cli = "formula" # Securely manage AWS API credentials using AWS SSO
 awscli = "formula" # Official Amazon AWS command-line interface
-openvpn-connect = "cask" # OpenVPN Connect client
 
 [fonts]
 "martimlobao/fonts/font-neacademia" = "cask" # Neacademia font
@@ -57,7 +55,6 @@ spotify = "cask" # Music streaming service
 # 1048524688 = "mas" # Delta - Game Emulator: All-in-One GBA4iOS Successor [not working, see: https://github.com/mas-cli/mas/issues/321]
 
 [productivity]
-linear-linear = "cask" # App to manage software development and track bugs
 notion = "cask" # App to write, plan, collaborate, and get organised
 obsidian = "cask" # Knowledge base that works on top of a local folder of plain text Markdown files
 slack = "cask" # Team communication and collaboration software
