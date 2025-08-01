@@ -50,8 +50,11 @@ font-source-code-pro = "cask" # Source Code Pro
 font-source-sans-3 = "cask" # Source Sans 3
 
 [leisure]
+"martimlobao/dos-games/jumpstart-1st-grade" = "cask" # Windows first grade educational game from 1995
+"martimlobao/dos-games/ready-to-read-with-pooh" = "cask" # Windows reading game by Disney from 1997
 minecraft = "cask" # Sandbox construction video game
 spotify = "cask" # Music streaming service
+302584613 = "mas" # Amazon Kindle
 # 1048524688 = "mas" # Delta - Game Emulator: All-in-One GBA4iOS Successor [not working, see: https://github.com/mas-cli/mas/issues/321]
 
 [productivity]
