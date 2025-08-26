@@ -10,10 +10,12 @@ uv = "formula" # Extremely fast Python package installer and resolver, written i
 [developer]
 charles = "cask" # Web debugging Proxy application
 cursor = "cask" # Write, edit, and chat about your code with AI
+cursor-cli = "cask" # Command-line agent for Cursor
 docker-desktop = "cask" # App to build and share containerised applications and microservices
 gh = "formula" # GitHub command-line tool
 ghostty = "cask" # Terminal emulator that uses platform-native UI and GPU acceleration
 git-who = "formula" # Git blame for file trees
+icon-composer = "cask" # Apple tool to create multi-platform icons
 jupyter-notebook-viewer = "cask" # Utility to render Jupyter notebooks
 "postgresql@14" = "formula" # Object-relational database system
 redis = "formula" # Persistent key-value database, with built-in net interface
@@ -28,14 +30,6 @@ aws-sso-cli = "formula" # Securely manage AWS API credentials using AWS SSO
 awscli = "formula" # Official Amazon AWS command-line interface
 
 [fonts]
-"martimlobao/fonts/font-neacademia" = "cask" # Neacademia font
-"martimlobao/nyt-fonts/font-cheltenham" = "cask" # Cheltenham NYT font
-"martimlobao/nyt-fonts/font-franklin" = "cask" # Franklin NYT font
-"martimlobao/nyt-fonts/font-imperial" = "cask" # Imperial NYT font
-"martimlobao/nyt-fonts/font-karnak" = "cask" # Karnak NYT font
-"martimlobao/nyt-fonts/font-mag" = "cask" # NYT Magazine font
-"martimlobao/nyt-fonts/font-schnyder" = "cask" # Schnyder NYT font
-"martimlobao/nyt-fonts/font-stymie" = "cask" # Stymie NYT font
 font-chomsky = "cask" # Chomsky (a font in the style of the New York Times masthead)
 font-doto = "cask" # Doto
 font-eb-garamond = "cask" # EB Garamond
@@ -48,9 +42,21 @@ font-sf-mono = "cask" # San Francisco Mono, SF Mono
 font-sf-pro = "cask" # San Francisco Pro, SF Pro
 font-source-code-pro = "cask" # Source Code Pro
 font-source-sans-3 = "cask" # Source Sans 3
+"martimlobao/fonts/font-neacademia" = "cask" # Neacademia font
+"martimlobao/nyt-fonts/font-cheltenham" = "cask" # Cheltenham NYT font
+"martimlobao/nyt-fonts/font-franklin" = "cask" # Franklin NYT font
+"martimlobao/nyt-fonts/font-imperial" = "cask" # Imperial NYT font
+"martimlobao/nyt-fonts/font-karnak" = "cask" # Karnak NYT font
+"martimlobao/nyt-fonts/font-mag" = "cask" # NYT Magazine font
+"martimlobao/nyt-fonts/font-schnyder" = "cask" # Schnyder NYT font
+"martimlobao/nyt-fonts/font-stymie" = "cask" # Stymie NYT font
 
 [leisure]
 "martimlobao/dos-games/jumpstart-1st-grade" = "cask" # Windows first grade educational game from 1995
+"martimlobao/dos-games/jumpstart-kindergarten" = "cask" # Windows Kindergarten educational game from 1994
+"martimlobao/dos-games/mission-think" = "cask" # Windows educational game from 1997
+"martimlobao/dos-games/ods-vol1" = "cask" # Educational compilation by Ohio Distinctive Software from 1997
+"martimlobao/dos-games/orlys-draw-a-story" = "cask" # Windows drawing and storytelling game by Broderbund from 1997
 "martimlobao/dos-games/ready-to-read-with-pooh" = "cask" # Windows reading game by Disney from 1997
 minecraft = "cask" # Sandbox construction video game
 spotify = "cask" # Music streaming service
@@ -118,6 +124,7 @@ ruff = "uv" # Extremely fast Python linter, written in Rust
 [cli-tools]
 ack = "formula" # Search tool like grep, but optimized for programmers
 bat = "formula" # Clone of cat(1) with syntax highlighting and Git integration
+domain-check = "formula" # CLI tool for checking domain availability using RDAP and WHOIS protocols
 exiftool = "formula" # Perl lib for reading and writing EXIF metadata
 ffmpeg = "formula" # Play, record, convert, and stream audio and video
 httpie = "uv" # User-friendly cURL replacement (command-line HTTP client)
