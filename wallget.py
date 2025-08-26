@@ -28,16 +28,13 @@ AERIALS_PATH: Path = (
     pathlib.Path.home() / "Library/Application Support/com.apple.wallpaper/aerials"
 )
 STRINGS_PATH: Path = (
-    AERIALS_PATH
-    / "manifest/TVIdleScreenStrings.bundle/en.lproj/Localizable.nocache.strings"
+    AERIALS_PATH / "manifest/TVIdleScreenStrings.bundle/en.lproj/Localizable.nocache.strings"
 )
 ENTRIES_PATH: Path = AERIALS_PATH / "manifest/entries.json"
 VIDEO_PATH: Path = AERIALS_PATH / "videos"
 
 
-def print_summary(
-    items: list, action: str, elapsed_time: float, total_bytes: int
-) -> None:
+def print_summary(items: list, action: str, elapsed_time: float, total_bytes: int) -> None:
     """Print a summary of the operation."""
     print("\n" + "=" * 50)
     print("📊 OPERATION SUMMARY")
@@ -160,9 +157,7 @@ def main() -> None:
 
             # Download if file doesn't exist or is the wrong size
             file_exists: bool = pathlib.Path(file_path).is_file()
-            file_size: int = (
-                pathlib.Path(file_path).stat().st_size if file_exists else 0
-            )
+            file_size: int = pathlib.Path(file_path).stat().st_size if file_exists else 0
             if action in {"d", "l"}:
                 content_length: int = get_content_length(url)
                 if action == "l" or not file_exists or file_size != content_length:
@@ -206,9 +201,7 @@ def main() -> None:
         print("=" * 50)
         results: list[str] = []
         with (
-            tqdm.tqdm(
-                total=len(items), desc="Overall Progress", unit="file"
-            ) as overall_pbar,
+            tqdm.tqdm(total=len(items), desc="Overall Progress", unit="file") as overall_pbar,
             ThreadPool() as pool,
         ):
             futures: list[ApplyResult[str]] = [
