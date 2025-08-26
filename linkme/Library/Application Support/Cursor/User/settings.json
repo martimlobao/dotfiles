@@ -126,6 +126,7 @@
   "githubPullRequests.pullBranch": "never",
   "githubPullRequests.terminalLinksHandler": "github",
   "go.toolsManagement.autoUpdate": true,
+  "hediet.vscode-drawio.resizeImages": null,
   "json.schemas": [],
   "markdownlint.config": {
     "MD024": {
@@ -153,6 +154,7 @@
   },
   "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
   "window.autoDetectColorScheme": true,
+  "window.commandCenter": true,
   "workbench.colorCustomizations": {
     "[Andromeda Colorizer]": {
       "activityBar.background": "#1e1f29",
