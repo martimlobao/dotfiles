@@ -1,4 +1,5 @@
 #!/usr/bin/env -S uv run --script
+#
 # /// script
 # requires-python = ">=3.13,<3.14"
 # dependencies = [
@@ -6,14 +7,18 @@
 #     "tqdm>=4.67.1,<5.0.0",
 #     "urllib3>=2.2.3,<2.3.0",
 # ]
+# [tool.uv]
+# exclude-newer = "2025-08-27T00:00:00Z"
 # ///
-# Forked from https://github.com/joshuaclayton/wallget and https://github.com/lejacobroy/aerials-downloader
+# Forked from https://github.com/mikeswanson/WallGet and https://github.com/lejacobroy/aerials-downloader
+import argparse
 import http.client
 import json
 import pathlib
 import plistlib
 import ssl
 import sys
+import textwrap
 import time
 import urllib.parse
 import warnings
@@ -33,6 +38,97 @@ STRINGS_PATH: Path = (
 )
 ENTRIES_PATH: Path = AERIALS_PATH / "manifest/entries.json"
 VIDEO_PATH: Path = AERIALS_PATH / "videos"
+
+
+def parse_arguments() -> argparse.Namespace:
+    """Parse command-line arguments.
+
+    Returns:
+        Parsed command-line arguments.
+    """
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description="macOS Aerial Live Wallpaper Downloader",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent("""
+            Examples:
+              %(prog)s                    # Interactive mode
+              %(prog)s -d -c 1            # Download category 1
+              %(prog)s -x -c 2,3          # Delete categories 2 and 3
+              %(prog)s -l --all           # List all categories
+              %(prog)s -d --all           # Download all categories
+        """),
+    )
+
+    # Action group (mutually exclusive)
+    action_group: argparse._ArgumentGroup = parser.add_mutually_exclusive_group(required=False)
+    action_group.add_argument("-d", "--download", action="store_true", help="Download wallpapers")
+    action_group.add_argument("-x", "--delete", action="store_true", help="Delete wallpapers")
+    action_group.add_argument("-l", "--list", action="store_true", help="List wallpapers")
+
+    # Category selection
+    parser.add_argument(
+        "-c", "--category", type=str, help="Category number(s) or 'all' (e.g., 1, 2,3, all)"
+    )
+    parser.add_argument("--all", action="store_true", help="Select all categories")
+
+    # Skip confirmation
+    parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompts")
+
+    return parser.parse_args()
+
+
+def parse_category_selection(
+    category_arg: str | None, num_categories: int, *, all_flag: bool
+) -> list[int]:
+    """Parse category selection from command-line arguments.
+
+    Args:
+        category_arg: Category argument string (e.g., "1,2,3")
+        all_flag: Whether --all flag was used
+        num_categories: Total number of available categories
+
+    Returns:
+        List of category indices (1-based)
+    """
+    if all_flag:
+        return list(range(1, num_categories + 1))
+
+    if not category_arg:
+        return []
+
+    if category_arg.lower() == "all":
+        return list(range(1, num_categories + 1))
+
+    try:
+        # Parse comma-separated numbers
+        categories: list[int] = [int(c.strip()) for c in category_arg.split(",")]
+    except ValueError as e:
+        print(f"❌ Invalid category selection: {e}")
+        sys.exit(1)
+    # Validate range
+    for cat in categories:
+        if cat < 1 or cat > num_categories:
+            print(f"❌ Invalid category selection: {cat}")
+            sys.exit(1)
+    return categories
+
+
+def get_action_from_args(args: argparse.Namespace) -> tuple[str, str]:
+    """Get action from command-line arguments.
+
+    Args:
+        args: Parsed command-line arguments
+
+    Returns:
+        Tuple of (action_code, action_text)
+    """
+    if args.download:
+        return "d", "download"
+    if args.delete:
+        return "x", "delete"
+    if args.list:
+        return "l", "list"
+    return "", ""
 
 
 def print_summary(items: list, action: str, elapsed_time: float, total_bytes: int) -> None:
@@ -119,7 +215,7 @@ def select_category(
     Returns:
         A tuple containing the category ID and name.
     """
-    category_index: int = as_int(input("Category number? "))
+    category_index: int = as_int(input("Choose category number: "))
     if category_index < 1 or category_index > num_categories + 1:
         print("\n❌ No category selected.")
         sys.exit()
@@ -157,14 +253,18 @@ def select_action() -> tuple[str, Literal["delete", "download", "list"]]:
 
 
 def analyze_assets(
-    asset_entries: dict[str, Any], strings: dict[str, str], category_id: str | None, action: str
+    asset_entries: dict[str, Any],
+    strings: dict[str, str],
+    category_ids: list[str | None],
+    action: str,
 ) -> tuple[list[tuple[str, str, str, int]], int]:
     """Analyzes assets and returns items to process and total bytes.
 
     Args:
         asset_entries: A dictionary of asset entries.
         strings: A dictionary of localizable strings.
-        category_id: The ID of the selected category.
+        category_ids: A list of category IDs to filter by (None means all
+            categories).
         action: The action to perform.
 
     Returns:
@@ -182,7 +282,12 @@ def analyze_assets(
             asset_categories: list[str] = [
                 category.split("-")[0] for category in asset.get("categories", [])
             ]
-            if category_id and category_id.split("-")[0] not in asset_categories:
+            # Check if asset belongs to any of the selected categories
+            if category_ids and not any(
+                cat_id.split("-")[0] in asset_categories
+                for cat_id in category_ids
+                if cat_id is not None
+            ):
                 pbar.update(1)
                 continue
 
@@ -442,9 +547,15 @@ def download_file_with_progress(download: tuple[str, str, str, int]) -> str:
 
 
 def main() -> None:
-    print("WallGet Live Wallpaper Download/Delete Script")
+    print("macOS Aerial Live Wallpaper Downloader")
     print("=" * 50)
     print()
+
+    # Parse command-line arguments
+    args: argparse.Namespace = parse_arguments()
+
+    # Determine if running in interactive mode
+    interactive_mode: bool = not any([args.download, args.delete, args.list])
 
     # Validate environment
     validate_environment()
@@ -455,13 +566,41 @@ def main() -> None:
     # Show categories and get selection
     categories: list[dict[str, Any]] = asset_entries.get("categories", [])
     num_categories: int = display_categories(categories, strings)
-    category_id, _ = select_category(categories, strings, num_categories)
 
-    # Select action
-    action, action_text = select_action()
+    if interactive_mode:
+        # Interactive mode - ask user for input
+        category_id, _ = select_category(categories, strings, num_categories)
+        category_ids: list[str | None] = [category_id]
+        action, action_text = select_action()
+        skip_confirmation: bool = False
+    else:
+        # Non-interactive mode - use command-line arguments
+        action, action_text = get_action_from_args(args)
+
+        # Parse category selection
+        selected_categories: list[int] = parse_category_selection(
+            args.category, num_categories, all_flag=args.all
+        )
+        if not selected_categories:
+            print("❌ No category selected. Use -c/--category or --all")
+            sys.exit(1)
+
+        # Convert category numbers to category IDs
+        category_ids: list[str | None] = []
+        for cat_num in selected_categories:
+            if cat_num <= num_categories:
+                category_ids.append(categories[cat_num - 1]["id"])
+            else:
+                category_ids.append(None)
+
+        print(f"✅ Selected categories: {', '.join(str(c) for c in selected_categories)}")
+        print(f"✅ Action: {action_text.capitalize()}")
+        print()
+
+        skip_confirmation: bool = args.yes
 
     # Analyze assets
-    items, total_bytes = analyze_assets(asset_entries, strings, category_id, action)
+    items, total_bytes = analyze_assets(asset_entries, strings, category_ids, action)
 
     # Anything to process?
     if not items:
@@ -473,8 +612,8 @@ def main() -> None:
         list_files(items)
         sys.exit()
 
-    # Confirm operation
-    if not confirm_operation(action_text, items, total_bytes):
+    # Confirm operation (skip if -y flag or non-interactive mode)
+    if not skip_confirmation and not confirm_operation(action_text, items, total_bytes):
         sys.exit()
 
     # Execute operation
@@ -487,4 +626,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n🚨 Operation cancelled by user.")
+        sys.exit(1)
