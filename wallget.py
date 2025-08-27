@@ -301,7 +301,7 @@ def get_content_length(url: str) -> int:
     """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
-        req: requests.Response = requests.head(url, verify=False, timeout=10)
+        req: requests.Response = requests.head(url, verify=False, timeout=10)  # noqa: S501
     return int(req.headers["Content-Length"])
 
 
@@ -321,7 +321,11 @@ def download_file_with_progress(download: tuple[str, str, str, int]) -> str:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
         req: requests.Response = requests.get(
-            parsed_url, stream=True, headers=headers, verify=False, timeout=10
+            parsed_url,
+            stream=True,
+            headers=headers,
+            verify=False,
+            timeout=10,  # noqa: S501
         )
     try:
         req.raise_for_status()
