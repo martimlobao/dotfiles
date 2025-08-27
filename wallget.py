@@ -1,3 +1,4 @@
+#!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.13,<3.14"
 # dependencies = [
@@ -48,12 +49,8 @@ def print_summary(items: list, action: str, elapsed_time: float, total_bytes: in
     print("=" * 50)
 
 
-def main() -> None:
-    print("WallGet Live Wallpaper Download/Delete Script")
-    print("=" * 50)
-    print()
-
-    # Validate environment
+def validate_environment() -> None:
+    """Validate that all required paths and files exist."""
     print("Validating environment...")
     if not pathlib.Path(AERIALS_PATH).is_dir():
         print("❌ Unable to find aerials path.")
@@ -70,56 +67,110 @@ def main() -> None:
     print("✅ Environment validated successfully")
     print()
 
-    # Read localizable strings
+
+def load_asset_data() -> tuple[dict[str, str], dict[str, Any]]:
+    """Loads localizable strings and asset entries.
+
+    Returns:
+        A tuple containing the localizable strings and asset entries.
+    """
     print("Loading asset data...")
     with pathlib.Path(STRINGS_PATH).open("rb") as fp:
-        strings: Any = plistlib.load(fp)
+        strings: dict[str, str] = plistlib.load(fp)
 
-    # Read asset entries
     with pathlib.Path(ENTRIES_PATH).open(encoding="utf-8") as fp:
         asset_entries: dict[str, Any] = json.load(fp)
 
-    # Show categories
+    return strings, asset_entries
+
+
+def display_categories(categories: list[dict[str, Any]], strings: dict[str, str]) -> int:
+    """Displays available categories and returns the number of categories.
+
+    Args:
+        categories: A list of categories.
+        strings: A dictionary of localizable strings.
+
+    Returns:
+        The number of categories.
+    """
     print("Available categories:")
     print("-" * 30)
     item = 0
-    categories: list[dict[str, Any]] = asset_entries.get("categories", [])
     for category in categories:
         name: str = strings.get(category.get("localizedNameKey", ""), "")
         item += 1
         print(f"{item:2d}. {name}")
     print(f"{item + 1:2d}. All")
     print()
+    return item
 
-    # Select category
+
+def select_category(
+    categories: list[dict[str, Any]], strings: dict[str, str], num_categories: int
+) -> tuple[str | None, str]:
+    """Handles category selection and returns category ID and name.
+
+    Args:
+        categories: A list of categories.
+        strings: A dictionary of localizable strings.
+        num_categories: The number of categories.
+
+    Returns:
+        A tuple containing the category ID and name.
+    """
     category_index: int = as_int(input("Category number? "))
-    if category_index < 1 or category_index > item + 1:
+    if category_index < 1 or category_index > num_categories + 1:
         print("\n❌ No category selected.")
         sys.exit()
+
     category_id: str | None = (
-        categories[int(category_index) - 1]["id"] if category_index <= item else None
+        categories[int(category_index) - 1]["id"] if category_index <= num_categories else None
     )
     selected_category: str = (
         categories[int(category_index) - 1]["localizedNameKey"]
-        if category_index <= item
+        if category_index <= num_categories
         else "All"
     )
     print(f"✅ Selected: {strings.get(selected_category, selected_category)}")
     print()
+    return category_id, selected_category
 
-    # Download, delete, or list?
+
+def select_action() -> tuple[str, Literal["delete", "download", "list"]]:
+    """Handles action selection and returns action code and text.
+
+    Returns:
+        A tuple containing the action code and text.
+    """
     action = input("Download (d), delete (x), or list (l)? ").strip().lower()
     if action not in {"d", "x", "l"}:
         print("\n❌ No action selected.")
         sys.exit()
+
     action_text: Literal["delete", "download", "list"] = (
         "download" if action == "d" else "delete" if action == "x" else "list"
     )
     print(f"✅ Action: {action_text.capitalize()}")
     print()
+    return action, action_text
 
-    # Determine items
-    print(f"Analyzing {action_text} requirements...")
+
+def analyze_assets(
+    asset_entries: dict[str, Any], strings: dict[str, str], category_id: str | None, action: str
+) -> tuple[list[tuple[str, str, str, int]], int]:
+    """Analyzes assets and returns items to process and total bytes.
+
+    Args:
+        asset_entries: A dictionary of asset entries.
+        strings: A dictionary of localizable strings.
+        category_id: The ID of the selected category.
+        action: The action to perform.
+
+    Returns:
+        A tuple containing the items to process and the total bytes.
+    """
+    print(f"Analyzing {get_action_text(action)} requirements...")
     items: list[tuple[str, str, str, int]] = []
     total_bytes: int = 0
     total_assets: int = len(asset_entries.get("assets", []))
@@ -169,69 +220,107 @@ def main() -> None:
 
             pbar.update(1)
 
-    print(f"✅ Analysis complete: {len(items)} files to {action_text}")
+    print(f"✅ Analysis complete: {len(items)} files to {get_action_text(action)}")
     print()
+    return items, total_bytes
 
-    # Anything to process?
-    if not items:
-        print(f"ℹ️  Nothing to {action_text}.")  # noqa: RUF001
-        sys.exit()
 
+def get_action_text(action: str) -> str:
+    """Converts action code to readable text.
+
+    Args:
+        action: The action to convert.
+
+    Returns:
+        The readable text of the action.
+    """
+    return "download" if action == "d" else "delete" if action == "x" else "list"
+
+
+def list_files(items: list[tuple[str, str, str, int]]) -> None:
+    """Lists files that would be processed.
+
+    Args:
+        items: A list of items to list.
+    """
+    print("=" * 50)
+    print("📂 Listing files...")
+    print("=" * 50)
+    for item in items:
+        print(f"{format_name(item[0])} - {pathlib.Path(item[2]).name}")
+
+
+def confirm_operation(action_text: str, items: list, total_bytes: int) -> bool:
+    """Asks user to confirm the operation.
+
+    Args:
+        action_text: The action to confirm.
+        items: A list of items to confirm.
+        total_bytes: The total bytes of the items.
+
+    Returns:
+        True if the user confirms the operation, False otherwise.
+    """
     print("System Information:")
     print(f"  Files to {action_text}: {len(items)}")
     print(f"  Total size: {format_bytes(total_bytes)}")
     print()
 
-    if action == "l":
-        print("=" * 50)
-        print("📂 Listing files...")
-        print("=" * 50)
-        for item in items:
-            print(f"{format_name(item[0])} - {pathlib.Path(item[2]).name}")
-        sys.exit()
-
     proceed = input(f"Proceed with {action_text}? (y/n) ").strip().lower()
     if proceed != "y":
         print("❌ Operation cancelled.")
-        sys.exit()
+        return False
+    return True
 
-    if action == "d":
-        start_time: float = time.time()
-        print(f"\n📥 Downloading {len(items)} files in parallel...")
-        print("=" * 50)
-        results: list[str] = []
-        with (
-            tqdm.tqdm(total=len(items), desc="Overall Progress", unit="file") as overall_pbar,
-            ThreadPool() as pool,
-        ):
-            futures: list[ApplyResult[str]] = [
-                pool.apply_async(download_file_with_progress, (item,)) for item in items
-            ]
-            for future in futures:
-                result: str = future.get()
-                results.append(result)
-                overall_pbar.update(1)
 
-        elapsed_time: float = time.time() - start_time
-        print_summary(items, action_text, elapsed_time, total_bytes)
+def download_files(items: list[tuple[str, str, str, int]], total_bytes: int) -> None:
+    """Downloads files in parallel with progress tracking.
 
-    elif action == "x":
-        start_time: float = time.time()
-        print(f"\n🗑️  Deleting {len(items)} files...")
-        print("=" * 50)
+    Args:
+        items: A list of items to download.
+        total_bytes: The total bytes of the items.
+    """
+    start_time: float = time.time()
+    print(f"\n📥 Downloading {len(items)} files in parallel...")
+    print("=" * 50)
+    results: list[str] = []
+    with (
+        tqdm.tqdm(total=len(items), desc="Overall Progress", unit="file") as overall_pbar,
+        ThreadPool() as pool,
+    ):
+        futures: list[ApplyResult[str]] = [
+            pool.apply_async(download_file_with_progress, (item,)) for item in items
+        ]
+        for future in futures:
+            result: str = future.get()
+            results.append(result)
+            overall_pbar.update(1)
 
-        deleted_count: int = 0
-        with tqdm.tqdm(total=len(items), desc="Deleting files", unit="file") as pbar:
-            for item in items:
-                _, _, file_path, _ = item
-                pathlib.Path(file_path).unlink()
-                deleted_count += 1
-                pbar.update(1)
+    elapsed_time: float = time.time() - start_time
+    print_summary(items, "download", elapsed_time, total_bytes)
 
-        elapsed_time: float = time.time() - start_time
-        print_summary(items, action_text, elapsed_time, total_bytes)
 
-    print("\n🎉 Operation completed successfully!")
+def delete_files(items: list[tuple[str, str, str, int]], total_bytes: int) -> None:
+    """Deletes files with progress tracking.
+
+    Args:
+        items: A list of items to delete.
+        total_bytes: The total bytes of the items.
+    """
+    start_time: float = time.time()
+    print(f"\n🗑️  Deleting {len(items)} files...")
+    print("=" * 50)
+
+    deleted_count: int = 0
+    with tqdm.tqdm(total=len(items), desc="Deleting files", unit="file") as pbar:
+        for item in items:
+            _, _, file_path, _ = item
+            pathlib.Path(file_path).unlink()
+            deleted_count += 1
+            pbar.update(1)
+
+    elapsed_time: float = time.time() - start_time
+    print_summary(items, "delete", elapsed_time, total_bytes)
 
 
 def as_int(s: str) -> int:
@@ -324,8 +413,8 @@ def download_file_with_progress(download: tuple[str, str, str, int]) -> str:
             parsed_url,
             stream=True,
             headers=headers,
-            verify=False,
-            timeout=10,  # noqa: S501
+            verify=False,  # noqa: S501
+            timeout=10,
         )
     try:
         req.raise_for_status()
@@ -350,6 +439,51 @@ def download_file_with_progress(download: tuple[str, str, str, int]) -> str:
                 pbar.update(len(chunk))
 
     return label
+
+
+def main() -> None:
+    print("WallGet Live Wallpaper Download/Delete Script")
+    print("=" * 50)
+    print()
+
+    # Validate environment
+    validate_environment()
+
+    # Load asset data
+    strings, asset_entries = load_asset_data()
+
+    # Show categories and get selection
+    categories: list[dict[str, Any]] = asset_entries.get("categories", [])
+    num_categories: int = display_categories(categories, strings)
+    category_id, _ = select_category(categories, strings, num_categories)
+
+    # Select action
+    action, action_text = select_action()
+
+    # Analyze assets
+    items, total_bytes = analyze_assets(asset_entries, strings, category_id, action)
+
+    # Anything to process?
+    if not items:
+        print(f"ℹ️  Nothing to {action_text}.")  # noqa: RUF001
+        sys.exit()
+
+    # Handle list action
+    if action == "l":
+        list_files(items)
+        sys.exit()
+
+    # Confirm operation
+    if not confirm_operation(action_text, items, total_bytes):
+        sys.exit()
+
+    # Execute operation
+    if action == "d":
+        download_files(items, total_bytes)
+    elif action == "x":
+        delete_files(items, total_bytes)
+
+    print("\n🎉 Operation completed successfully!")
 
 
 if __name__ == "__main__":
