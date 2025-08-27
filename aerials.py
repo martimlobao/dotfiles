@@ -54,8 +54,8 @@ def parse_arguments() -> argparse.Namespace:
               %(prog)s                    # Interactive mode
               %(prog)s -d -c 1            # Download category 1
               %(prog)s -x -c 2,3          # Delete categories 2 and 3
-              %(prog)s -l --all           # List all categories
-              %(prog)s -d --all           # Download all categories
+              %(prog)s -l -c all          # List all categories
+              %(prog)s -d -c all          # Download all categories
         """),
     )
 
@@ -69,7 +69,6 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "-c", "--category", type=str, help="Category number(s) or 'all' (e.g., 1, 2,3, all)"
     )
-    parser.add_argument("--all", action="store_true", help="Select all categories")
 
     # Skip confirmation
     parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompts")
@@ -78,21 +77,17 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def parse_category_selection(
-    category_arg: str | None, num_categories: int, *, all_flag: bool
+    category_arg: str | None, num_categories: int
 ) -> list[int]:
     """Parse category selection from command-line arguments.
 
     Args:
         category_arg: Category argument string (e.g., "1,2,3")
-        all_flag: Whether --all flag was used
         num_categories: Total number of available categories
 
     Returns:
         List of category indices (1-based)
     """
-    if all_flag:
-        return list(range(1, num_categories + 1))
-
     if not category_arg:
         return []
 
@@ -554,16 +549,12 @@ def main() -> None:
     # Parse command-line arguments
     args: argparse.Namespace = parse_arguments()
 
-    # Determine if running in interactive mode
     interactive_mode: bool = not any([args.download, args.delete, args.list])
 
-    # Validate environment
     validate_environment()
 
-    # Load asset data
     strings, asset_entries = load_asset_data()
 
-    # Show categories and get selection
     categories: list[dict[str, Any]] = asset_entries.get("categories", [])
     num_categories: int = display_categories(categories, strings)
 
@@ -579,10 +570,10 @@ def main() -> None:
 
         # Parse category selection
         selected_categories: list[int] = parse_category_selection(
-            args.category, num_categories, all_flag=args.all
+            args.category, num_categories
         )
         if not selected_categories:
-            print("❌ No category selected. Use -c/--category or --all")
+            print("❌ No category selected. Use -c/--category (e.g., -c 1, -c 1,2, -c all)")
             sys.exit(1)
 
         # Convert category numbers to category IDs
