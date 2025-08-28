@@ -36,11 +36,9 @@ Usage:
 """
 
 import argparse
-import http.client
 import json
 import pathlib
 import plistlib
-import ssl
 import sys
 import textwrap
 import time
@@ -205,16 +203,16 @@ def validate_environment() -> None:
     """Validates that all required paths and files exist."""
     if not pathlib.Path(AERIALS_PATH).is_dir():
         print("❌ Unable to find aerials path.")
-        sys.exit()
+        sys.exit(1)
     if not pathlib.Path(STRINGS_PATH).is_file():
         print("❌ Unable to find localizable strings file.")
-        sys.exit()
+        sys.exit(1)
     if not pathlib.Path(ENTRIES_PATH).is_file():
         print("❌ Unable to find entries.json file.")
-        sys.exit()
+        sys.exit(1)
     if not pathlib.Path(VIDEO_PATH).is_dir():
         print("❌ Unable to find video path.")
-        sys.exit()
+        sys.exit(1)
 
 
 def load_asset_data() -> tuple[Strings, AssetEntry]:
@@ -271,7 +269,7 @@ def select_category(
     category_index: int = as_int(input("Choose category number: "))
     if category_index < 1 or category_index > num_categories + 1:
         print("\n❌ No category selected.")
-        sys.exit()
+        sys.exit(1)
 
     if category_index == num_categories + 1:
         # "All" option selected
@@ -541,22 +539,6 @@ def format_name(name: str, length: int = DEFAULT_NAME_LENGTH) -> str:
     return f"{name[: length - 3]}..."
 
 
-def connect(parsed_url: urllib.parse.ParseResult) -> http.client.HTTPConnection:
-    """Creates an HTTP connection for the given URL.
-
-    Args:
-        parsed_url: Parsed URL object
-
-    Returns:
-        HTTP connection object
-    """
-    if parsed_url.scheme == "https":
-        # Disable SSL verification for compatibility
-        context: ssl.SSLContext = ssl._create_unverified_context()  # noqa: SLF001, S323
-        return http.client.HTTPSConnection(parsed_url.netloc, context=context)
-    return http.client.HTTPConnection(parsed_url.netloc)
-
-
 def load_cache() -> ContentLengthCache:
     """Loads the content length cache from disk.
 
@@ -605,7 +587,7 @@ def get_content_length(url: str) -> int:
 
     # Check cache for URL
     if url in cache:
-        entry = cache[url]
+        entry: ContentLengthCacheEntry = cache[url]
         # Check if cache is expired
         if time.time() - entry["timestamp"] < CACHE_EXPIRY_DAYS * 24 * 60 * 60:
             return entry["length"]
@@ -613,6 +595,7 @@ def get_content_length(url: str) -> int:
     # Fetch from URL
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
+        # SSL verification must be disabled for host 'sylvan.apple.com'
         req: requests.Response = requests.head(url, verify=False, timeout=REQUEST_TIMEOUT)  # noqa: S501
     content_length: int = int(req.headers["Content-Length"])
 
@@ -637,9 +620,10 @@ def download_file_with_progress(download: AssetItem) -> str:
     """
     label, url, file_path, content_length = download
     parsed_url: str = urllib.parse.urlparse(url).geturl()
-    headers: dict[str, str] = {"Range": f"bytes={0}-"}
+    headers: dict[str, str] = {"Range": "bytes=0-"}
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
+        # SSL verification must be disabled for host 'sylvan.apple.com'
         req: requests.Response = requests.get(
             parsed_url,
             stream=True,
