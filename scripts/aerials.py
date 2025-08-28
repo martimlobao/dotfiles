@@ -32,7 +32,7 @@ Usage:
     Interactive: uv run aerials.py
     Download:    uv run aerials.py -d -c 1
     Delete:      uv run aerials.py -x -c 1,2
-    List:        uv run aerials.py -l -c all
+    List:        uv run aerials.py -l
 """
 
 import argparse
@@ -98,8 +98,8 @@ def parse_arguments() -> argparse.Namespace:
               %(prog)s                    # Interactive mode
               %(prog)s -d -c 1            # Download category 1
               %(prog)s -x -c 2,3          # Delete categories 2 and 3
-              %(prog)s -l -c all          # List all categories
-              %(prog)s -d -c all          # Download all categories
+              %(prog)s -l                 # List all categories (same as -l -c all)
+              %(prog)s -d                 # Download all categories (same as -d -c all)
         """),
     )
 
@@ -111,7 +111,11 @@ def parse_arguments() -> argparse.Namespace:
 
     # Category selection
     parser.add_argument(
-        "-c", "--category", type=str, help="Category number(s) or 'all' (e.g., 1, 2,3, all)"
+        "-c",
+        "--category",
+        type=str,
+        help="Category number(s) or 'all' (e.g., 1, 2,3, all) (default: all)",
+        default="all",
     )
 
     # Skip confirmation
@@ -283,7 +287,6 @@ def select_category(
     selected_category: str = category["localizedNameKey"]
 
     print(f"✅ Selected: {strings.get(selected_category, selected_category)}")
-    print()
     return category_id, selected_category
 
 
@@ -303,7 +306,6 @@ def select_action() -> tuple[str, Literal["delete", "download", "list"]]:
         "download" if action == "d" else "delete" if action == "x" else "list"
     )
     print(f"✅ Action: {action_text.capitalize()}")
-    print()
     return action, action_text
 
 
@@ -381,7 +383,6 @@ def analyze_assets(
             pbar.update(1)
 
     print(f"✅ Analysis complete: {len(items)} files to {get_action_text(action)}")
-    print()
     return items, total_bytes
 
 
@@ -403,7 +404,7 @@ def list_files(items: list[AssetItem]) -> None:
     Args:
         items: A list of items to list.
     """
-    print("=" * 50)
+    print("\n" + "=" * 50)
     print("📂 Listing files...")
     print("=" * 50)
     for item in items:
@@ -715,7 +716,6 @@ def main() -> None:
 
         print(f"✅ Selected categories: {', '.join(str(c) for c in selected_categories)}")
         print(f"✅ Action: {action_text.capitalize()}")
-        print()
 
         skip_confirmation: bool = args.yes
 
@@ -724,7 +724,7 @@ def main() -> None:
 
     # Anything to process?
     if not items:
-        print(f"ℹ️ Nothing to {action_text}.")  # noqa: RUF001
+        print(f"✅ Nothing to {action_text}.")
         sys.exit()
 
     # Handle list action

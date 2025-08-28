@@ -13,7 +13,7 @@ function syncapps() {
 # Run aerials.py
 function aerials() {
 	if [[ $# -eq 0 ]]; then
-		uv run "${DOTPATH}/scripts/aerials.py" -d -c all -y
+		uv run "${DOTPATH}/scripts/aerials.py" -d -y
 	else
 		uv run "${DOTPATH}/scripts/aerials.py" "$@"
 	fi
