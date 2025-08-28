@@ -15,6 +15,10 @@ if [ ! -f "$ZSH/oh-my-zsh.sh" ]; then
 	ZSH= sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
 
+# Bind Alt+Left and Alt+Right to move by word
+bindkey '^[[1;3C' forward-word
+bindkey '^[[1;3D' backward-word
+
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
 
