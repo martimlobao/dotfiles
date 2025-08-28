@@ -77,9 +77,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def parse_category_selection(
-    category_arg: str | None, num_categories: int
-) -> list[int]:
+def parse_category_selection(category_arg: str | None, num_categories: int) -> list[int]:
     """Parse category selection from command-line arguments.
 
     Args:
@@ -168,6 +166,7 @@ def load_asset_data() -> tuple[dict[str, str], dict[str, Any]]:
     Returns:
         A tuple containing the localizable strings and asset entries.
     """
+    print("📂 Loading asset data...")
     with pathlib.Path(STRINGS_PATH).open("rb") as fp:
         strings: dict[str, str] = plistlib.load(fp)
 
@@ -410,15 +409,13 @@ def delete_files(items: list[tuple[str, str, str, int]], total_bytes: int) -> No
         total_bytes: The total bytes of the items.
     """
     start_time: float = time.time()
-    print(f"\n🗑️  Deleting {len(items)} files...")
+    print(f"\n🗑️ Deleting {len(items)} files...")
     print("=" * 50)
 
-    deleted_count: int = 0
     with tqdm.tqdm(total=len(items), desc="Deleting files", unit="file") as pbar:
         for item in items:
             _, _, file_path, _ = item
             pathlib.Path(file_path).unlink()
-            deleted_count += 1
             pbar.update(1)
 
     elapsed_time: float = time.time() - start_time
@@ -571,9 +568,7 @@ def main() -> None:
         action, action_text = get_action_from_args(args)
 
         # Parse category selection
-        selected_categories: list[int] = parse_category_selection(
-            args.category, num_categories
-        )
+        selected_categories: list[int] = parse_category_selection(args.category, num_categories)
         if not selected_categories:
             print("❌ No category selected. Use -c/--category (e.g., -c 1, -c 1,2, -c all)")
             sys.exit(1)
