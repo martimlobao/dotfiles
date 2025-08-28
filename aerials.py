@@ -12,6 +12,29 @@
 # ///
 # Forked and adapted from https://github.com/mikeswanson/WallGet and
 # https://github.com/lejacobroy/aerials-downloader
+
+"""macOS Aerial Live Wallpaper Downloader.
+
+This script downloads, manages, and lists macOS Aerial live wallpapers.
+It can work in both interactive and non-interactive modes, supporting
+download, delete, and list operations on wallpaper categories.
+
+Features:
+- Download wallpapers from Apple's servers
+- Delete existing wallpapers
+- List available wallpapers
+- Category-based filtering
+- Progress tracking with tqdm
+- Parallel downloads for better performance
+- Both interactive and command-line interfaces
+
+Usage:
+    Interactive: uv run aerials.py
+    Download:    uv run aerials.py -d -c 1
+    Delete:      uv run aerials.py -x -c 1,2
+    List:        uv run aerials.py -l -c all
+"""
+
 import argparse
 import http.client
 import json
@@ -40,9 +63,20 @@ STRINGS_PATH: Path = (
 ENTRIES_PATH: Path = AERIALS_PATH / "manifest/entries.json"
 VIDEO_PATH: Path = AERIALS_PATH / "videos"
 
+# Constants
+CHUNK_SIZE: int = 32 * 1024  # 32KB chunks for downloading
+REQUEST_TIMEOUT: int = 10  # seconds
+DEFAULT_NAME_LENGTH: int = 30  # default length for formatted names
+
+# Type aliases for better readability
+AssetItem = tuple[str, str, str, int]  # (label, url, file_path, size)
+Category = dict[str, Any]
+AssetEntry = dict[str, Any]
+Strings = dict[str, str]
+
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse command-line arguments.
+    """Parses command-line arguments.
 
     Returns:
         Parsed command-line arguments.
@@ -78,7 +112,7 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def parse_category_selection(category_arg: str | None, num_categories: int) -> list[int]:
-    """Parse category selection from command-line arguments.
+    """Parses category selection from command-line arguments.
 
     Args:
         category_arg: Category argument string (e.g., "1,2,3")
@@ -113,7 +147,7 @@ def parse_category_selection(category_arg: str | None, num_categories: int) -> l
 
 
 def get_action_from_args(args: argparse.Namespace) -> tuple[str, str]:
-    """Get action from command-line arguments.
+    """Gets action from command-line arguments.
 
     Args:
         args: Parsed command-line arguments
@@ -131,7 +165,14 @@ def get_action_from_args(args: argparse.Namespace) -> tuple[str, str]:
 
 
 def print_summary(items: list, action: str, elapsed_time: float, total_bytes: int) -> None:
-    """Print a summary of the operation."""
+    """Prints a summary of the operation.
+
+    Args:
+        items: List of items that were processed
+        action: Action that was performed (download, delete, list)
+        elapsed_time: Time taken for the operation in seconds
+        total_bytes: Total bytes processed
+    """
     print("\n" + "=" * 50)
     print("📊 OPERATION SUMMARY")
     print("=" * 50)
@@ -145,7 +186,7 @@ def print_summary(items: list, action: str, elapsed_time: float, total_bytes: in
 
 
 def validate_environment() -> None:
-    """Validate that all required paths and files exist."""
+    """Validates that all required paths and files exist."""
     if not pathlib.Path(AERIALS_PATH).is_dir():
         print("❌ Unable to find aerials path.")
         sys.exit()
@@ -160,7 +201,7 @@ def validate_environment() -> None:
         sys.exit()
 
 
-def load_asset_data() -> tuple[dict[str, str], dict[str, Any]]:
+def load_asset_data() -> tuple[Strings, AssetEntry]:
     """Loads localizable strings and asset entries.
 
     Returns:
@@ -168,15 +209,15 @@ def load_asset_data() -> tuple[dict[str, str], dict[str, Any]]:
     """
     print("📂 Loading asset data...")
     with pathlib.Path(STRINGS_PATH).open("rb") as fp:
-        strings: dict[str, str] = plistlib.load(fp)
+        strings: Strings = plistlib.load(fp)
 
     with pathlib.Path(ENTRIES_PATH).open(encoding="utf-8") as fp:
-        asset_entries: dict[str, Any] = json.load(fp)
+        asset_entries: AssetEntry = json.load(fp)
 
     return strings, asset_entries
 
 
-def display_categories(categories: list[dict[str, Any]], strings: dict[str, str]) -> int:
+def display_categories(categories: list[Category], strings: Strings) -> int:
     """Displays available categories and returns the number of categories.
 
     Args:
@@ -199,7 +240,7 @@ def display_categories(categories: list[dict[str, Any]], strings: dict[str, str]
 
 
 def select_category(
-    categories: list[dict[str, Any]], strings: dict[str, str], num_categories: int
+    categories: list[Category], strings: Strings, num_categories: int
 ) -> tuple[str | None, str]:
     """Handles category selection and returns category ID and name.
 
@@ -216,14 +257,15 @@ def select_category(
         print("\n❌ No category selected.")
         sys.exit()
 
-    category_id: str | None = (
-        categories[int(category_index) - 1]["id"] if category_index <= num_categories else None
-    )
-    selected_category: str = (
-        categories[int(category_index) - 1]["localizedNameKey"]
-        if category_index <= num_categories
-        else "All"
-    )
+    if category_index == num_categories + 1:
+        # "All" option selected
+        return None, "All"
+
+    # Regular category selected
+    category: Category = categories[category_index - 1]
+    category_id: str = category["id"]
+    selected_category: str = category["localizedNameKey"]
+
     print(f"✅ Selected: {strings.get(selected_category, selected_category)}")
     print()
     return category_id, selected_category
@@ -235,10 +277,11 @@ def select_action() -> tuple[str, Literal["delete", "download", "list"]]:
     Returns:
         A tuple containing the action code and text.
     """
-    action = input("Download (d), delete (x), or list (l)? ").strip().lower()
-    if action not in {"d", "x", "l"}:
-        print("\n❌ No action selected.")
-        sys.exit()
+    while True:
+        action = input("Download (d), delete (x), or list (l)? ").strip().lower()
+        if action in {"d", "x", "l"}:
+            break
+        print("❌ Please enter 'd', 'x', or 'l'")
 
     action_text: Literal["delete", "download", "list"] = (
         "download" if action == "d" else "delete" if action == "x" else "list"
@@ -249,11 +292,11 @@ def select_action() -> tuple[str, Literal["delete", "download", "list"]]:
 
 
 def analyze_assets(
-    asset_entries: dict[str, Any],
-    strings: dict[str, str],
+    asset_entries: AssetEntry,
+    strings: Strings,
     category_ids: list[str | None],
     action: str,
-) -> tuple[list[tuple[str, str, str, int]], int]:
+) -> tuple[list[AssetItem], int]:
     """Analyzes assets and returns items to process and total bytes.
 
     Args:
@@ -267,7 +310,7 @@ def analyze_assets(
         A tuple containing the items to process and the total bytes.
     """
     print(f"🔄 Analyzing {get_action_text(action)} requirements...")
-    items: list[tuple[str, str, str, int]] = []
+    items: list[AssetItem] = []
     total_bytes: int = 0
     total_assets: int = len(asset_entries.get("assets", []))
 
@@ -338,7 +381,7 @@ def get_action_text(action: str) -> str:
     return "download" if action == "d" else "delete" if action == "x" else "list"
 
 
-def list_files(items: list[tuple[str, str, str, int]]) -> None:
+def list_files(items: list[AssetItem]) -> None:
     """Lists files that would be processed.
 
     Args:
@@ -374,7 +417,7 @@ def confirm_operation(action_text: str, items: list, total_bytes: int) -> bool:
     return True
 
 
-def download_files(items: list[tuple[str, str, str, int]], total_bytes: int) -> None:
+def download_files(items: list[AssetItem], total_bytes: int) -> None:
     """Downloads files in parallel with progress tracking.
 
     Args:
@@ -401,7 +444,7 @@ def download_files(items: list[tuple[str, str, str, int]], total_bytes: int) -> 
     print_summary(items, "download", elapsed_time, total_bytes)
 
 
-def delete_files(items: list[tuple[str, str, str, int]], total_bytes: int) -> None:
+def delete_files(items: list[AssetItem], total_bytes: int) -> None:
     """Deletes files with progress tracking.
 
     Args:
@@ -423,6 +466,14 @@ def delete_files(items: list[tuple[str, str, str, int]], total_bytes: int) -> No
 
 
 def as_int(s: str) -> int:
+    """Converts a string to an integer, returning -1 on failure.
+
+    Args:
+        s: String to convert
+
+    Returns:
+        Integer value or -1 if conversion fails
+    """
     try:
         return int(s)
     except ValueError:
@@ -430,31 +481,37 @@ def as_int(s: str) -> int:
 
 
 def format_bytes(bytes_: int) -> str:
-    units: tuple[
-        tuple[int, Literal["PB"]],
-        tuple[int, Literal["TB"]],
-        tuple[int, Literal["GB"]],
-        tuple[int, Literal["MB"]],
-        tuple[int, Literal["KB"]],
-        tuple[Literal[1], Literal["bytes"]],
-    ] = (
+    """Formats bytes into human-readable format.
+
+    Args:
+        bytes_: Number of bytes to format
+
+    Returns:
+        Formatted string with appropriate unit
+    """
+    if bytes_ == 0:
+        return "0 bytes"
+    if bytes_ == 1:
+        return "1 byte"
+
+    units = [
         (1 << 50, "PB"),
         (1 << 40, "TB"),
         (1 << 30, "GB"),
         (1 << 20, "MB"),
         (1 << 10, "KB"),
         (1, "bytes"),
-    )
-    if bytes_ == 1:
-        return "1 byte"
-    for factor, _suffix in units:
+    ]
+
+    for factor, suffix in units:
         if bytes_ >= factor:
-            break
-    return f"{bytes_ / factor:.2f} {_suffix}"
+            return f"{bytes_ / factor:.2f} {suffix}"
+
+    return f"{bytes_} bytes"
 
 
-def format_name(name: str, length: int = 30) -> str:
-    """Format a string name to an exact length, with ... if truncated.
+def format_name(name: str, length: int = DEFAULT_NAME_LENGTH) -> str:
+    """Formats a string name to an exact length, with ... if truncated.
 
     Args:
         name: The string to format.
@@ -469,13 +526,19 @@ def format_name(name: str, length: int = 30) -> str:
 
 
 def connect(parsed_url: urllib.parse.ParseResult) -> http.client.HTTPConnection:
-    # disable SSL verification
-    context: ssl.SSLContext = ssl._create_unverified_context()  # noqa: SLF001, S323
-    return (
-        http.client.HTTPSConnection(parsed_url.netloc, context=context)
-        if parsed_url.scheme == "https"
-        else http.client.HTTPConnection(parsed_url.netloc)
-    )
+    """Creates an HTTP connection for the given URL.
+
+    Args:
+        parsed_url: Parsed URL object
+
+    Returns:
+        HTTP connection object
+    """
+    if parsed_url.scheme == "https":
+        # Disable SSL verification for compatibility
+        context = ssl._create_unverified_context()  # noqa: SLF001, S323
+        return http.client.HTTPSConnection(parsed_url.netloc, context=context)
+    return http.client.HTTPConnection(parsed_url.netloc)
 
 
 def get_content_length(url: str) -> int:
@@ -489,11 +552,11 @@ def get_content_length(url: str) -> int:
     """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
-        req: requests.Response = requests.head(url, verify=False, timeout=10)  # noqa: S501
+        req: requests.Response = requests.head(url, verify=False, timeout=REQUEST_TIMEOUT)  # noqa: S501
     return int(req.headers["Content-Length"])
 
 
-def download_file_with_progress(download: tuple[str, str, str, int]) -> str:
+def download_file_with_progress(download: AssetItem) -> str:
     """Download a file with progress bar.
 
     Args:
@@ -513,7 +576,7 @@ def download_file_with_progress(download: tuple[str, str, str, int]) -> str:
             stream=True,
             headers=headers,
             verify=False,  # noqa: S501
-            timeout=10,
+            timeout=REQUEST_TIMEOUT,
         )
     try:
         req.raise_for_status()
@@ -541,6 +604,7 @@ def download_file_with_progress(download: tuple[str, str, str, int]) -> str:
 
 
 def main() -> None:
+    """Main function for the macOS Aerial Live Wallpaper Downloader."""
     print("🖥️ macOS Aerial Live Wallpaper Downloader")
     print("=" * 50)
     print()
@@ -554,7 +618,7 @@ def main() -> None:
 
     strings, asset_entries = load_asset_data()
 
-    categories: list[dict[str, Any]] = asset_entries.get("categories", [])
+    categories: list[Category] = asset_entries.get("categories", [])
     num_categories: int = display_categories(categories, strings)
 
     if interactive_mode:
