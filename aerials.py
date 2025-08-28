@@ -48,7 +48,7 @@ import urllib.parse
 import warnings
 from multiprocessing.pool import ApplyResult, ThreadPool
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 import requests
 import tqdm
@@ -67,12 +67,23 @@ VIDEO_PATH: Path = AERIALS_PATH / "videos"
 CHUNK_SIZE: int = 32 * 1024  # 32KB chunks for downloading
 REQUEST_TIMEOUT: int = 10  # seconds
 DEFAULT_NAME_LENGTH: int = 30  # default length for formatted names
+CACHE_EXPIRY_DAYS: int = 90  # Cache expiry in days
+CACHE_FILE: Path = AERIALS_PATH / "cache.json"
+
 
 # Type aliases for better readability
+class ContentLengthCacheEntry(TypedDict):
+    """A cache entry for content length."""
+
+    length: int
+    timestamp: float
+
+
 AssetItem = tuple[str, str, str, int]  # (label, url, file_path, size)
 Category = dict[str, Any]
 AssetEntry = dict[str, Any]
 Strings = dict[str, str]
+ContentLengthCache = dict[str, ContentLengthCacheEntry]
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -107,6 +118,11 @@ def parse_arguments() -> argparse.Namespace:
 
     # Skip confirmation
     parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompts")
+
+    # Clear cache
+    parser.add_argument(
+        "-cc", "--clear-cache", action="store_true", help="Clear the content length cache"
+    )
 
     return parser.parse_args()
 
@@ -536,13 +552,47 @@ def connect(parsed_url: urllib.parse.ParseResult) -> http.client.HTTPConnection:
     """
     if parsed_url.scheme == "https":
         # Disable SSL verification for compatibility
-        context = ssl._create_unverified_context()  # noqa: SLF001, S323
+        context: ssl.SSLContext = ssl._create_unverified_context()  # noqa: SLF001, S323
         return http.client.HTTPSConnection(parsed_url.netloc, context=context)
     return http.client.HTTPConnection(parsed_url.netloc)
 
 
+def load_cache() -> ContentLengthCache:
+    """Loads the content length cache from disk.
+
+    Returns:
+        The loaded cache dictionary, or empty dict if loading fails.
+    """
+    if not CACHE_FILE.is_file():
+        return {}
+
+    try:
+        with CACHE_FILE.open("r", encoding="utf-8") as f:
+            cache: ContentLengthCache = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"⚠️ Error loading cache file {CACHE_FILE}: {e}")
+        print("Starting with fresh cache.")
+        return {}
+    return cache
+
+
+def save_cache(cache: ContentLengthCache) -> None:
+    """Saves the content length cache to disk.
+
+    Args:
+        cache: The cache dictionary to save.
+    """
+    try:
+        # Ensure the cache directory exists
+        CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with CACHE_FILE.open("w", encoding="utf-8") as f:
+            json.dump(cache, f, indent=2)
+    except OSError as e:
+        print(f"❌ Error saving cache to {CACHE_FILE}: {e}")
+
+
 def get_content_length(url: str) -> int:
-    """Get content length from URL.
+    """Get content length from URL, using cache when possible.
 
     Args:
         url: The URL to get the content length from.
@@ -550,10 +600,29 @@ def get_content_length(url: str) -> int:
     Returns:
         The content length of the URL.
     """
+    # Load cache
+    cache: ContentLengthCache = load_cache()
+
+    # Check cache for URL
+    if url in cache:
+        entry = cache[url]
+        # Check if cache is expired
+        if time.time() - entry["timestamp"] < CACHE_EXPIRY_DAYS * 24 * 60 * 60:
+            return entry["length"]
+
+    # Fetch from URL
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
         req: requests.Response = requests.head(url, verify=False, timeout=REQUEST_TIMEOUT)  # noqa: S501
-    return int(req.headers["Content-Length"])
+    content_length: int = int(req.headers["Content-Length"])
+
+    # Update cache
+    cache[url] = {"length": content_length, "timestamp": time.time()}
+
+    # Save cache
+    save_cache(cache)
+
+    return content_length
 
 
 def download_file_with_progress(download: AssetItem) -> str:
@@ -603,6 +672,19 @@ def download_file_with_progress(download: AssetItem) -> str:
     return label
 
 
+def clear_cache() -> None:
+    """Clears the content length cache file."""
+    if CACHE_FILE.is_file():
+        print(f"🗑️ Clearing cache file: {CACHE_FILE}")
+        try:
+            CACHE_FILE.unlink()
+            print("✅ Cache cleared.")
+        except OSError as e:
+            print(f"❌ Error clearing cache: {e}")
+    else:
+        print(f"ℹ️ Cache file not found: {CACHE_FILE}")  # noqa: RUF001
+
+
 def main() -> None:
     """Main function for the macOS Aerial Live Wallpaper Downloader."""
     print("🖥️ macOS Aerial Live Wallpaper Downloader")
@@ -611,6 +693,9 @@ def main() -> None:
 
     # Parse command-line arguments
     args: argparse.Namespace = parse_arguments()
+
+    if args.clear_cache:
+        clear_cache()
 
     interactive_mode: bool = not any([args.download, args.delete, args.list])
 
@@ -639,11 +724,8 @@ def main() -> None:
 
         # Convert category numbers to category IDs
         category_ids: list[str | None] = []
-        for cat_num in selected_categories:
-            if cat_num <= num_categories:
-                category_ids.append(categories[cat_num - 1]["id"])
-            else:
-                category_ids.append(None)
+        for cat in selected_categories:
+            category_ids.append(categories[cat - 1]["id"] if cat <= num_categories else None)
 
         print(f"✅ Selected categories: {', '.join(str(c) for c in selected_categories)}")
         print(f"✅ Action: {action_text.capitalize()}")
