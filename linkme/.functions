@@ -5,11 +5,21 @@ function apps() {
 	bat -P "${DOTPATH}/apps.toml"
 }
 
-# Run .install.sh
+# Run install.sh
 function syncapps() {
 	bash "${DOTPATH}/install.sh"
 }
 
+# Run aerials.py
+function aerials() {
+	if [[ $# -eq 0 ]]; then
+		uv run "${DOTPATH}/aerials.py" -d -c all -y
+	else
+		uv run "${DOTPATH}/aerials.py" "$@"
+	fi
+}
+
+# Run bootstrap.sh
 function bootstrap() {
 	bash "${DOTPATH}/bootstrap.sh" -y
 }
