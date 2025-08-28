@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Root is $DOTPATH if it exists, otherwise the directory of this script
-root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")}")
+# Root is $DOTPATH if it exists, otherwise the parent directory of this script
+root=$(realpath "${DOTPATH:-$(dirname "$(realpath "$0")")/../}")
 
 # Source the bash_traceback.sh file
 source "${root}/bash_traceback.sh"

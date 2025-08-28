@@ -102,7 +102,7 @@ sleep 1
 echo
 echo -e "🚀 \033[1;33mRunning aerials.py...\033[0m"
 sleep 1
-./scripts/aerials.py -d -c all -y
+./scripts/aerials.py -d -y
 
 ###############################################################################
 # Install Cursor extensions                                                   #
