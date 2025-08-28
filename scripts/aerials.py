@@ -32,7 +32,7 @@ Usage:
     Interactive: uv run aerials.py
     Download:    uv run aerials.py -d -c 1
     Delete:      uv run aerials.py -x -c 1,2
-    List:        uv run aerials.py -l -c all
+    List:        uv run aerials.py -l
 """
 
 import argparse
@@ -98,7 +98,7 @@ def parse_arguments() -> argparse.Namespace:
               %(prog)s                    # Interactive mode
               %(prog)s -d -c 1            # Download category 1
               %(prog)s -x -c 2,3          # Delete categories 2 and 3
-              %(prog)s -l -c all          # List all categories
+              %(prog)s -l                 # List all categories (same as -l -c all)
               %(prog)s -d                 # Download all categories (same as -d -c all)
         """),
     )
