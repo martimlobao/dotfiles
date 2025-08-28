@@ -68,9 +68,11 @@ bash <(curl -sL https://dot.lobao.io) -y
 
 ## Aerial live wallpapers
 
-This repository contains a script that downloads the wallpapers from Apple's servers and caches them to your local machine. It can also delete existing wallpapers and list all available wallpapers.
+This repository contains a [script](scripts/aerials.py) that downloads the wallpapers from Apple's servers and caches them to your local machine. It can also delete existing wallpapers and list all available wallpapers.
 
-To use the script, run `uv run scripts/aerials.py` or simply `./scripts/aerials.py` (requires `uv`).
+To use the script, run `uv run scripts/aerials.py` or simply `./scripts/aerials.py` (requires installing [`uv`](https://docs.astral.sh/uv/getting-started/installation/)).
+
+![Aerials live wallpapers](static/aerials.png)
 
 ## Thanks and inspiration
 
