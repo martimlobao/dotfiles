@@ -70,6 +70,7 @@
     "unparsable",
     "untrusted"
   ],
+  "cursor.cpp.disabledLanguages": ["plaintext"],
   "editor.acceptSuggestionOnEnter": "on",
   "editor.accessibilitySupport": "off",
   "editor.cursorBlinking": "phase",
