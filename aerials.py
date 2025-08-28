@@ -10,7 +10,8 @@
 # [tool.uv]
 # exclude-newer = "2025-08-27T00:00:00Z"
 # ///
-# Forked from https://github.com/mikeswanson/WallGet and https://github.com/lejacobroy/aerials-downloader
+# Forked and adapted from https://github.com/mikeswanson/WallGet and
+# https://github.com/lejacobroy/aerials-downloader
 import argparse
 import http.client
 import json
@@ -100,7 +101,12 @@ def parse_category_selection(
     except ValueError as e:
         print(f"❌ Invalid category selection: {e}")
         sys.exit(1)
-    # Validate range
+
+    # Check if any category is the "all" option (which is num_categories + 1)
+    if (num_categories + 1) in categories:
+        return list(range(1, num_categories + 1))
+
+    # Validate range for other categories
     for cat in categories:
         if cat < 1 or cat > num_categories:
             print(f"❌ Invalid category selection: {cat}")
@@ -142,7 +148,6 @@ def print_summary(items: list, action: str, elapsed_time: float, total_bytes: in
 
 def validate_environment() -> None:
     """Validate that all required paths and files exist."""
-    print("Validating environment...")
     if not pathlib.Path(AERIALS_PATH).is_dir():
         print("❌ Unable to find aerials path.")
         sys.exit()
@@ -155,8 +160,6 @@ def validate_environment() -> None:
     if not pathlib.Path(VIDEO_PATH).is_dir():
         print("❌ Unable to find video path.")
         sys.exit()
-    print("✅ Environment validated successfully")
-    print()
 
 
 def load_asset_data() -> tuple[dict[str, str], dict[str, Any]]:
@@ -165,7 +168,6 @@ def load_asset_data() -> tuple[dict[str, str], dict[str, Any]]:
     Returns:
         A tuple containing the localizable strings and asset entries.
     """
-    print("Loading asset data...")
     with pathlib.Path(STRINGS_PATH).open("rb") as fp:
         strings: dict[str, str] = plistlib.load(fp)
 
@@ -185,8 +187,8 @@ def display_categories(categories: list[dict[str, Any]], strings: dict[str, str]
     Returns:
         The number of categories.
     """
-    print("Available categories:")
-    print("-" * 30)
+    print("🟢 Available categories:")
+    print("-" * 50)
     item = 0
     for category in categories:
         name: str = strings.get(category.get("localizedNameKey", ""), "")
@@ -265,12 +267,12 @@ def analyze_assets(
     Returns:
         A tuple containing the items to process and the total bytes.
     """
-    print(f"Analyzing {get_action_text(action)} requirements...")
+    print(f"🔄 Analyzing {get_action_text(action)} requirements...")
     items: list[tuple[str, str, str, int]] = []
     total_bytes: int = 0
     total_assets: int = len(asset_entries.get("assets", []))
 
-    with tqdm.tqdm(total=total_assets, desc="Scanning assets", unit="asset") as pbar:
+    with tqdm.tqdm(total=total_assets, desc="🔍 Scanning assets", unit="asset") as pbar:
         for asset in asset_entries.get("assets", []):
             # On macOS 26, default wallpapers have a category ID that is off by
             # the last character
@@ -361,7 +363,7 @@ def confirm_operation(action_text: str, items: list, total_bytes: int) -> bool:
     Returns:
         True if the user confirms the operation, False otherwise.
     """
-    print("System Information:")
+    print("⚙️ System Information:")
     print(f"  Files to {action_text}: {len(items)}")
     print(f"  Total size: {format_bytes(total_bytes)}")
     print()
@@ -542,7 +544,7 @@ def download_file_with_progress(download: tuple[str, str, str, int]) -> str:
 
 
 def main() -> None:
-    print("macOS Aerial Live Wallpaper Downloader")
+    print("🖥️ macOS Aerial Live Wallpaper Downloader")
     print("=" * 50)
     print()
 
@@ -595,7 +597,7 @@ def main() -> None:
 
     # Anything to process?
     if not items:
-        print(f"ℹ️  Nothing to {action_text}.")  # noqa: RUF001
+        print(f"ℹ️ Nothing to {action_text}.")  # noqa: RUF001
         sys.exit()
 
     # Handle list action
