@@ -178,7 +178,9 @@ def get_action_from_args(args: argparse.Namespace) -> tuple[str, str]:
     return "", ""
 
 
-def print_summary(items: list, action: str, elapsed_time: float, total_bytes: int) -> None:
+def print_summary(
+    items: list[AssetItem], action: str, elapsed_time: float, total_bytes: int
+) -> None:
     """Prints a summary of the operation.
 
     Args:
@@ -243,7 +245,7 @@ def display_categories(categories: list[Category], strings: Strings) -> int:
     """
     print("🟢 Available categories:")
     print("-" * 50)
-    item = 0
+    item: int = 0
     for category in categories:
         name: str = strings.get(category.get("localizedNameKey", ""), "")
         item += 1
@@ -292,7 +294,7 @@ def select_action() -> tuple[str, Literal["delete", "download", "list"]]:
         A tuple containing the action code and text.
     """
     while True:
-        action = input("Download (d), delete (x), or list (l)? ").strip().lower()
+        action: str = input("Download (d), delete (x), or list (l)? ").strip().lower()
         if action in {"d", "x", "l"}:
             break
         print("❌ Please enter 'd', 'x', or 'l'")
@@ -408,7 +410,7 @@ def list_files(items: list[AssetItem]) -> None:
         print(f"{format_name(item[0])} - {pathlib.Path(item[2]).name}")
 
 
-def confirm_operation(action_text: str, items: list, total_bytes: int) -> bool:
+def confirm_operation(action_text: str, items: list[AssetItem], total_bytes: int) -> bool:
     """Asks user to confirm the operation.
 
     Args:
@@ -424,7 +426,7 @@ def confirm_operation(action_text: str, items: list, total_bytes: int) -> bool:
     print(f"  Total size: {format_bytes(total_bytes)}")
     print()
 
-    proceed = input(f"Proceed with {action_text}? (y/n) ").strip().lower()
+    proceed: str = input(f"Proceed with {action_text}? (y/n) ").strip().lower()
     if proceed != "y":
         print("❌ Operation cancelled.")
         return False
@@ -508,7 +510,7 @@ def format_bytes(bytes_: int) -> str:
     if bytes_ == 1:
         return "1 byte"
 
-    units = [
+    units: list[tuple[int, str]] = [
         (1 << 50, "PB"),
         (1 << 40, "TB"),
         (1 << 30, "GB"),
