@@ -72,6 +72,8 @@ This repository contains a script that downloads the wallpapers from Apple's ser
 
 To use the script, run `uv run scripts/aerials.py` or simply `./scripts/aerials.py` (requires `uv`).
 
+![Aerials live wallpapers](static/aerials.png)
+
 ## Thanks and inspiration
 
 Several people and repositories have contributed to or been a source of inspiration for this repository:
