@@ -56,7 +56,7 @@ fi
 echo
 echo -e "🚀 \033[1;33mRunning dotsync.sh...\033[0m"
 sleep 1
-./dotsync.sh "${1-}"
+./scripts/dotsync.sh "${1-}"
 
 ###############################################################################
 # Linux exit                                                                  #
@@ -73,7 +73,7 @@ fi
 sleep 1
 echo
 echo -e "🚀 \033[1;33mRunning macos.sh...\033[0m"
-./macos.sh "${1-}"
+./scripts/macos.sh "${1-}"
 
 ###############################################################################
 # CI exit                                                                     #
@@ -90,11 +90,11 @@ fi
 echo
 echo -e "🚀 \033[1;33mRunning install.sh...\033[0m"
 sleep 1
-./install.sh "${1-}"
+./scripts/install.sh "${1-}"
 echo
 echo -e "🚀 \033[1;33mRunning dock.sh...\033[0m"
 sleep 1
-./dock.sh
+./scripts/dock.sh
 
 ###############################################################################
 # Install Aerial Live Wallpapers                                              #
@@ -102,7 +102,7 @@ sleep 1
 echo
 echo -e "🚀 \033[1;33mRunning aerials.py...\033[0m"
 sleep 1
-./aerials.py -d -c all -y
+./scripts/aerials.py -d -c all -y
 
 ###############################################################################
 # Install Cursor extensions                                                   #
@@ -110,7 +110,7 @@ sleep 1
 echo
 echo -e "🚀 \033[1;33mRunning code.sh...\033[0m"
 sleep 1
-./code.sh --sync "${1-}"
+./scripts/code.sh --sync "${1-}"
 
 ###############################################################################
 # Local settings and variables                                                #
@@ -118,7 +118,7 @@ sleep 1
 echo
 echo -e "🚀 \033[1;33mRunning local.sh...\033[0m"
 sleep 1
-./local.sh "${1-}"
+./scripts/local.sh "${1-}"
 
 echo
 echo -e "🎉 \033[1;32mSetup complete!\033[0m"
