@@ -6,16 +6,16 @@ This repository contains my personal dotfiles, as well as several scripts to ins
 
 Here's a short description of each script in this repository:
 
-- `bootstrap.sh` bootstrap install everything, including cloning this repository
-- `run.sh` install Homebrew and run all the following scripts
-- `dotsync.sh` sync and symlink dotfiles from this repository to your home directory
-- `macos.sh` configure several macOS settings
-- `aerials.py` download macOS Aerial live wallpapers
-- `install.sh` install fonts, tools, and apps using Homebrew, [`uv`](https://docs.astral.sh/uv/), and the Mac App Store
-- `dock.sh` configure macOS dock
-- `code.sh` install Cursor extensions
-- `local.sh` final local settings, like configuring git user details and registering apps using keys stored in 1Password
-- `bash_traceback.sh` helper script used by other scripts to print a more helpful traceback on failure (does nothing by itself)
+- [`bootstrap.sh`](bootstrap.sh) bootstrap install everything, including cloning this repository
+- [`run.sh`](run.sh) install Homebrew and run all the following scripts
+- [`dotsync.sh`](scripts/dotsync.sh) sync and symlink dotfiles from this repository to your home directory
+- [`macos.sh`](scripts/macos.sh) configure several macOS settings
+- [`aerials.py`](scripts/aerials.py) download macOS Aerial live wallpapers
+- [`install.sh`](scripts/install.sh) install fonts, tools, and apps using Homebrew, [`uv`](https://docs.astral.sh/uv/), and the Mac App Store
+- [`dock.sh`](scripts/dock.sh) configure macOS dock
+- [`code.sh`](scripts/code.sh) install Cursor extensions
+- [`local.sh`](scripts/local.sh) final local settings, like configuring git user details and registering apps using keys stored in 1Password
+- [`bash_traceback.sh`](bash_traceback.sh) helper script used by other scripts to print a more helpful traceback on failure (does nothing by itself)
 
 All these scripts are idempotent, meaning they can be run multiple times without issue.
 
@@ -70,7 +70,7 @@ bash <(curl -sL https://dot.lobao.io) -y
 
 This repository contains a script that downloads the wallpapers from Apple's servers and caches them to your local machine. It can also delete existing wallpapers and list all available wallpapers.
 
-To use the script, run `uv run aerials.py` or simply `./aerials.py` (requires `uv`).
+To use the script, run `uv run scripts/aerials.py` or simply `./scripts/aerials.py` (requires `uv`).
 
 ## Thanks and inspiration
 
