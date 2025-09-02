@@ -20,6 +20,9 @@ alias d="cd ~/Dropbox"
 alias dl="cd ~/Downloads"
 alias dt="cd ~/Desktop"
 
+# Use eza instead of ls
+alias ls="eza"
+
 # List all files colorized in long format
 alias l="ls -lF"
 
