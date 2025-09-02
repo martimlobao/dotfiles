@@ -126,6 +126,7 @@ ack = "formula" # Search tool like grep, but optimized for programmers
 bat = "formula" # Clone of cat(1) with syntax highlighting and Git integration
 domain-check = "formula" # CLI tool for checking domain availability using RDAP and WHOIS protocols
 exiftool = "formula" # Perl lib for reading and writing EXIF metadata
+eza = "formula" # Modern, maintained replacement for ls
 ffmpeg = "formula" # Play, record, convert, and stream audio and video
 httpie = "uv" # User-friendly cURL replacement (command-line HTTP client)
 imagemagick = "formula" # Tools and libraries to manipulate images in many formats
