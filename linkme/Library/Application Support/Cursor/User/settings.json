@@ -143,7 +143,7 @@
   "Prettier-SQL.expressionWidth": 100,
   "Prettier-SQL.keywordCase": "upper",
   "Prettier-SQL.SQLFlavourOverride": "snowflake",
-  "python.languageServer": "Pylance",
+  "python.languageServer": "None",
   "python.terminal.activateEnvironment": false,
   "redhat.telemetry.enabled": true,
   "rewrap.wrappingColumn": 79,
