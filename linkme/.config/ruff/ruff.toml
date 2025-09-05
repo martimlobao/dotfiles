@@ -57,6 +57,10 @@ ignore = [
   "S101", # assert
 ]
 
+[lint.mccabe]
+# Adjust level of function complexity for error `C901`.
+max-complexity = 15
+
 [lint.pydocstyle]
 convention = "google"
 
