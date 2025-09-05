@@ -33,6 +33,7 @@ Usage:
     Download:    uv run aerials.py -d -c 1
     Delete:      uv run aerials.py -x -c 1,2
     List:        uv run aerials.py -l
+    Open:        uv run aerials.py -o
 """
 
 import argparse
@@ -44,6 +45,7 @@ import textwrap
 import time
 import urllib.parse
 import warnings
+import webbrowser
 from multiprocessing.pool import ApplyResult, ThreadPool
 from pathlib import Path
 from typing import Any, Literal, TypedDict
@@ -100,6 +102,7 @@ def parse_arguments() -> argparse.Namespace:
               %(prog)s -x -c 2,3          # Delete categories 2 and 3
               %(prog)s -l                 # List all categories (same as -l -c all)
               %(prog)s -d                 # Download all categories (same as -d -c all)
+              %(prog)s -o                 # Open video directory in Finder
         """),
     )
 
@@ -108,6 +111,9 @@ def parse_arguments() -> argparse.Namespace:
     action_group.add_argument("-d", "--download", action="store_true", help="Download wallpapers")
     action_group.add_argument("-x", "--delete", action="store_true", help="Delete wallpapers")
     action_group.add_argument("-l", "--list", action="store_true", help="List wallpapers")
+    action_group.add_argument(
+        "-o", "--open", action="store_true", help="Open video directory in Finder"
+    )
 
     # Category selection
     parser.add_argument(
@@ -127,6 +133,12 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     return parser.parse_args()
+
+
+def open_video_directory() -> None:
+    """Opens the video directory in Finder."""
+    print(f"📂 Opening video directory: {VIDEO_PATH}")
+    webbrowser.open(f"file://{VIDEO_PATH}")
 
 
 def parse_category_selection(category_arg: str | None, num_categories: int) -> list[int]:
@@ -179,6 +191,8 @@ def get_action_from_args(args: argparse.Namespace) -> tuple[str, str]:
         return "x", "delete"
     if args.list:
         return "l", "list"
+    if args.open:
+        return "o", "open"
     return "", ""
 
 
@@ -227,7 +241,6 @@ def load_asset_data() -> tuple[Strings, AssetEntry]:
     Returns:
         A tuple containing the localizable strings and asset entries.
     """
-    print("📂 Loading asset data...")
     with pathlib.Path(STRINGS_PATH).open("rb") as fp:
         strings: Strings = plistlib.load(fp)
 
@@ -327,7 +340,6 @@ def analyze_assets(
     Returns:
         A tuple containing the items to process and the total bytes.
     """
-    print(f"🔄 Analyzing {get_action_text(action)} requirements...")
     items: list[AssetItem] = []
     total_bytes: int = 0
     total_assets: int = len(asset_entries.get("assets", []))
@@ -674,15 +686,17 @@ def clear_cache() -> None:
 
 def main() -> None:
     """Main function for the macOS Aerial Live Wallpaper Downloader."""
-    print("🖥️ macOS Aerial Live Wallpaper Downloader")
-    print("=" * 50)
-    print()
-
     # Parse command-line arguments
     args: argparse.Namespace = parse_arguments()
 
     if args.clear_cache:
         clear_cache()
+
+    # Handle open action immediately
+    if args.open:
+        validate_environment()
+        open_video_directory()
+        return
 
     interactive_mode: bool = not any([args.download, args.delete, args.list])
 
