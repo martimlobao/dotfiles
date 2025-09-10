@@ -49,6 +49,7 @@ ms-toolsai.vscode-jupyter-slideshow
 ms-vscode-remote.remote-containers
 ms-vscode-remote.remote-ssh
 ms-vscode-remote.remote-ssh-edit
+ms-vscode.makefile-tools
 ms-vscode.remote-explorer
 ms-vscode.remote-repositories
 ms-vscode.vscode-github-issue-notebooks
@@ -59,6 +60,7 @@ mushan.vscode-paste-image
 naumovs.color-highlight
 nhoizey.gremlins
 njpwerner.autodocstring
+openai.chatgpt
 pnp.polacode
 redhat.vscode-yaml
 richie5um2.vscode-sort-json
