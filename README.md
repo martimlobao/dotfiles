@@ -72,6 +72,13 @@ This repository contains a [script](scripts/aerials.py) that downloads the wallp
 
 To use the script, run `uv run scripts/aerials.py` or simply `./scripts/aerials.py` (requires installing [`uv`](https://docs.astral.sh/uv/getting-started/installation/)).
 
+You can even run the script directly from GitHub using `uv`:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh  # Install uv if not already installed
+uv run https://raw.githubusercontent.com/martimlobao/dotfiles/refs/heads/main/scripts/aerials.py
+```
+
 ![Aerials live wallpapers](static/aerials.png)
 
 ## Thanks and inspiration
