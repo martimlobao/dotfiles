@@ -22,22 +22,6 @@ if [[ -z "$(op account get 2>/dev/null)" ]]; then
 fi
 eval "$(op signin)"
 
-# Set up .gitconfig.private
-echo -e "📝 \033[1;35mSetting up .gitconfig.private...\033[0m"
-USERNAME=$(op user get --me | grep 'Name:' | sed 's/Name: *//')
-GITHUB_USER=$(op read "op://Private/GitHub/username")
-EMAIL=$(op read "op://Private/GitHub/email")
-SIGNING_KEY=$(op read "op://Private/GitHub SSH Commit Signing Key/public key")
-if [[ -n ${USERNAME} ]] && [[ -n ${EMAIL} ]] && [[ -n ${SIGNING_KEY} ]] && [[ -n ${GITHUB_USER} ]]; then
-	git config --file="${HOME}"/.gitconfig.private user.name "${USERNAME}"
-	git config --file="${HOME}"/.gitconfig.private user.email "${EMAIL}"
-	git config --file="${HOME}"/.gitconfig.private user.signingKey "${SIGNING_KEY}"
-	git config --file="${HOME}"/.gitconfig.private github.user "${GITHUB_USER}"
-else
-	echo -e "❌ \033[1;31mError: One or more values for .gitconfig are not set. Exiting.\033[0m"
-	exit 1
-fi
-
 # Inject secrets into files using 1Password
 if [[ ${1-} != "--yes" ]] && [[ ${1-} != "-y" ]]; then
 	read -rp $'❓ \e[1;31mDo you want to inject secrets and overwrite all files from injectme/ to your home directory? (y/n)\e[0m ' INJECTME
@@ -46,19 +30,19 @@ else
 fi
 if [[ ${INJECTME} =~ ^[Yy]$ ]]; then
 	echo -e "💉 \033[1;35mInjecting secrets into files using 1Password...\033[0m"
-	find injectme -type f -name "*.tpl" | while read -r template; do
+	find "${root}/injectme" -type f -name "*.tpl" | while read -r template; do
 		# Get the output path by:
 		# 1. Removing 'injectme/' prefix
 		# 2. Removing '.tpl' suffix
 		# 3. Prepending $HOME
-		output="${HOME}/${template#injectme/}"
+		output="${HOME}/${template#${root}/injectme/}"
 		output="${output%.tpl}"
 
 		# Create the output directory if it doesn't exist
 		mkdir -p "$(dirname "${output}")"
 
 		# Inject the template
-		op inject --in-file "${root}/${template}" --out-file "${output}" --force &>/dev/null
+		op inject --in-file "${template}" --out-file "${output}" --force >/dev/null
 		echo -e "✅ \033[1;32mInjected ${template} -> ${output/#${HOME}/\~}\033[0m"
 	done
 fi
