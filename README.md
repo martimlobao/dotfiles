@@ -47,7 +47,7 @@ bash <(curl -sL https://dot.lobao.io) -y
 
 1Password is required to store secrets used by these scripts. These include but are not limited to:
 
-- `op user get --me` to set your git `user.name`
+- `op://Private/GitHub/name` to set your git `user.name`
 - `op://Private/GitHub/email` and `op://Private/GitHub/username` to configure git and push to Github
 - `op://Private/GitHub SSH Commit Signing Key/public key` to configure SSH commit signing
 - `op://Private/iStat Menus 6/registered email` and `op://Private/iStat Menus 6/license key` to register iStat Menus 6
