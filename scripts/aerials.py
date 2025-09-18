@@ -344,6 +344,10 @@ def analyze_assets(
     total_bytes: int = 0
     total_assets: int = len(asset_entries.get("assets", []))
 
+    # If "All" category is selected, set category_ids to empty list
+    if None in category_ids:
+        category_ids = []
+
     with tqdm.tqdm(total=total_assets, desc="🔍 Scanning assets", unit="asset") as pbar:
         for asset in asset_entries.get("assets", []):
             # On macOS 26, default wallpapers have a category ID that is off by
@@ -351,7 +355,7 @@ def analyze_assets(
             asset_categories: list[str] = [
                 category.split("-")[0] for category in asset.get("categories", [])
             ]
-            # Check if asset belongs to any of the selected categories
+            # Skip if asset does not belong to any of the selected categories
             if category_ids and not any(
                 cat_id.split("-")[0] in asset_categories
                 for cat_id in category_ids
