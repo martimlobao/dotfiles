@@ -20,7 +20,7 @@ if [[ -z "$(op account get 2>/dev/null)" ]]; then
 	open /Applications/1Password.app
 	eval "$(op account add --address my.1password.com)"
 fi
-eval "$(op signin)"
+eval "$(op signin --account my.1password.com)"
 
 # Inject secrets into files using 1Password
 if [[ ${1-} != "--yes" ]] && [[ ${1-} != "-y" ]]; then

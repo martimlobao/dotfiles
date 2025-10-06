@@ -36,6 +36,7 @@ mathematic.vscode-latex
 mechatroner.rainbow-csv
 meta.pyrefly
 mohsen1.prettify-json
+mongodb.mongodb-vscode
 ms-azuretools.vscode-docker
 ms-python.debugpy
 ms-python.isort
