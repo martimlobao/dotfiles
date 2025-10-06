@@ -98,6 +98,7 @@ qlvideo = "cask" # Thumbnails, static previews, cover art and metadata for video
 quicklook-json = "cask" # Quick Look plugin for JSON files
 syntax-highlight = "cask" # Quicklook extension for source files
 webpquicklook = "cask" # Quick Look plugin for webp files
+6753110395 = "mas" # Folder Quick Look
 
 [shell-tools]
 autojump = "formula" # Shell extension to jump to frequently used directories
