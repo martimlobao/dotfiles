@@ -8,7 +8,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.7.2
+      ref: v1.7.3
       uri: https://github.com/trunk-io/plugins
 # Many linters and tools depend on runtimes - configure them here. (https://docs.trunk.io/runtimes)
 runtimes:
@@ -19,10 +19,10 @@ runtimes:
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   enabled:
-    - isort@6.0.1
-    - ruff@0.12.10
-    - actionlint@1.7.7
-    - checkov@3.2.465
+    - isort@7.0.0
+    - ruff@0.14.4
+    - actionlint@1.7.8
+    - checkov@3.2.492
     - git-diff-check
     - markdownlint@0.45.0
     - oxipng@9.1.5
@@ -30,7 +30,7 @@ lint:
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - taplo@0.10.0
-    - trufflehog@3.90.5
+    - trufflehog@3.90.13
     - yamllint@1.37.1
 actions:
   enabled:
