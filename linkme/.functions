@@ -32,9 +32,13 @@ function compresspdf() {
 	# from https://superuser.com/a/1217306/1280839
 	if [[ $# -lt 2 || $1 == "-h" || $1 == "--help" ]]; then
 		echo 'Usage: compresspdf [input file] [output file] [screen|ebook|printer|prepress]'
+		if [[ $1 == "-h" || $1 == "--help" ]]; then
+			return 0
+		fi
 		return 1
+	else
+		gs -sDEVICE=pdfwrite -dNOPAUSE -dQUIET -dBATCH -dPDFSETTINGS=/"${3:-"screen"}" -dCompatibilityLevel=1.4 -sOutputFile="$2" "$1"
 	fi
-	gs -sDEVICE=pdfwrite -dNOPAUSE -dQUIET -dBATCH -dPDFSETTINGS=/"${3:-"screen"}" -dCompatibilityLevel=1.4 -sOutputFile="$2" "$1"
 }
 
 # Start screensaver.
