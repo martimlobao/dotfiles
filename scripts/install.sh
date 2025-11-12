@@ -36,11 +36,11 @@ installed_uv=()
 populate_installed_apps() {
 	while IFS= read -r app; do
 		installed_casks+=("${app}")
-	done < <(brew list --cask)
+	done < <(brew list --cask | grep -v '\.jws\.json$')
 
 	while IFS= read -r app; do
 		installed_formulas+=("${app}")
-	done < <(brew list --formula)
+	done < <(brew list --formula | grep -v '\.jws\.json$')
 
 	while IFS= read -r app; do
 		installed_mas+=("${app}")
@@ -117,9 +117,9 @@ brew_sync() {
 	toml_apps=$(echo -e "${toml_apps_without_taps}\n${toml_apps}" | sort -u)
 
 	local missing_formulae
-	missing_formulae=$(comm -23 <(brew leaves | sort) <(echo "${toml_apps}" | sort))
+	missing_formulae=$(comm -23 <(brew leaves | grep -v '\.jws\.json$' | sort) <(echo "${toml_apps}" | sort))
 	local missing_casks
-	missing_casks=$(comm -23 <(brew list --cask | sort) <(echo "${toml_apps}" | sort))
+	missing_casks=$(comm -23 <(brew list --cask | grep -v '\.jws\.json$' | sort) <(echo "${toml_apps}" | sort))
 	local missing_apps
 	missing_apps=$(echo -e "${missing_formulae}\n${missing_casks}" | sort -u)
 
