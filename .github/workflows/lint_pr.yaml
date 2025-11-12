@@ -37,4 +37,20 @@ jobs:
       - name: Display yamllint version
         run: yamllint --version
       - name: yamllint
-        run: yamllint -c .trunk/configs/.yamllint.yaml .
+        run: yamllint -c linkme/.config/yamllint/config .
+  tombi:
+    name: Run tombi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: tombi
+        run: |
+          tombi lint .
+          tombi format --check .
+  rumdl:
+    name: Run rumdl
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: rumdl
+        run: rumdl --config linkme/.config/rumdl/rumdl.toml check .

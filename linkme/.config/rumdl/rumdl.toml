@@ -1,0 +1,8 @@
+[global]
+disable = []
+
+[per-file-ignores]
+"README.md" = ["MD033"]  # Allow HTML in README
+
+[MD013]
+line-length = 99
