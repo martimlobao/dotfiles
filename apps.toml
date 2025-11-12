@@ -1,159 +1,159 @@
 [core]
-mas = "formula" # Mac App Store command-line interface
-uv = "formula" # Extremely fast Python package installer and resolver, written in Rust
-1password = "cask" # Password manager that keeps all passwords secure behind one password
-1password-cli = "cask" # Command-line interface for 1Password [command: op]
+mas = "formula"  # Mac App Store command-line interface
+uv = "formula"  # Extremely fast Python package installer and resolver, written in Rust
+1password = "cask"  # Password manager that keeps all passwords secure behind one password
+1password-cli = "cask"  # Command-line interface for 1Password [command: op]
 
 [apple]
-409203825 = "mas" # Numbers: Create impressive spreadsheets
+409203825 = "mas"  # Numbers: Create impressive spreadsheets
 
 [developer]
-charles = "cask" # Web debugging Proxy application
-codex = "cask" # OpenAI's coding agent that runs in your terminal
-cursor = "cask" # Write, edit, and chat about your code with AI
-cursor-cli = "cask" # Command-line agent for Cursor
-docker-desktop = "cask" # App to build and share containerised applications and microservices
-gh = "formula" # GitHub command-line tool
-ghostty = "cask" # Terminal emulator that uses platform-native UI and GPU acceleration
-git-who = "formula" # Git blame for file trees
-icon-composer = "cask" # Apple tool to create multi-platform icons
-jupyter-notebook-viewer = "cask" # Utility to render Jupyter notebooks
-"postgresql@15" = "formula" # Object-relational database system
-redis = "formula" # Persistent key-value database, with built-in net interface
-shellcheck = "formula" # Static analysis and lint tool, for (ba)sh scripts
-shfmt = "formula" # Autoformat shell script source code
-sqlfluff = "uv" # SQL linter and auto-formatter for Humans
-trunk-io = "cask" # Developer experience toolkit used to check, test, merge, and monitor code
-yamllint = "uv" # Linter for YAML files
+charles = "cask"  # Web debugging Proxy application
+codex = "cask"  # OpenAI's coding agent that runs in your terminal
+cursor = "cask"  # Write, edit, and chat about your code with AI
+cursor-cli = "cask"  # Command-line agent for Cursor
+docker-desktop = "cask"  # App to build and share containerised applications and microservices
+gh = "formula"  # GitHub command-line tool
+ghostty = "cask"  # Terminal emulator that uses platform-native UI and GPU acceleration
+git-who = "formula"  # Git blame for file trees
+icon-composer = "cask"  # Apple tool to create multi-platform icons
+jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
+"postgresql@15" = "formula"  # Object-relational database system
+redis = "formula"  # Persistent key-value database, with built-in net interface
+shellcheck = "formula"  # Static analysis and lint tool, for (ba)sh scripts
+shfmt = "formula"  # Autoformat shell script source code
+sqlfluff = "uv"  # SQL linter and auto-formatter for Humans
+trunk-io = "cask"  # Developer experience toolkit used to check, test, merge, and monitor code
+yamllint = "uv"  # Linter for YAML files
 
 [work]
-aws-sso-cli = "formula" # Securely manage AWS API credentials using AWS SSO
-awscli = "formula" # Official Amazon AWS command-line interface
+aws-sso-cli = "formula"  # Securely manage AWS API credentials using AWS SSO
+awscli = "formula"  # Official Amazon AWS command-line interface
 
 [fonts]
-font-chomsky = "cask" # Chomsky (a font in the style of the New York Times masthead)
-font-doto = "cask" # Doto
-font-eb-garamond = "cask" # EB Garamond
-font-fira-code = "cask" # Fira Code
-font-humor-sans = "cask" # Humor Sans
-font-new-york = "cask" # New York, NY
-font-pixel-code = "cask" # Pixel Code
-font-sauce-code-pro-nerd-font = "cask" # SauceCodePro Nerd Font (Source Code Pro)
-font-sf-mono = "cask" # San Francisco Mono, SF Mono
-font-sf-pro = "cask" # San Francisco Pro, SF Pro
-font-source-code-pro = "cask" # Source Code Pro
-font-source-sans-3 = "cask" # Source Sans 3
-font-with-a-syntax-highlighter = "cask" # Font With A Syntax Highlighter
-"martimlobao/fonts/font-neacademia" = "cask" # Neacademia font
-"martimlobao/nyt-fonts/font-cheltenham" = "cask" # Cheltenham NYT font
-"martimlobao/nyt-fonts/font-franklin" = "cask" # Franklin NYT font
-"martimlobao/nyt-fonts/font-imperial" = "cask" # Imperial NYT font
-"martimlobao/nyt-fonts/font-karnak" = "cask" # Karnak NYT font
-"martimlobao/nyt-fonts/font-mag" = "cask" # NYT Magazine font
-"martimlobao/nyt-fonts/font-schnyder" = "cask" # Schnyder NYT font
-"martimlobao/nyt-fonts/font-stymie" = "cask" # Stymie NYT font
+font-chomsky = "cask"  # Chomsky (a font in the style of the New York Times masthead)
+font-doto = "cask"  # Doto
+font-eb-garamond = "cask"  # EB Garamond
+font-fira-code = "cask"  # Fira Code
+font-humor-sans = "cask"  # Humor Sans
+font-new-york = "cask"  # New York, NY
+font-pixel-code = "cask"  # Pixel Code
+font-sauce-code-pro-nerd-font = "cask"  # SauceCodePro Nerd Font (Source Code Pro)
+font-sf-mono = "cask"  # San Francisco Mono, SF Mono
+font-sf-pro = "cask"  # San Francisco Pro, SF Pro
+font-source-code-pro = "cask"  # Source Code Pro
+font-source-sans-3 = "cask"  # Source Sans 3
+font-with-a-syntax-highlighter = "cask"  # Font With A Syntax Highlighter
+"martimlobao/fonts/font-neacademia" = "cask"  # Neacademia font
+"martimlobao/nyt-fonts/font-cheltenham" = "cask"  # Cheltenham NYT font
+"martimlobao/nyt-fonts/font-franklin" = "cask"  # Franklin NYT font
+"martimlobao/nyt-fonts/font-imperial" = "cask"  # Imperial NYT font
+"martimlobao/nyt-fonts/font-karnak" = "cask"  # Karnak NYT font
+"martimlobao/nyt-fonts/font-mag" = "cask"  # NYT Magazine font
+"martimlobao/nyt-fonts/font-schnyder" = "cask"  # Schnyder NYT font
+"martimlobao/nyt-fonts/font-stymie" = "cask"  # Stymie NYT font
 
 [leisure]
-"martimlobao/dos-games/jumpstart-1st-grade" = "cask" # Windows first grade educational game from 1995
-"martimlobao/dos-games/jumpstart-kindergarten" = "cask" # Windows Kindergarten educational game from 1994
-"martimlobao/dos-games/mission-think" = "cask" # Windows educational game from 1997
-"martimlobao/dos-games/ods-vol1" = "cask" # Educational compilation by Ohio Distinctive Software from 1997
-"martimlobao/dos-games/orlys-draw-a-story" = "cask" # Windows drawing and storytelling game by Broderbund from 1997
-"martimlobao/dos-games/ready-to-read-with-pooh" = "cask" # Windows reading game by Disney from 1997
-minecraft = "cask" # Sandbox construction video game
-spotify = "cask" # Music streaming service
-302584613 = "mas" # Amazon Kindle
+"martimlobao/dos-games/jumpstart-1st-grade" = "cask"  # Windows first grade educational game from 1995
+"martimlobao/dos-games/jumpstart-kindergarten" = "cask"  # Windows Kindergarten educational game from 1994
+"martimlobao/dos-games/mission-think" = "cask"  # Windows educational game from 1997
+"martimlobao/dos-games/ods-vol1" = "cask"  # Educational compilation by Ohio Distinctive Software from 1997
+"martimlobao/dos-games/orlys-draw-a-story" = "cask"  # Windows drawing and storytelling game by Broderbund from 1997
+"martimlobao/dos-games/ready-to-read-with-pooh" = "cask"  # Windows reading game by Disney from 1997
+minecraft = "cask"  # Sandbox construction video game
+spotify = "cask"  # Music streaming service
+302584613 = "mas"  # Amazon Kindle
 # 1048524688 = "mas" # Delta - Game Emulator: All-in-One GBA4iOS Successor [not working, see: https://github.com/mas-cli/mas/issues/321]
 
 [productivity]
-notion = "cask" # App to write, plan, collaborate, and get organised
-obsidian = "cask" # Knowledge base that works on top of a local folder of plain text Markdown files
-slack = "cask" # Team communication and collaboration software
-superwhisper = "cask" # Dictation tool including LLM reformatting
-todoist-app = "cask" # To-do list
-zoom = "cask" # Video communication and virtual meeting platform
+notion = "cask"  # App to write, plan, collaborate, and get organised
+obsidian = "cask"  # Knowledge base that works on top of a local folder of plain text Markdown files
+slack = "cask"  # Team communication and collaboration software
+superwhisper = "cask"  # Dictation tool including LLM reformatting
+todoist-app = "cask"  # To-do list
+zoom = "cask"  # Video communication and virtual meeting platform
 
 [social]
-telegram = "cask" # Messaging app with a focus on speed and security
-whatsapp = "cask" # Native desktop client for WhatsApp
+telegram = "cask"  # Messaging app with a focus on speed and security
+whatsapp = "cask"  # Native desktop client for WhatsApp
 
 [tools]
-calibre = "cask" # E-books management software
-dropbox = "cask" # Client for the Dropbox cloud storage service
-google-drive = "cask" # Client for the Google Drive storage service
-iina = "cask" # Free and open-source media player [modern vlc alternative]
-istat-menus = "cask" # System monitoring app
-localsend = "cask" # Open-source cross-platform alternative to AirDrop
-nordvpn = "cask" # VPN client for secure internet access and private browsing
-parallels = "cask" # Desktop virtualization software
-rocket = "cask" # Emoji picker optimised for blind people
-the-unarchiver = "cask" # Unpacks archive files
-thebrowsercompany-dia = "cask" # Web browser
-transmission = "cask" # Open-source BitTorrent client
-1193539993 = "mas" # Brother iPrint&Scan
-937984704 = "mas" # Amphetamine: Powerful keep-awake utility
+calibre = "cask"  # E-books management software
+dropbox = "cask"  # Client for the Dropbox cloud storage service
+google-drive = "cask"  # Client for the Google Drive storage service
+iina = "cask"  # Free and open-source media player [modern vlc alternative]
+istat-menus = "cask"  # System monitoring app
+localsend = "cask"  # Open-source cross-platform alternative to AirDrop
+nordvpn = "cask"  # VPN client for secure internet access and private browsing
+parallels = "cask"  # Desktop virtualization software
+rocket = "cask"  # Emoji picker optimised for blind people
+the-unarchiver = "cask"  # Unpacks archive files
+thebrowsercompany-dia = "cask"  # Web browser
+transmission = "cask"  # Open-source BitTorrent client
+1193539993 = "mas"  # Brother iPrint&Scan
+937984704 = "mas"  # Amphetamine: Powerful keep-awake utility
 
 [utilities]
-chromedriver = "cask" # Automated testing of webapps for Google Chrome
-qlmarkdown = "cask" # Quick Look generator for Markdown files
-qlvideo = "cask" # Thumbnails, static previews, cover art and metadata for video files
-quicklook-json = "cask" # Quick Look plugin for JSON files
-syntax-highlight = "cask" # Quicklook extension for source files
-6753110395 = "mas" # Folder Quick Look
+chromedriver = "cask"  # Automated testing of webapps for Google Chrome
+qlmarkdown = "cask"  # Quick Look generator for Markdown files
+qlvideo = "cask"  # Thumbnails, static previews, cover art and metadata for video files
+quicklook-json = "cask"  # Quick Look plugin for JSON files
+syntax-highlight = "cask"  # Quicklook extension for source files
+6753110395 = "mas"  # Folder Quick Look
 
 [shell-tools]
-autojump = "formula" # Shell extension to jump to frequently used directories
-starship = "formula" # Cross-shell prompt for astronauts
-thefuck = "formula" # Programmatically correct mistyped console commands
-zsh-autosuggestions = "formula" # Fish-like fast/unobtrusive autosuggestions for zsh
-zsh-syntax-highlighting = "formula" # Fish shell like syntax highlighting for zsh
+autojump = "formula"  # Shell extension to jump to frequently used directories
+starship = "formula"  # Cross-shell prompt for astronauts
+thefuck = "formula"  # Programmatically correct mistyped console commands
+zsh-autosuggestions = "formula"  # Fish-like fast/unobtrusive autosuggestions for zsh
+zsh-syntax-highlighting = "formula"  # Fish shell like syntax highlighting for zsh
 
 [languages]
-go = "formula" # Open source programming language to build simple/reliable/efficient software
-node = "formula" # Platform built on V8 to build network applications
-rust = "formula" # Safe, concurrent, practical language
+go = "formula"  # Open source programming language to build simple/reliable/efficient software
+node = "formula"  # Platform built on V8 to build network applications
+rust = "formula"  # Safe, concurrent, practical language
 
 [python-tools]
-ipython = "uv" # Interactive computing in Python
-marimo = "uv" # Reactive notebook for Python [Jupyter alternative]
-mypy = "uv" # Experimental optional static type checker for Python
-"pantsbuild/tap/pants" = "cask" # Fast, scalable, user-friendly build system for codebases of all sizes
-poetry = "uv" # Python package management tool
-pylint = "uv" # It's not just a linter that annoys you!
-ruff = "uv" # Extremely fast Python linter, written in Rust
-rumdl = "uv" # Markdown Linter and Formatter written in Rust
-tombi = "uv" # TOML formatter, linter and language server
+ipython = "uv"  # Interactive computing in Python
+marimo = "uv"  # Reactive notebook for Python [Jupyter alternative]
+mypy = "uv"  # Experimental optional static type checker for Python
+"pantsbuild/tap/pants" = "cask"  # Fast, scalable, user-friendly build system for codebases of all sizes
+poetry = "uv"  # Python package management tool
+pylint = "uv"  # It's not just a linter that annoys you!
+ruff = "uv"  # Extremely fast Python linter, written in Rust
+rumdl = "uv"  # Markdown Linter and Formatter written in Rust
+tombi = "uv"  # TOML formatter, linter and language server
 
 [cli-tools]
-ack = "formula" # Search tool like grep, but optimized for programmers
-bat = "formula" # Clone of cat(1) with syntax highlighting and Git integration
-domain-check = "formula" # CLI tool for checking domain availability using RDAP and WHOIS protocols
-exiftool = "formula" # Perl lib for reading and writing EXIF metadata
-eza = "formula" # Modern, maintained replacement for ls
-ffmpeg = "formula" # Play, record, convert, and stream audio and video
-ghostscript = "formula" # Interpreter for PostScript and PDF
-httpie = "uv" # User-friendly cURL replacement (command-line HTTP client)
-imagemagick = "formula" # Tools and libraries to manipulate images in many formats
-jq = "formula" # Lightweight and flexible command-line JSON processor
-mcat = "formula" # Terminal image, video, directory, and Markdown viewer
-nano = "formula" # Free (GNU) replacement for the Pico text editor
-nnn = "formula" # Tiny, lightning fast, feature-packed file manager
-pandoc = "formula" # Swiss-army knife of markup format conversion
-pastel = "formula" # Command-line tool to generate, analyze, convert and manipulate colors
-pngcrush = "formula" # Optimizer for PNG files
-pv = "formula" # Monitor data's progress through a pipe
-telnet = "formula" # User interface to the TELNET protocol
-tree = "formula" # Display directories as trees (with optional color/HTML output)
-wget = "formula" # Internet file retriever
-yq = "formula" # Process YAML, JSON, XML, CSV and properties documents from the CLI
-yt-dlp = "uv" # Feature-rich command-line audio/video downloader
+ack = "formula"  # Search tool like grep, but optimized for programmers
+bat = "formula"  # Clone of cat(1) with syntax highlighting and Git integration
+domain-check = "formula"  # CLI tool for checking domain availability using RDAP and WHOIS protocols
+exiftool = "formula"  # Perl lib for reading and writing EXIF metadata
+eza = "formula"  # Modern, maintained replacement for ls
+ffmpeg = "formula"  # Play, record, convert, and stream audio and video
+ghostscript = "formula"  # Interpreter for PostScript and PDF
+httpie = "uv"  # User-friendly cURL replacement (command-line HTTP client)
+imagemagick = "formula"  # Tools and libraries to manipulate images in many formats
+jq = "formula"  # Lightweight and flexible command-line JSON processor
+mcat = "formula"  # Terminal image, video, directory, and Markdown viewer
+nano = "formula"  # Free (GNU) replacement for the Pico text editor
+nnn = "formula"  # Tiny, lightning fast, feature-packed file manager
+pandoc = "formula"  # Swiss-army knife of markup format conversion
+pastel = "formula"  # Command-line tool to generate, analyze, convert and manipulate colors
+pngcrush = "formula"  # Optimizer for PNG files
+pv = "formula"  # Monitor data's progress through a pipe
+telnet = "formula"  # User interface to the TELNET protocol
+tree = "formula"  # Display directories as trees (with optional color/HTML output)
+wget = "formula"  # Internet file retriever
+yq = "formula"  # Process YAML, JSON, XML, CSV and properties documents from the CLI
+yt-dlp = "uv"  # Feature-rich command-line audio/video downloader
 
 [fun]
-fastfetch = "formula" # Like neofetch, but much faster because written mostly in C
-lolcat = "formula" # Rainbows and unicorns in your console!
-lucky-commit = "formula" # Customize your git commit hashes!
+fastfetch = "formula"  # Like neofetch, but much faster because written mostly in C
+lolcat = "formula"  # Rainbows and unicorns in your console!
+lucky-commit = "formula"  # Customize your git commit hashes!
 
 [system-binaries]
-bash = "formula" # Bourne-Again SHell, a UNIX command interpreter
-git = "formula" # Distributed revision control system
-grep = "formula" # GNU grep, egrep and fgrep [command: ggrep]
+bash = "formula"  # Bourne-Again SHell, a UNIX command interpreter
+git = "formula"  # Distributed revision control system
+grep = "formula"  # GNU grep, egrep and fgrep [command: ggrep]

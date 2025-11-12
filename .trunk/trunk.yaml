@@ -19,8 +19,6 @@ runtimes:
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   enabled:
-    - isort@7.0.0
-    - ruff@0.14.4
     - actionlint@1.7.8
     - checkov@3.2.492
     - git-diff-check
@@ -29,9 +27,7 @@ lint:
     - prettier@3.6.2
     - shellcheck@0.11.0
     - shfmt@3.6.0
-    - taplo@0.10.0
     - trufflehog@3.90.13
-    - yamllint@1.37.1
 actions:
   enabled:
     - trunk-check-pre-push
