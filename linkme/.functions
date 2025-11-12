@@ -28,6 +28,12 @@ function chrome() {
 	uvx --with "selenium" python -c "from selenium import webdriver; driver = webdriver.Chrome(); input('Press Enter to exit...')"
 }
 
+function compresspdf() {
+	# from https://superuser.com/a/1217306/1280839
+	echo 'Usage: compresspdf [input file] [output file] [screen|ebook|printer|prepress]'
+	gs -sDEVICE=pdfwrite -dNOPAUSE -dQUIET -dBATCH -dPDFSETTINGS=/"${3:-"screen"}" -dCompatibilityLevel=1.4 -sOutputFile="$2" "$1"
+}
+
 # Start screensaver.
 function ss() {
 	open -a ScreenSaverEngine
