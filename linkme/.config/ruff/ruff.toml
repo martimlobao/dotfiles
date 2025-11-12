@@ -1,5 +1,5 @@
 target-version = "py312"
-line-length = 99
+line-length = 80
 preview = true
 
 [lint]
