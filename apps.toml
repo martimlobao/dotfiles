@@ -18,7 +18,7 @@ ghostty = "cask" # Terminal emulator that uses platform-native UI and GPU accele
 git-who = "formula" # Git blame for file trees
 icon-composer = "cask" # Apple tool to create multi-platform icons
 jupyter-notebook-viewer = "cask" # Utility to render Jupyter notebooks
-"postgresql@14" = "formula" # Object-relational database system
+"postgresql@15" = "formula" # Object-relational database system
 redis = "formula" # Persistent key-value database, with built-in net interface
 shellcheck = "formula" # Static analysis and lint tool, for (ba)sh scripts
 shfmt = "formula" # Autoformat shell script source code
@@ -85,6 +85,7 @@ iina = "cask" # Free and open-source media player [modern vlc alternative]
 istat-menus = "cask" # System monitoring app
 localsend = "cask" # Open-source cross-platform alternative to AirDrop
 nordvpn = "cask" # VPN client for secure internet access and private browsing
+parallels = "cask" # Desktop virtualization software
 rocket = "cask" # Emoji picker optimised for blind people
 the-unarchiver = "cask" # Unpacks archive files
 thebrowsercompany-dia = "cask" # Web browser
@@ -95,11 +96,9 @@ transmission = "cask" # Open-source BitTorrent client
 [utilities]
 chromedriver = "cask" # Automated testing of webapps for Google Chrome
 qlmarkdown = "cask" # Quick Look generator for Markdown files
-qlstephen = "cask" # Quick Look plugin for plaintext files without an extension
 qlvideo = "cask" # Thumbnails, static previews, cover art and metadata for video files
 quicklook-json = "cask" # Quick Look plugin for JSON files
 syntax-highlight = "cask" # Quicklook extension for source files
-webpquicklook = "cask" # Quick Look plugin for webp files
 6753110395 = "mas" # Folder Quick Look
 
 [shell-tools]
@@ -122,6 +121,8 @@ mypy = "uv" # Experimental optional static type checker for Python
 poetry = "uv" # Python package management tool
 pylint = "uv" # It's not just a linter that annoys you!
 ruff = "uv" # Extremely fast Python linter, written in Rust
+rumdl = "uv" # Markdown Linter and Formatter written in Rust
+tombi = "uv" # TOML formatter, linter and language server
 
 [cli-tools]
 ack = "formula" # Search tool like grep, but optimized for programmers
@@ -130,9 +131,11 @@ domain-check = "formula" # CLI tool for checking domain availability using RDAP 
 exiftool = "formula" # Perl lib for reading and writing EXIF metadata
 eza = "formula" # Modern, maintained replacement for ls
 ffmpeg = "formula" # Play, record, convert, and stream audio and video
+ghostscript = "formula" # Interpreter for PostScript and PDF
 httpie = "uv" # User-friendly cURL replacement (command-line HTTP client)
 imagemagick = "formula" # Tools and libraries to manipulate images in many formats
 jq = "formula" # Lightweight and flexible command-line JSON processor
+mcat = "formula" # Terminal image, video, directory, and Markdown viewer
 nano = "formula" # Free (GNU) replacement for the Pico text editor
 nnn = "formula" # Tiny, lightning fast, feature-packed file manager
 pandoc = "formula" # Swiss-army knife of markup format conversion
