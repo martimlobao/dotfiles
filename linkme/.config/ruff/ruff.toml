@@ -1,4 +1,4 @@
-target-version = "py312"
+target-version = "py313"
 line-length = 99
 preview = true
 
@@ -24,6 +24,7 @@ ignore = [
   "G004",  # logging-f-string
   "TRY003",  # raise-vanilla-args
   "T201",  # print
+  "UP040",  # non-pep695-type-alias
   # from https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
   "W191",  # tab-indentation
   "E111",  # indentation-with-invalid-multiple
