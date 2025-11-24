@@ -48,7 +48,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
       - name: Install uv
-        uses: astral-sh/setup-uv@5a7eac68fb9809dea845d802897dc5c723910fa3 # v7.1.3
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
       - name: Run tombi
         run: |
           uvx tombi lint .
@@ -60,7 +60,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
       - name: Install uv
-        uses: astral-sh/setup-uv@5a7eac68fb9809dea845d802897dc5c723910fa3 # v7.1.3
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
       - name: Run rumdl
         run: uvx rumdl --config linkme/.config/rumdl/rumdl.toml check .
   ruff:
