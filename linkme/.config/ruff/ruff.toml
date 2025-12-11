@@ -43,7 +43,7 @@ ignore = [
 ]
 
 [lint.per-file-ignores]
-"tests/**/*.py" = [
+"{tests/**/*.py,**/test_*.py}" = [
   # unnecessary for tests
   "D100",  # undocumented-public-module
   "D101",  # undocumented-public-class

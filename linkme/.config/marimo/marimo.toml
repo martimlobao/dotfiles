@@ -1,57 +1,88 @@
-[server]
-browser = "default"
-follow_symlink = false
+[snippets]
+include_default_snippets = true
+custom_paths = []
 
-[experimental]
+[language_servers.pylsp]
+enable_mypy = true
+enable_flake8 = false
+enable_pylint = false
+enable_pyflakes = false
+enable_pydocstyle = false
+enable_ruff = true
+enabled = true
 
 [ai]
+mode = "manual"
 rules = ""
+inline_tooltip = false
+
+[ai.open_ai_compatible]
+
+[ai.open_ai]
+
+[ai.ollama]
+
+[ai.google]
+
+[ai.models]
+custom_models = []
+displayed_models = ["openai/gpt-5"]
+
+[ai.anthropic]
 
 [keymap]
 preset = "default"
+destructive_delete = true
 
 [keymap.overrides]
 
-[completion]
-activate_on_typing = true
-copilot = "github"
+[server]
+follow_symlink = false
+browser = "default"
 
-[formatting]
-line_length = 99
+[experimental]
 
 [runtime]
-pythonpath = []
-watcher_on_save = "lazy"
+auto_reload = "autorun"
+default_auto_download = []
+auto_instantiate = true
+default_sql_output = "auto"
+reactive_tests = true
 std_stream_max_bytes = 1000000
 output_max_bytes = 8000000
-auto_instantiate = true
-auto_reload = "off"
-on_cell_change = "lazy"
-
-[save]
-autosave_delay = 1000
-autosave = "off"
-format_on_save = true
+on_cell_change = "autorun"
+watcher_on_save = "lazy"
+pythonpath = []
 
 [package_management]
 manager = "uv"
 
+[save]
+autosave = "off"
+autosave_delay = 1000
+format_on_save = true
+
+[mcp]
+presets = ["marimo"]
+
+[mcp.mcpServers]
+
 [display]
-default_width = "medium"
-theme = "light"
+default_table_page_size = 10
+default_table_max_columns = 50
 dataframes = "rich"
 cell_output = "above"
+reference_highlighting = false
+theme = "light"
 code_editor_font_size = 14
+default_width = "medium"
 
-[language_servers.pylsp]
-enable_pylint = false
-enable_ruff = true
-enabled = true
-enable_flake8 = false
-enable_pyflakes = false
-enable_mypy = true
-enable_pydocstyle = false
+[diagnostics]
+sql_linter = true
 
-[snippets]
-include_default_snippets = true
-custom_paths = []
+[completion]
+copilot = "github"
+activate_on_typing = true
+
+[formatting]
+line_length = 99
