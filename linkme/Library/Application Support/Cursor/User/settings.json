@@ -81,6 +81,7 @@
   ],
   "cursor.composer.shouldChimeAfterChatFinishes": true,
   "cursor.cpp.disabledLanguages": ["plaintext"],
+  "cursorpyright.disableLanguageServices": true,
   "editor.acceptSuggestionOnEnter": "on",
   "editor.accessibilitySupport": "off",
   "editor.cursorBlinking": "phase",
