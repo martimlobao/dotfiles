@@ -279,6 +279,9 @@ def infer_description(source: str, app: str, description: str | None) -> str:
         AppManagerError: If the description is required for uv-installed apps
             and not provided.
     """
+    if description is not None:
+        description = description.strip()
+
     if source == "uv" and not description:
         raise AppManagerError(
             "Description is required for uv-installed apps. Use --description/-d."
@@ -291,6 +294,19 @@ def infer_description(source: str, app: str, description: str | None) -> str:
         return fetch_mas_description(app)
 
     return fetch_brew_description(app, source)
+
+
+def sanitize_toml_inline_comment(comment: str) -> str:
+    """Make a string safe to use as a TOML inline comment.
+
+    TOML comments cannot span multiple lines, so we collapse all whitespace
+    (including newlines) into single spaces.
+
+    Returns:
+        A single-line string safe to pass to ``tomlkit``'s
+        ``value.comment(...)``.
+    """
+    return " ".join(comment.split())
 
 
 def fetch_mas_description(app_id: str) -> str:
@@ -533,7 +549,7 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
         raise AppManagerError(f"Section [{args.group}] is not a table in apps.toml.")
 
     value = tomlkit.string(args.source)
-    value.comment(description)
+    value.comment(sanitize_toml_inline_comment(description))
     value.trivia.comment_ws = "  "  # two spaces before comment
 
     document[args.group], existed = upsert_value(group_table, args.app, value)
