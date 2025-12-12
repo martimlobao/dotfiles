@@ -10,12 +10,16 @@ all on any other OS.
 Here's a short description of each script in this repository:
 
 - [`bootstrap.sh`](bootstrap.sh) bootstrap install everything, including cloning this repository
+  (callable using `bootstrap`)
 - [`run.sh`](run.sh) install Homebrew and run all the following scripts
 - [`dotsync.sh`](scripts/dotsync.sh) sync and symlink dotfiles from this repository to your home directory
 - [`macos.sh`](scripts/macos.sh) configure several macOS settings
-- [`aerials.py`](scripts/aerials.py) download macOS Aerial live wallpapers
+- [`aerials.py`](scripts/aerials.py) download macOS Aerial live wallpapers (callable using
+  `aerials`)
 - [`install.sh`](scripts/install.sh) install fonts, tools, and apps using Homebrew,
-  [`uv`](https://docs.astral.sh/uv/), and the Mac App Store
+  [`uv`](https://docs.astral.sh/uv/), and the Mac App Store (callable using `syncapps`)
+- [`app.py`](scripts/app.py) CLI tool to manage applications listed in [`apps.toml`](apps.toml)
+  (callable using `app`)
 - [`dock.sh`](scripts/dock.sh) configure macOS dock
 - [`code.sh`](scripts/code.sh) install Cursor extensions
 - [`local.sh`](scripts/local.sh) final local settings, like configuring git user details and
