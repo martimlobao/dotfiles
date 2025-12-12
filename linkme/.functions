@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# Print installed apps in apps.toml
-function apps() {
-	bat -P "${DOTPATH}/apps.toml"
+# Manage installed apps in apps.toml
+function app() {
+	uv run "${DOTPATH}/scripts/app.py" "$@"
 }
 
 # Run install.sh
