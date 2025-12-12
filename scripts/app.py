@@ -282,7 +282,9 @@ def remove_app_from_group(document: tomlkit.TOMLDocument, *, group: str, app_key
     return True
 
 
-def infer_description(source: str, app: str, description: str | None, document: tomlkit.TOMLDocument) -> str:
+def infer_description(
+    source: str, app: str, description: str | None, document: tomlkit.TOMLDocument
+) -> str:
     """Infers a description for an app.
 
     Args:
@@ -306,7 +308,7 @@ def infer_description(source: str, app: str, description: str | None, document: 
     if description:
         return description
 
-    info = fetch_app_info(source, app, document)
+    info: AppInfo = fetch_app_info(source, app, document)
     if info.description:
         return info.description
     raise AppManagerError(
@@ -315,7 +317,17 @@ def infer_description(source: str, app: str, description: str | None, document: 
 
 
 def fetch_mas_info(app_id: str) -> AppInfo:
-    """Fetches info for an app from the Mac App Store."""
+    """Fetches info for an app from the Mac App Store.
+
+    Args:
+        app_id: The ID of the app.
+
+    Returns:
+        An AppInfo object.
+
+    Raises:
+        AppManagerError: If mas is not installed or if the app is not found.
+    """
     mas_executable: str | None = shutil.which("mas")
     if not mas_executable:
         raise AppManagerError("mas is required to infer descriptions for Mac App Store apps.")
@@ -337,10 +349,8 @@ def fetch_mas_info(app_id: str) -> AppInfo:
     if not description_line:
         raise AppManagerError("Could not parse mas info output.")
 
-    match = re.match(
-        r"^(?P<name>.+?)\s+(?P<version>\d[\w.\-]+)(?:\s+\[.*\])?$", description_line
-    )
-    name = description_line
+    match = re.match(r"^(?P<name>.+?)\s+(?P<version>\d[\w.\-]+)(?:\s+\[.*\])?$", description_line)
+    name: str = description_line
     version: str | None = None
     if match:
         name = match.group("name").strip()
@@ -388,7 +398,19 @@ def _extract_brew_install(entry: dict[str, JSON]) -> tuple[bool, str | None]:
 
 
 def fetch_brew_info(app: str, source: str) -> AppInfo:
-    """Fetches info for an app from Homebrew."""
+    """Fetches info for an app from Homebrew.
+
+    Args:
+        app: The name of the app.
+        source: The source of the app.
+
+    Returns:
+        An AppInfo object.
+
+    Raises:
+        AppManagerError: If Homebrew is not installed or if the app is not
+            found.
+    """
     brew_executable = shutil.which("brew")
     if not brew_executable:
         raise AppManagerError(
@@ -418,7 +440,7 @@ def fetch_brew_info(app: str, source: str) -> AppInfo:
     installed, version = _extract_brew_install(entry)
 
     return AppInfo(
-        name=str(entry.get("name") or entry.get("full_name") or app),
+        name=app,
         source=source,
         description=str(description) if description else None,
         version=version,
@@ -427,6 +449,15 @@ def fetch_brew_info(app: str, source: str) -> AppInfo:
 
 
 def fetch_uv_info(document: tomlkit.TOMLDocument, app: str) -> AppInfo:
+    """Fetches info for an app from uv.
+
+    Args:
+        document: The TOML document object.
+        app: The name of the app.
+
+    Returns:
+        An AppInfo object.
+    """
     description: str | None = None
     entry = find_app_group(document, app)
     if entry is not None:
@@ -446,12 +477,11 @@ def fetch_uv_info(document: tomlkit.TOMLDocument, app: str) -> AppInfo:
             capture_output=True,
         )
         if result.returncode == 0:
-            norm = normalize_key(app)
+            norm: str = normalize_key(app)
             for line in result.stdout.splitlines():
-                parts = line.split()
-                if len(parts) >= 2 and normalize_key(parts[0]) == norm:
+                name, version = line.split()
+                if normalize_key(name) == norm and version.startswith("v"):
                     installed = True
-                    version = parts[1]
                     break
 
     return AppInfo(
@@ -464,6 +494,19 @@ def fetch_uv_info(document: tomlkit.TOMLDocument, app: str) -> AppInfo:
 
 
 def fetch_app_info(source: str, app: str, document: tomlkit.TOMLDocument) -> AppInfo:
+    """Fetches info for an app from a given source.
+
+    Args:
+        source: The source of the app.
+        app: The name of the app.
+        document: The TOML document object.
+
+    Returns:
+        An AppInfo object.
+
+    Raises:
+        AppManagerError: If the source is unknown.
+    """
     match source:
         case "mas":
             return fetch_mas_info(app)
@@ -809,7 +852,12 @@ def list_apps(document: tomlkit.TOMLDocument) -> None:
 
 
 def print_app_info(info: AppInfo) -> None:
-    fields = {
+    """Prints app info in a formatted table.
+
+    Args:
+        info: The AppInfo object.
+    """
+    fields: dict[str, str] = {
         "Name": info.name,
         "Source": info.source,
         "Description": info.description or "N/A",
@@ -817,7 +865,7 @@ def print_app_info(info: AppInfo) -> None:
         "Installed": "Yes" if info.installed else "No",
     }
 
-    max_label = max(len(label) for label in fields)
+    max_label: int = max(len(label) for label in fields)
     for label, value in fields.items():
         print(f"{label:<{max_label}} : {value}")
 
@@ -842,7 +890,7 @@ def main() -> None:
     elif args.command == "list":
         list_apps(document)
     elif args.command == "info":
-        info = fetch_app_info(args.source, args.app, document)
+        info: AppInfo = fetch_app_info(args.source, args.app, document)
         print_app_info(info)
     else:
         raise AppManagerError(f"Unknown command: {args.command!r}")
