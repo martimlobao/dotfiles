@@ -14,6 +14,7 @@ Examples:
     app add cask chromedriver -g utilities
     app add mas 6753110395
     app remove httpie
+    app list
 """
 
 import argparse
@@ -175,6 +176,8 @@ def parse_args() -> argparse.Namespace:
     remove_parser = subparsers.add_parser("remove", help="Remove an app from apps.toml")
     remove_parser.add_argument("app", help="App name or identifier to remove")
 
+    subparsers.add_parser("list", help="List apps in apps.toml")
+
     return parser.parse_args()
 
 
@@ -209,6 +212,137 @@ def save_apps(apps_file: Path, doc: tomlkit.TOMLDocument) -> None:
     """
     with apps_file.open("w", encoding="utf-8") as f:
         f.write(tomlkit.dumps(doc))
+
+
+class _Ansi:
+    RESET = "\x1b[0m"
+    BOLD = "\x1b[1m"
+    DIM = "\x1b[2m"
+    CYAN = "\x1b[36m"
+    GREEN = "\x1b[32m"
+    YELLOW = "\x1b[33m"
+    MAGENTA = "\x1b[35m"
+    BLUE = "\x1b[34m"
+
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _supports_color() -> bool:
+    return sys.stdout.isatty()
+
+
+def _c(text: str, *styles: str) -> str:
+    if not _supports_color() or not styles:
+        return text
+    return "".join(styles) + text + _Ansi.RESET
+
+
+def _truncate(text: str, width: int) -> str:
+    if width <= 0:
+        return ""
+    if len(text) <= width:
+        return text
+    if width <= 1:
+        return text[:width]
+    return text[: width - 1] + "…"
+
+
+def _visible_len(text: str) -> int:
+    return len(_ANSI_RE.sub("", text))
+
+
+def _ljust_ansi(text: str, width: int) -> str:
+    pad = width - _visible_len(text)
+    if pad <= 0:
+        return text
+    return text + (" " * pad)
+
+
+def _get_item_value(item: tomlkit.items.Item) -> str:
+    value = getattr(item, "value", None)
+    if value is None:
+        return str(item).strip('"')
+    return str(value)
+
+
+def _get_item_comment(item: tomlkit.items.Item) -> str:
+    trivia = getattr(item, "trivia", None)
+    comment = getattr(trivia, "comment", None)
+    if not comment:
+        return ""
+    return str(comment).lstrip("#").strip()
+
+
+def list_apps(document: tomlkit.TOMLDocument) -> None:
+    """Lists apps in apps.toml in an aligned table."""
+    groups = list(iter_group_tables(document))
+    if not groups:
+        print("No apps found.")
+        return
+
+    rows_by_group: list[tuple[str, list[tuple[str, str, str]]]] = []
+    any_rows = False
+    for group, table in groups:
+        group_rows: list[tuple[str, str, str]] = []
+        for app_key, item in table.items():
+            app = str(app_key)
+            source = _get_item_value(item)
+            desc = _get_item_comment(item)
+            group_rows.append((app, source, desc))
+            any_rows = True
+        rows_by_group.append((group, group_rows))
+
+    if not any_rows:
+        print("No apps found.")
+        return
+
+    # Compute widths once, across all groups, so every table aligns the same.
+    all_rows = [row for _, rows in rows_by_group for row in rows]
+    col1_w = max(
+        (
+            *(len(r[0]) for r in all_rows),
+            *(len(group) for group, rows in rows_by_group if rows),
+        ),
+        default=0,
+    )
+    source_w = max((len("Source"), *(len(r[1]) for r in all_rows)))
+
+    cols = shutil.get_terminal_size((120, 20)).columns
+    fixed = col1_w + source_w + len(" |  | ")  # separators/spaces
+    desc_w = max(10, cols - fixed)
+
+    sep = f"{'-' * col1_w}-+-{'-' * source_w}-+-{'-' * desc_w}"
+
+    def color_source(s: str) -> str:
+        match s:
+            case "uv":
+                return _c(s, _Ansi.GREEN)
+            case "cask":
+                return _c(s, _Ansi.MAGENTA)
+            case "formula":
+                return _c(s, _Ansi.YELLOW)
+            case "mas":
+                return _c(s, _Ansi.BLUE)
+            case _:
+                return s
+
+    for group, group_rows in rows_by_group:
+        if not group_rows:
+            continue
+
+        group_header = f"{group:<{col1_w}} | {'Source':<{source_w}} | {'Description':<{desc_w}}"
+        print(_c(group_header, _Ansi.CYAN, _Ansi.BOLD))
+        print(_c(sep, _Ansi.DIM))
+
+        for app, source, description in group_rows:
+            desc = _truncate(description, desc_w)
+            print(
+                f"{_ljust_ansi(_c(app, _Ansi.BOLD), col1_w)} | "
+                f"{_ljust_ansi(color_source(source), source_w)} | "
+                f"{_c(desc, _Ansi.DIM) if desc else ''}"
+            )
+        print()
 
 
 def infer_description(source: str, app: str, description: str | None) -> str:
@@ -514,16 +648,24 @@ def remove_app(document: tomlkit.TOMLDocument, app: str) -> bool:
 
 
 def main() -> None:
-    """Main function."""
+    """Main function.
+
+    Raises:
+        AppManagerError: If an unknown command is encountered.
+    """
     args: argparse.Namespace = parse_args()
     document: tomlkit.TOMLDocument = load_apps(args.apps_file)
 
     if args.command == "add":
         add_app(document, args)
+        save_apps(args.apps_file, document)
     elif args.command == "remove":
         remove_app(document, args.app)
-
-    save_apps(args.apps_file, document)
+        save_apps(args.apps_file, document)
+    elif args.command == "list":
+        list_apps(document)
+    else:
+        raise AppManagerError(f"Unknown command: {args.command!r}")
 
 
 if __name__ == "__main__":
