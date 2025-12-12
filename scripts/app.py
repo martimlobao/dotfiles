@@ -24,10 +24,12 @@ import re
 import shutil
 import subprocess  # noqa: S404
 import sys
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 
 import tomlkit
+
+type JSON = dict[str, JSON] | list[JSON] | str | int | float | bool | None
 
 DOTPATH: Path = Path(os.environ.get("DOTPATH", Path(__file__).resolve().parent.parent))
 APPS_TOML: Path = DOTPATH / "apps.toml"
@@ -86,8 +88,15 @@ def parse_args() -> argparse.Namespace:
 
 def iter_group_tables(
     document: tomlkit.TOMLDocument,
-) -> Iterable[tuple[str, tomlkit.items.Table]]:
-    """Yields (group_name, table) pairs for all table sections."""
+) -> Iterator[tuple[str, tomlkit.items.Table]]:
+    """Yields (group_name, table) pairs for all table sections.
+
+    Args:
+        document: The TOML document object.
+
+    Yields:
+        A tuple containing the group name and table.
+    """
     for group, table in document.items():
         if isinstance(table, tomlkit.items.Table):
             yield group, table
@@ -95,6 +104,9 @@ def iter_group_tables(
 
 def normalize_key(key: str) -> str:
     """Normalizes keys for global uniqueness checks.
+
+    Args:
+        key: The key to normalize.
 
     Returns:
         A normalized key used for comparisons.
@@ -110,6 +122,10 @@ def resolve_group_name(document: tomlkit.TOMLDocument, group: str) -> str:
     If the provided group matches an existing group (ignoring case), returns
     the existing group's exact name from the file. Otherwise returns the
     stripped input (treated as a new group name).
+
+    Args:
+        document: The TOML document object.
+        group: The group name to resolve.
 
     Returns:
         The resolved (canonical) group name to use.
@@ -129,6 +145,10 @@ def resolve_group_name(document: tomlkit.TOMLDocument, group: str) -> str:
 
 def validate_no_duplicate_apps(document: tomlkit.TOMLDocument, *, apps_file: Path) -> None:
     """Ensures each app appears in only one section in the TOML.
+
+    Args:
+        document: The TOML document object.
+        apps_file: The path to the apps.toml file.
 
     Raises:
         AppManagerError: If duplicates are found
@@ -173,7 +193,7 @@ def load_apps(apps_file: Path) -> tomlkit.TOMLDocument:
         apps_file: The path to the apps.toml file.
 
     Returns:
-        A tomlkit.TOMLDocument object.
+        A TOML document object.
     """
     if not apps_file.exists():
         print(f"⚠️ apps.toml not found at {apps_file}, creating a new file.")
@@ -188,19 +208,23 @@ def load_apps(apps_file: Path) -> tomlkit.TOMLDocument:
     return document
 
 
-def save_apps(apps_file: Path, doc: tomlkit.TOMLDocument) -> None:
+def save_apps(apps_file: Path, document: tomlkit.TOMLDocument) -> None:
     """Saves the apps.toml file.
 
     Args:
         apps_file: The path to the apps.toml file.
-        doc: The tomlkit.TOMLDocument object to save.
+        document: The TOML document object to save.
     """
     with apps_file.open("w", encoding="utf-8") as f:
-        f.write(tomlkit.dumps(doc))
+        f.write(tomlkit.dumps(document))
 
 
 def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str] | None:
     """Finds an app across all sections (case-insensitive).
+
+    Args:
+        document: The TOML document object.
+        app: The name of the app.
 
     Returns:
         (group_name, existing_key) if found, else None.
@@ -216,8 +240,13 @@ def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str] 
 def remove_app_from_group(document: tomlkit.TOMLDocument, *, group: str, app_key: str) -> bool:
     """Removes an app key from a specific group table.
 
+    Args:
+        document: The TOML document object.
+        group: The name of the group.
+        app_key: The key of the app.
+
     Returns:
-        True if removed, False if not present.
+        A boolean indicating if the app was removed.
     """
     table = document.get(group)
     if not isinstance(table, tomlkit.items.Table):
@@ -335,15 +364,15 @@ def fetch_brew_description(app: str, source: str) -> str:
         msg: str = result.stderr.strip() or result.stdout.strip() or "Unable to fetch brew info."
         raise AppManagerError(msg)
 
-    data: dict[str, object] = json.loads(result.stdout)
+    data: dict[str, list[dict[str, JSON]]] = json.loads(result.stdout)
     entries_key: str = "casks" if source == "cask" else "formulae"
-    entries: list[dict[str, object]] = data.get(entries_key, [])
+    entries: list[dict[str, JSON]] = data.get(entries_key, [])
     if not entries:
         raise AppManagerError(f"No {entries_key} information returned for {app}.")
 
-    entry: dict[str, object] = entries[0]
-    description: str | None = entry.get("desc")
-    if not description:
+    entry: dict[str, JSON] = entries[0]
+    description: JSON = entry.get("desc")
+    if not description or not isinstance(description, str):
         raise AppManagerError(
             f"Could not determine description for {app}. Provide --description explicitly."
         )
@@ -394,7 +423,7 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
     """Picks a group interactively.
 
     Args:
-        document: The tomlkit.TOMLDocument object.
+        document: The TOML document object.
 
     Returns:
         The name of the group.
@@ -425,7 +454,8 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
 
     if not groups:
         # Empty apps.toml: allow user to create the first group.
-        return prompt_non_empty("New group name: ")
+        # Normalize anyway for consistency
+        return resolve_group_name(document, prompt_non_empty("New group name: "))
 
     print("No group provided. Select which group to add the app to:\n")
     print(" 0. <create a new group>")
@@ -446,7 +476,10 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
         if choice.isdigit():
             index = int(choice)
             if index == 0:
-                return prompt_non_empty("New group name: ")
+                # If the user types a name that case-insensitively matches an
+                # existing group, normalize to the canonical existing group
+                # name to avoid duplicate sections.
+                return resolve_group_name(document, prompt_non_empty("New group name: "))
             if 1 <= index <= len(groups):
                 return groups[index - 1]
             print("Invalid selection. Try again.")
@@ -455,14 +488,14 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
         if existing is not None:
             return existing
         # Not an existing group: treat as a new group name.
-        return choice
+        return resolve_group_name(document, choice)
 
 
 def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
     """Adds an app to the apps.toml file.
 
     Args:
-        document: The tomlkit.TOMLDocument object.
+        document: The TOML document object.
         args: The argparse.Namespace object.
 
     Raises:
@@ -525,7 +558,7 @@ def remove_app(document: tomlkit.TOMLDocument, app: str) -> bool:
     """Removes an app from the apps.toml file.
 
     Args:
-        document: The tomlkit.TOMLDocument object.
+        document: The TOML document object.
         app: The name of the app to remove.
 
     Returns:
@@ -607,7 +640,11 @@ def _get_item_comment(item: tomlkit.items.Item) -> str:
 
 
 def list_apps(document: tomlkit.TOMLDocument) -> None:
-    """Lists apps in apps.toml in an aligned table."""
+    """Lists apps in apps.toml in an aligned table.
+
+    Args:
+        document: The TOML document object.
+    """
     groups = list(iter_group_tables(document))
     if not groups:
         print("No apps found.")
