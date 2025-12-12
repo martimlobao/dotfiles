@@ -41,7 +41,7 @@ todoist-app = "cask"  # To-do list
 zoom = "cask"  # Video communication and virtual meeting platform
 
 [leisure]
-302584613 = "mas"  # Amazon Kindle
+302584613 = "mas"  # Amazon Kindle: Read eBooks & Magazines
 "martimlobao/dos-games/jumpstart-1st-grade" = "cask"  # Windows first grade educational game from 1995
 "martimlobao/dos-games/jumpstart-kindergarten" = "cask"  # Windows Kindergarten educational game from 1994
 "martimlobao/dos-games/mission-think" = "cask"  # Windows educational game from 1997
@@ -142,7 +142,7 @@ rumdl = "uv"  # Markdown Linter and Formatter written in Rust
 tombi = "uv"  # TOML formatter, linter and language server
 
 [utilities]
-6753110395 = "mas"  # Folder Quick Look
+6753110395 = "mas"  # Folder Quick Look: Instant Folder & Archive Peek
 chromedriver = "cask"  # Automated testing of webapps for Google Chrome
 qlmarkdown = "cask"  # Quick Look generator for Markdown files
 qlvideo = "cask"  # Thumbnails, static previews, cover art and metadata for video files
@@ -156,7 +156,7 @@ grep = "formula"  # GNU grep, egrep and fgrep [command: ggrep]
 
 [languages]
 go = "formula"  # Open source programming language to build simple/reliable/efficient software
-node = "formula"  # Platform built on V8 to build network applications
+node = "formula"  # Open-source, cross-platform JavaScript runtime environment
 rust = "formula"  # Safe, concurrent, practical language
 
 [fun]
