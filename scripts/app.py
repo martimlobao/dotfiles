@@ -186,12 +186,13 @@ def load_apps(apps_file: Path) -> tomlkit.TOMLDocument:
 
     Returns:
         A tomlkit.TOMLDocument object.
-
-    Raises:
-        AppManagerError: If the apps.toml file is not found.
     """
     if not apps_file.exists():
-        raise AppManagerError(f"apps.toml not found at {apps_file}")
+        print(f"⚠️ apps.toml not found at {apps_file}, creating a new file.")
+        document = tomlkit.document()
+        with apps_file.open("w", encoding="utf-8") as f:
+            f.write(tomlkit.dumps(document))
+        return document
     with apps_file.open("r", encoding="utf-8") as f:
         document = tomlkit.parse(f.read())
 
@@ -388,13 +389,14 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
     groups: list[str] = [
         group for group, table in document.items() if isinstance(table, tomlkit.items.Table)
     ]
-    if not groups:
-        raise AppManagerError("No groups found in apps.toml to choose from.")
-
     if not sys.stdin.isatty():
         raise AppManagerError(
             "No --group/-g provided and stdin is not interactive. Provide --group explicitly."
         )
+
+    if not groups:
+        # Empty apps.toml: allow user to create the first group.
+        return prompt_non_empty("New group name: ")
 
     print("No group provided. Select which group to add the app to:\n")
     print(" 0. <create a new group>")
