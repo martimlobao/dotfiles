@@ -93,13 +93,38 @@ def iter_group_tables(
             yield group, table
 
 
-def normalize_app_key(app: str) -> str:
-    """Normalizes app keys for global uniqueness checks.
+def normalize_key(key: str) -> str:
+    """Normalizes keys for global uniqueness checks.
 
     Returns:
         A normalized key used for comparisons.
     """
-    return app.casefold()
+    return key.casefold()
+
+
+def resolve_group_name(document: tomlkit.TOMLDocument, group: str) -> str:
+    """Resolves a group name to an existing canonical group name.
+
+    Matching is case-insensitive.
+
+    If the provided group matches an existing group (ignoring case), returns
+    the existing group's exact name from the file. Otherwise returns the
+    stripped input (treated as a new group name).
+
+    Returns:
+        The resolved (canonical) group name to use.
+
+    Raises:
+        AppManagerError: If the provided group name is empty.
+    """
+    resolved: str = group.strip()
+    if not resolved:
+        raise AppManagerError("Group name cannot be empty.")
+
+    by_norm: dict[str, str] = {
+        normalize_key(existing): existing for existing, _ in iter_group_tables(document)
+    }
+    return by_norm.get(normalize_key(resolved), resolved)
 
 
 def validate_no_duplicate_apps(document: tomlkit.TOMLDocument, *, apps_file: Path) -> None:
@@ -114,7 +139,7 @@ def validate_no_duplicate_apps(document: tomlkit.TOMLDocument, *, apps_file: Pat
 
     for group, table in iter_group_tables(document):
         for key in table:
-            norm: str = normalize_app_key(str(key))
+            norm: str = normalize_key(str(key))
             keys_by_norm.setdefault(norm, set()).add(str(key))
             if norm in seen:
                 # Only a problem if it appears in another section.
@@ -180,10 +205,10 @@ def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str] 
     Returns:
         (group_name, existing_key) if found, else None.
     """
-    norm = normalize_app_key(app)
+    norm: str = normalize_key(app)
     for group, table in iter_group_tables(document):
         for key in table:
-            if normalize_app_key(str(key)) == norm:
+            if normalize_key(str(key)) == norm:
                 return group, str(key)
     return None
 
@@ -406,11 +431,11 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
     print(" 0. <create a new group>")
     print("\n".join(f"{index:>2}. {group}" for index, group in enumerate(groups, start=1)))
 
-    by_lower: dict[str, str] = {group.lower(): group for group in groups}
+    by_norm: dict[str, str] = {normalize_key(group): group for group in groups}
 
     while True:
         try:
-            choice = input("\nEnter number, existing name, or new group name: ").strip()
+            choice: str = input("\nEnter number, existing name, or new group name: ").strip()
         except (EOFError, KeyboardInterrupt) as exc:
             print()
             raise AppManagerError("No group selected.") from exc
@@ -426,7 +451,7 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
                 return groups[index - 1]
             print("Invalid selection. Try again.")
             continue
-        existing = by_lower.get(choice.lower())
+        existing: str | None = by_norm.get(normalize_key(choice))
         if existing is not None:
             return existing
         # Not an existing group: treat as a new group name.
@@ -445,6 +470,10 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
     """
     if not args.group:
         args.group = pick_group_interactively(document)
+    else:
+        # Normalize CLI-provided group names to existing sections, so
+        # `--group CLI-Tools` matches an existing `[cli-tools]`.
+        args.group = resolve_group_name(document, args.group)
 
     existing = find_app_group(document, args.app)
     moved_from: str | None = None
@@ -609,11 +638,11 @@ def list_apps(document: tomlkit.TOMLDocument) -> None:
         ),
         default=0,
     )
-    source_w = max((len("Source"), *(len(r[1]) for r in all_rows)))
+    source_w: int = max((len("Source"), *(len(r[1]) for r in all_rows)))
 
-    cols = shutil.get_terminal_size((120, 20)).columns
-    fixed = col1_w + source_w + len(" |  | ")  # separators/spaces
-    desc_w = max(10, cols - fixed)
+    cols: int = shutil.get_terminal_size((120, 20)).columns
+    fixed: int = col1_w + source_w + len(" |  | ")  # separators/spaces
+    desc_w: int = max(10, cols - fixed)
 
     sep = f"{'-' * col1_w}-+-{'-' * source_w}-+-{'-' * desc_w}"
 
