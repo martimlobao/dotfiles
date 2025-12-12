@@ -491,19 +491,19 @@ def remove_app(document: tomlkit.TOMLDocument, app: str) -> bool:
     Returns:
         A boolean indicating if the app was removed.
     """
-    removed: bool = False
-    for group, table in document.items():
-        if not isinstance(table, tomlkit.items.Table):
-            continue
-        if app in table:
-            items = [(key, value) for key, value in table.items() if key != app]
-            document[group] = sorted_table(items)
-            print(f"🗑️ Removed {app!r} from [{group}].")
-            removed = True
-            break
+    existing: tuple[str, str] | None = find_app_group(document, app)
+    if existing is None:
+        print(f"⚠️ {app!r} not found in apps.toml.")
+        return False
+
+    group, existing_key = existing
+    removed: bool = remove_app_from_group(document, group=group, app_key=existing_key)
     if not removed:
         print(f"⚠️ {app!r} not found in apps.toml.")
-    return removed
+        return False
+
+    print(f"🗑️ Removed {existing_key!r} from [{group}].")
+    return True
 
 
 def main() -> None:
