@@ -37,6 +37,98 @@ class AppManagerError(Exception):
     """Custom exception for app management errors."""
 
 
+def iter_group_tables(
+    document: tomlkit.TOMLDocument,
+) -> Iterable[tuple[str, tomlkit.items.Table]]:
+    """Yields (group_name, table) pairs for all table sections."""
+    for group, table in document.items():
+        if isinstance(table, tomlkit.items.Table):
+            yield group, table
+
+
+def normalize_app_key(app: str) -> str:
+    """Normalizes app keys for global uniqueness checks.
+
+    Returns:
+        A normalized key used for comparisons.
+    """
+    return app.casefold()
+
+
+def validate_no_duplicate_apps(document: tomlkit.TOMLDocument, *, apps_file: Path) -> None:
+    """Ensures each app appears in only one section in the TOML.
+
+    Raises:
+        AppManagerError: If duplicates are found
+    """
+    seen: dict[str, tuple[str, str]] = {}  # norm_app -> (original_key, group)
+    keys_by_norm: dict[str, set[str]] = {}
+    groups_by_norm: dict[str, set[str]] = {}
+
+    for group, table in iter_group_tables(document):
+        for key in table:
+            norm: str = normalize_app_key(str(key))
+            keys_by_norm.setdefault(norm, set()).add(str(key))
+            if norm in seen:
+                # Only a problem if it appears in another section.
+                first_group = seen[norm][1]
+                if first_group != group:
+                    groups_by_norm.setdefault(norm, set()).update({first_group, group})
+            else:
+                seen[norm] = (str(key), group)
+
+    if not groups_by_norm:
+        return
+
+    lines: list[str] = [
+        f"Duplicate apps found in {apps_file}. Each app must be globally unique.",
+        "Please fix the file manually (move/remove the duplicates) and re-run.",
+        "",
+        "Duplicates:",
+    ]
+    for norm in sorted(groups_by_norm):
+        groups = ", ".join(f"[{g}]" for g in sorted(groups_by_norm[norm], key=str.lower))
+        keys = ", ".join(repr(k) for k in sorted(keys_by_norm.get(norm, {norm}), key=str.lower))
+        lines.append(f"- {keys} appears in {groups}")
+
+    raise AppManagerError("\n".join(lines))
+
+
+def find_app_group(
+    document: tomlkit.TOMLDocument, app: str
+) -> tuple[str, str] | None:
+    """Finds an app across all sections (case-insensitive).
+
+    Returns:
+        (group_name, existing_key) if found, else None.
+    """
+    norm = normalize_app_key(app)
+    for group, table in iter_group_tables(document):
+        for key in table:
+            if normalize_app_key(str(key)) == norm:
+                return group, str(key)
+    return None
+
+
+def remove_app_from_group(
+    document: tomlkit.TOMLDocument, *, group: str, app_key: str
+) -> bool:
+    """Removes an app key from a specific group table.
+
+    Returns:
+        True if removed, False if not present.
+    """
+    table = document.get(group)
+    if not isinstance(table, tomlkit.items.Table):
+        return False
+    if app_key not in table:
+        return False
+
+    items = [(key, value) for key, value in table.items() if key != app_key]
+    document[group] = sorted_table(items)
+    return True
+
+
 def parse_args() -> argparse.Namespace:
     """Parses the command line arguments.
 
@@ -96,7 +188,10 @@ def load_apps(apps_file: Path) -> tomlkit.TOMLDocument:
     if not apps_file.exists():
         raise AppManagerError(f"apps.toml not found at {apps_file}")
     with apps_file.open("r", encoding="utf-8") as f:
-        return tomlkit.parse(f.read())
+        document = tomlkit.parse(f.read())
+
+    validate_no_duplicate_apps(document, apps_file=apps_file)
+    return document
 
 
 def save_apps(apps_file: Path, doc: tomlkit.TOMLDocument) -> None:
@@ -266,9 +361,21 @@ def upsert_value(
 
 
 def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
+    """Picks a group interactively.
+
+    Args:
+        document: The tomlkit.TOMLDocument object.
+
+    Returns:
+        The name of the group.
+
+    Raises:
+        AppManagerError: If the group is not found, the stdin is not
+            interactive, or the group name is empty.
+    """
     def prompt_non_empty(prompt: str) -> str:
         while True:
-            value = input(prompt).strip()
+            value: str = input(prompt).strip()
             if value:
                 return value
             print("Group name cannot be empty.")
@@ -314,12 +421,35 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
         # Not an existing group: treat as a new group name.
         return choice
 
-        print("Invalid selection. Try again.")
-
 
 def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
+    """Adds an app to the apps.toml file.
+
+    Args:
+        document: The tomlkit.TOMLDocument object.
+        args: The argparse.Namespace object.
+
+    Raises:
+        AppManagerError: If unable to add the app to the apps.toml file.
+    """
     if not args.group:
         args.group = pick_group_interactively(document)
+
+    existing = find_app_group(document, args.app)
+    moved_from: str | None = None
+    if existing is not None:
+        existing_group, existing_key = existing
+        # Keep the canonical key casing already in the file to avoid duplicates
+        # like "Foo" vs "foo".
+        args.app = existing_key
+        if existing_group != args.group:
+            removed = remove_app_from_group(document, group=existing_group, app_key=existing_key)
+            if not removed:
+                raise AppManagerError(
+                    f"App {args.app!r} was detected in [{existing_group}] but could not be "
+                    "removed."
+                )
+            moved_from = existing_group
 
     description: str = infer_description(args.source, args.app, args.description)
     group_table = document.get(args.group)
@@ -334,7 +464,12 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
     value.trivia.comment_ws = "  "  # two spaces before comment
 
     document[args.group], existed = upsert_value(group_table, args.app, value)
-    if existed:
+    if moved_from is not None:
+        print(
+            f"➡️ Moved {args.app!r} from [{moved_from}] to [{args.group}] with source"
+            f" '{args.source}' and description \"{description}\"."
+        )
+    elif existed:
         print(
             f"🔄 Updated {args.app!r} in [{args.group}] with source '{args.source}' and"
             f' description "{description}".'
@@ -347,6 +482,16 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
 
 
 def remove_app(document: tomlkit.TOMLDocument, app: str) -> bool:
+    """Removes an app from the apps.toml file.
+
+    Args:
+        document: The tomlkit.TOMLDocument object.
+        app: The name of the app to remove.
+
+    Returns:
+        A boolean indicating if the app was removed.
+    """
+    removed: bool = False
     for group, table in document.items():
         if not isinstance(table, tomlkit.items.Table):
             continue
@@ -354,12 +499,15 @@ def remove_app(document: tomlkit.TOMLDocument, app: str) -> bool:
             items = [(key, value) for key, value in table.items() if key != app]
             document[group] = sorted_table(items)
             print(f"🗑️ Removed {app!r} from [{group}].")
-            return True
-    print(f"⚠️ {app!r} not found in apps.toml.")
-    return False
+            removed = True
+            break
+    if not removed:
+        print(f"⚠️ {app!r} not found in apps.toml.")
+    return removed
 
 
 def main() -> None:
+    """Main function."""
     args: argparse.Namespace = parse_args()
     document: tomlkit.TOMLDocument = load_apps(args.apps_file)
 
