@@ -38,6 +38,52 @@ class AppManagerError(Exception):
     """Custom exception for app management errors."""
 
 
+def parse_args() -> argparse.Namespace:
+    """Parses the command line arguments.
+
+    Returns:
+        An argparse.Namespace object.
+    """
+    parser = argparse.ArgumentParser(description="Manage entries in apps.toml")
+    parser.add_argument(
+        "--apps-file",
+        default=APPS_TOML,
+        type=Path,
+        help=f"Path to apps.toml (default: {APPS_TOML})",
+    )
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    add_parser = subparsers.add_parser("add", help="Add an app to apps.toml")
+    add_parser.add_argument(
+        "source",
+        choices=list(APP_SOURCES),
+        help=f"Source of the app (choices: {', '.join(APP_SOURCES)})",
+    )
+    add_parser.add_argument("app", help="App name or identifier")
+    add_parser.add_argument(
+        "-g",
+        "--group",
+        required=False,
+        help="Section/group name in apps.toml (if omitted, you'll be prompted to pick one)",
+    )
+    add_parser.add_argument(
+        "-d",
+        "--description",
+        help=(
+            "Description for the app. Required for 'uv' sources; optional overrides for other"
+            " sources."
+        ),
+    )
+
+    remove_parser = subparsers.add_parser("remove", help="Remove an app from apps.toml")
+    remove_parser.add_argument("app", help="App name or identifier to remove")
+
+    subparsers.add_parser("list", help="List apps in apps.toml")
+
+    return parser.parse_args()
+
+
 def iter_group_tables(
     document: tomlkit.TOMLDocument,
 ) -> Iterable[tuple[str, tomlkit.items.Table]]:
@@ -95,92 +141,6 @@ def validate_no_duplicate_apps(document: tomlkit.TOMLDocument, *, apps_file: Pat
     raise AppManagerError("\n".join(lines))
 
 
-def find_app_group(
-    document: tomlkit.TOMLDocument, app: str
-) -> tuple[str, str] | None:
-    """Finds an app across all sections (case-insensitive).
-
-    Returns:
-        (group_name, existing_key) if found, else None.
-    """
-    norm = normalize_app_key(app)
-    for group, table in iter_group_tables(document):
-        for key in table:
-            if normalize_app_key(str(key)) == norm:
-                return group, str(key)
-    return None
-
-
-def remove_app_from_group(
-    document: tomlkit.TOMLDocument, *, group: str, app_key: str
-) -> bool:
-    """Removes an app key from a specific group table.
-
-    Returns:
-        True if removed, False if not present.
-    """
-    table = document.get(group)
-    if not isinstance(table, tomlkit.items.Table):
-        return False
-    if app_key not in table:
-        return False
-
-    items = [(key, value) for key, value in table.items() if key != app_key]
-    if not items:
-        # Remove the whole section when it's empty.
-        del document[group]
-        return True
-
-    document[group] = sorted_table(items)
-    return True
-
-
-def parse_args() -> argparse.Namespace:
-    """Parses the command line arguments.
-
-    Returns:
-        An argparse.Namespace object.
-    """
-    parser = argparse.ArgumentParser(description="Manage entries in apps.toml")
-    parser.add_argument(
-        "--apps-file",
-        default=APPS_TOML,
-        type=Path,
-        help=f"Path to apps.toml (default: {APPS_TOML})",
-    )
-
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    add_parser = subparsers.add_parser("add", help="Add an app to apps.toml")
-    add_parser.add_argument(
-        "source",
-        choices=list(APP_SOURCES),
-        help=f"Source of the app (choices: {', '.join(APP_SOURCES)})",
-    )
-    add_parser.add_argument("app", help="App name or identifier")
-    add_parser.add_argument(
-        "-g",
-        "--group",
-        required=False,
-        help="Section/group name in apps.toml (if omitted, you'll be prompted to pick one)",
-    )
-    add_parser.add_argument(
-        "-d",
-        "--description",
-        help=(
-            "Description for the app. Required for 'uv' sources; optional overrides for other"
-            " sources."
-        ),
-    )
-
-    remove_parser = subparsers.add_parser("remove", help="Remove an app from apps.toml")
-    remove_parser.add_argument("app", help="App name or identifier to remove")
-
-    subparsers.add_parser("list", help="List apps in apps.toml")
-
-    return parser.parse_args()
-
-
 def load_apps(apps_file: Path) -> tomlkit.TOMLDocument:
     """Loads the apps.toml file.
 
@@ -214,135 +174,40 @@ def save_apps(apps_file: Path, doc: tomlkit.TOMLDocument) -> None:
         f.write(tomlkit.dumps(doc))
 
 
-class _Ansi:
-    RESET = "\x1b[0m"
-    BOLD = "\x1b[1m"
-    DIM = "\x1b[2m"
-    CYAN = "\x1b[36m"
-    GREEN = "\x1b[32m"
-    YELLOW = "\x1b[33m"
-    MAGENTA = "\x1b[35m"
-    BLUE = "\x1b[34m"
+def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str] | None:
+    """Finds an app across all sections (case-insensitive).
+
+    Returns:
+        (group_name, existing_key) if found, else None.
+    """
+    norm = normalize_app_key(app)
+    for group, table in iter_group_tables(document):
+        for key in table:
+            if normalize_app_key(str(key)) == norm:
+                return group, str(key)
+    return None
 
 
-_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+def remove_app_from_group(document: tomlkit.TOMLDocument, *, group: str, app_key: str) -> bool:
+    """Removes an app key from a specific group table.
 
+    Returns:
+        True if removed, False if not present.
+    """
+    table = document.get(group)
+    if not isinstance(table, tomlkit.items.Table):
+        return False
+    if app_key not in table:
+        return False
 
-def _supports_color() -> bool:
-    return sys.stdout.isatty()
+    items = [(key, value) for key, value in table.items() if key != app_key]
+    if not items:
+        # Remove the whole section when it's empty.
+        del document[group]
+        return True
 
-
-def _c(text: str, *styles: str) -> str:
-    if not _supports_color() or not styles:
-        return text
-    return "".join(styles) + text + _Ansi.RESET
-
-
-def _truncate(text: str, width: int) -> str:
-    if width <= 0:
-        return ""
-    if len(text) <= width:
-        return text
-    if width <= 1:
-        return text[:width]
-    return text[: width - 1] + "…"
-
-
-def _visible_len(text: str) -> int:
-    return len(_ANSI_RE.sub("", text))
-
-
-def _ljust_ansi(text: str, width: int) -> str:
-    pad = width - _visible_len(text)
-    if pad <= 0:
-        return text
-    return text + (" " * pad)
-
-
-def _get_item_value(item: tomlkit.items.Item) -> str:
-    value = getattr(item, "value", None)
-    if value is None:
-        return str(item).strip('"')
-    return str(value)
-
-
-def _get_item_comment(item: tomlkit.items.Item) -> str:
-    trivia = getattr(item, "trivia", None)
-    comment = getattr(trivia, "comment", None)
-    if not comment:
-        return ""
-    return str(comment).lstrip("#").strip()
-
-
-def list_apps(document: tomlkit.TOMLDocument) -> None:
-    """Lists apps in apps.toml in an aligned table."""
-    groups = list(iter_group_tables(document))
-    if not groups:
-        print("No apps found.")
-        return
-
-    rows_by_group: list[tuple[str, list[tuple[str, str, str]]]] = []
-    any_rows = False
-    for group, table in groups:
-        group_rows: list[tuple[str, str, str]] = []
-        for app_key, item in table.items():
-            app = str(app_key)
-            source = _get_item_value(item)
-            desc = _get_item_comment(item)
-            group_rows.append((app, source, desc))
-            any_rows = True
-        rows_by_group.append((group, group_rows))
-
-    if not any_rows:
-        print("No apps found.")
-        return
-
-    # Compute widths once, across all groups, so every table aligns the same.
-    all_rows = [row for _, rows in rows_by_group for row in rows]
-    col1_w = max(
-        (
-            *(len(r[0]) for r in all_rows),
-            *(len(group) for group, rows in rows_by_group if rows),
-        ),
-        default=0,
-    )
-    source_w = max((len("Source"), *(len(r[1]) for r in all_rows)))
-
-    cols = shutil.get_terminal_size((120, 20)).columns
-    fixed = col1_w + source_w + len(" |  | ")  # separators/spaces
-    desc_w = max(10, cols - fixed)
-
-    sep = f"{'-' * col1_w}-+-{'-' * source_w}-+-{'-' * desc_w}"
-
-    def color_source(s: str) -> str:
-        match s:
-            case "uv":
-                return _c(s, _Ansi.GREEN)
-            case "cask":
-                return _c(s, _Ansi.MAGENTA)
-            case "formula":
-                return _c(s, _Ansi.YELLOW)
-            case "mas":
-                return _c(s, _Ansi.BLUE)
-            case _:
-                return s
-
-    for group, group_rows in rows_by_group:
-        if not group_rows:
-            continue
-
-        group_header = f"{group:<{col1_w}} | {'Source':<{source_w}} | {'Description':<{desc_w}}"
-        print(_c(group_header, _Ansi.CYAN, _Ansi.BOLD))
-        print(_c(sep, _Ansi.DIM))
-
-        for app, source, description in group_rows:
-            desc = _truncate(description, desc_w)
-            print(
-                f"{_ljust_ansi(_c(app, _Ansi.BOLD), col1_w)} | "
-                f"{_ljust_ansi(color_source(source), source_w)} | "
-                f"{_c(desc, _Ansi.DIM) if desc else ''}"
-            )
-        print()
+    document[group] = sorted_table(items)
+    return True
 
 
 def infer_description(source: str, app: str, description: str | None) -> str:
@@ -513,6 +378,7 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
         AppManagerError: If the group is not found, the stdin is not
             interactive, or the group name is empty.
     """
+
     def prompt_non_empty(prompt: str) -> str:
         while True:
             value: str = input(prompt).strip()
@@ -645,6 +511,137 @@ def remove_app(document: tomlkit.TOMLDocument, app: str) -> bool:
 
     print(f"🗑️ Removed {existing_key!r} from [{group}].")
     return True
+
+
+class _Ansi:
+    RESET = "\x1b[0m"
+    BOLD = "\x1b[1m"
+    DIM = "\x1b[2m"
+    CYAN = "\x1b[36m"
+    GREEN = "\x1b[32m"
+    YELLOW = "\x1b[33m"
+    MAGENTA = "\x1b[35m"
+    BLUE = "\x1b[34m"
+
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _supports_color() -> bool:
+    return sys.stdout.isatty()
+
+
+def _c(text: str, *styles: str) -> str:
+    if not _supports_color() or not styles:
+        return text
+    return "".join(styles) + text + _Ansi.RESET
+
+
+def _truncate(text: str, width: int) -> str:
+    if width <= 0:
+        return ""
+    if len(text) <= width:
+        return text
+    if width <= 1:
+        return text[:width]
+    return text[: width - 1] + "…"
+
+
+def _visible_len(text: str) -> int:
+    return len(_ANSI_RE.sub("", text))
+
+
+def _ljust_ansi(text: str, width: int) -> str:
+    pad = width - _visible_len(text)
+    if pad <= 0:
+        return text
+    return text + (" " * pad)
+
+
+def _get_item_value(item: tomlkit.items.Item) -> str:
+    value = getattr(item, "value", None)
+    if value is None:
+        return str(item).strip('"')
+    return str(value)
+
+
+def _get_item_comment(item: tomlkit.items.Item) -> str:
+    trivia = getattr(item, "trivia", None)
+    comment = getattr(trivia, "comment", None)
+    if not comment:
+        return ""
+    return str(comment).lstrip("#").strip()
+
+
+def list_apps(document: tomlkit.TOMLDocument) -> None:
+    """Lists apps in apps.toml in an aligned table."""
+    groups = list(iter_group_tables(document))
+    if not groups:
+        print("No apps found.")
+        return
+
+    rows_by_group: list[tuple[str, list[tuple[str, str, str]]]] = []
+    any_rows = False
+    for group, table in groups:
+        group_rows: list[tuple[str, str, str]] = []
+        for app_key, item in table.items():
+            app = str(app_key)
+            source = _get_item_value(item)
+            desc = _get_item_comment(item)
+            group_rows.append((app, source, desc))
+            any_rows = True
+        rows_by_group.append((group, group_rows))
+
+    if not any_rows:
+        print("No apps found.")
+        return
+
+    # Compute widths once, across all groups, so every table aligns the same.
+    all_rows = [row for _, rows in rows_by_group for row in rows]
+    col1_w = max(
+        (
+            *(len(r[0]) for r in all_rows),
+            *(len(group) for group, rows in rows_by_group if rows),
+        ),
+        default=0,
+    )
+    source_w = max((len("Source"), *(len(r[1]) for r in all_rows)))
+
+    cols = shutil.get_terminal_size((120, 20)).columns
+    fixed = col1_w + source_w + len(" |  | ")  # separators/spaces
+    desc_w = max(10, cols - fixed)
+
+    sep = f"{'-' * col1_w}-+-{'-' * source_w}-+-{'-' * desc_w}"
+
+    def color_source(s: str) -> str:
+        match s:
+            case "uv":
+                return _c(s, _Ansi.GREEN)
+            case "cask":
+                return _c(s, _Ansi.MAGENTA)
+            case "formula":
+                return _c(s, _Ansi.YELLOW)
+            case "mas":
+                return _c(s, _Ansi.BLUE)
+            case _:
+                return s
+
+    for group, group_rows in rows_by_group:
+        if not group_rows:
+            continue
+
+        group_header = f"{group:<{col1_w}} | {'Source':<{source_w}} | {'Description':<{desc_w}}"
+        print(_c(group_header, _Ansi.CYAN, _Ansi.BOLD))
+        print(_c(sep, _Ansi.DIM))
+
+        for app, source, description in group_rows:
+            desc = _truncate(description, desc_w)
+            print(
+                f"{_ljust_ansi(_c(app, _Ansi.BOLD), col1_w)} | "
+                f"{_ljust_ansi(color_source(source), source_w)} | "
+                f"{_c(desc, _Ansi.DIM) if desc else ''}"
+            )
+        print()
 
 
 def main() -> None:
