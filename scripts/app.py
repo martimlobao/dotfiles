@@ -22,6 +22,7 @@ import os
 import re
 import shutil
 import subprocess  # noqa: S404
+import sys
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -62,8 +63,8 @@ def parse_args() -> argparse.Namespace:
     add_parser.add_argument(
         "-g",
         "--group",
-        required=True,
-        help="Section/group name in apps.toml",
+        required=False,
+        help="Section/group name in apps.toml (if omitted, you'll be prompted to pick one)",
     )
     add_parser.add_argument(
         "-d",
@@ -264,7 +265,62 @@ def upsert_value(
     return sorted_table(items), False
 
 
+def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
+    def prompt_non_empty(prompt: str) -> str:
+        while True:
+            value = input(prompt).strip()
+            if value:
+                return value
+            print("Group name cannot be empty.")
+
+    groups: list[str] = [
+        group for group, table in document.items() if isinstance(table, tomlkit.items.Table)
+    ]
+    if not groups:
+        raise AppManagerError("No groups found in apps.toml to choose from.")
+
+    if not sys.stdin.isatty():
+        raise AppManagerError(
+            "No --group/-g provided and stdin is not interactive. Provide --group explicitly."
+        )
+
+    print("No group provided. Select which group to add the app to:\n")
+    print(" 0. <create a new group>")
+    print("\n".join(f"{index:>2}. {group}" for index, group in enumerate(groups, start=1)))
+
+    by_lower: dict[str, str] = {group.lower(): group for group in groups}
+
+    while True:
+        try:
+            choice = input("\nEnter number, existing name, or new group name: ").strip()
+        except (EOFError, KeyboardInterrupt) as exc:
+            print()
+            raise AppManagerError("No group selected.") from exc
+
+        if not choice:
+            continue
+
+        if choice.isdigit():
+            index = int(choice)
+            if index == 0:
+                return prompt_non_empty("New group name: ")
+            if 1 <= index <= len(groups):
+                return groups[index - 1]
+            print("Invalid selection. Try again.")
+            continue
+        existing = by_lower.get(choice.lower())
+        if existing is not None:
+            return existing
+        # Not an existing group: treat as a new group name.
+        return choice
+
+        print("Invalid selection. Try again.")
+
+
 def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
+    if not args.group:
+        args.group = pick_group_interactively(document)
+
     description: str = infer_description(args.source, args.app, args.description)
     group_table = document.get(args.group)
     if group_table is None:
@@ -280,8 +336,8 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
     document[args.group], existed = upsert_value(group_table, args.app, value)
     if existed:
         print(
-            f"🔄 Updated {args.app!r} in [{args.group}] with source '{args.source}' and description"
-            f' "{description}".'
+            f"🔄 Updated {args.app!r} in [{args.group}] with source '{args.source}' and"
+            f' description "{description}".'
         )
     else:
         print(
