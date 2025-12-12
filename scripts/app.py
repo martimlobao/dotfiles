@@ -381,7 +381,11 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
 
     def prompt_non_empty(prompt: str) -> str:
         while True:
-            value: str = input(prompt).strip()
+            try:
+                value: str = input(prompt).strip()
+            except (EOFError, KeyboardInterrupt) as exc:
+                print()
+                raise AppManagerError("No group selected.") from exc
             if value:
                 return value
             print("Group name cannot be empty.")
