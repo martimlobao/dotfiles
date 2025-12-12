@@ -125,6 +125,11 @@ def remove_app_from_group(
         return False
 
     items = [(key, value) for key, value in table.items() if key != app_key]
+    if not items:
+        # Remove the whole section when it's empty.
+        del document[group]
+        return True
+
     document[group] = sorted_table(items)
     return True
 
