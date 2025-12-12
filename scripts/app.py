@@ -657,8 +657,10 @@ def main() -> None:
         add_app(document, args)
         save_apps(args.apps_file, document)
     elif args.command == "remove":
-        remove_app(document, args.app)
-        save_apps(args.apps_file, document)
+        removed: bool = remove_app(document, args.app)
+        if removed:
+            # if nothing was removed there's no need to modify the file
+            save_apps(args.apps_file, document)
     elif args.command == "list":
         list_apps(document)
     else:
