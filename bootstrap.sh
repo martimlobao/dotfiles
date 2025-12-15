@@ -31,7 +31,7 @@
 		if [[ -z ${BRANCH} ]]; then
 			BRANCH="main"
 		fi
-		echo -e "✅ \033[1;34mDotfiles already downloaded to ${DOTPATH}, checking out branch "${BRANCH}"\033[0m"
+		echo -e "✅ \033[1;34mDotfiles already downloaded to ${DOTPATH}, checking out branch \"${BRANCH}\"\033[0m"
 		cd "${DOTPATH}"
 		if [[ $(git status -s) ]]; then
 			echo -e "🔄 \033[1;33mStashing existing changes...\033[0m"
