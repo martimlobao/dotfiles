@@ -84,6 +84,7 @@ font-with-a-syntax-highlighter = "cask"  # Font With A Syntax Highlighter
 blip = "cask"  # Send any size file between devices
 calibre = "cask"  # E-books management software
 chatgpt-atlas = "cask"  # OpenAI's official browser with ChatGPT built in
+comet = "cask"  # Web browser with integrated AI assistant
 dropbox = "cask"  # Client for the Dropbox cloud storage service
 google-drive = "cask"  # Client for the Google Drive storage service
 iina = "cask"  # Free and open-source media player [modern vlc alternative]
@@ -140,6 +141,7 @@ pylint = "uv"  # It's not just a linter that annoys you!
 ruff = "uv"  # Extremely fast Python linter, written in Rust
 rumdl = "uv"  # Markdown Linter and Formatter written in Rust
 tombi = "uv"  # TOML formatter, linter and language server
+ty = "uv"  # Extremely fast Python package installer and resolver, written in Rust
 
 [utilities]
 6753110395 = "mas"  # Folder Quick Look: Instant Folder & Archive Peek
