@@ -17,26 +17,22 @@
 
 	echo -e "🥾 \033[1;34mBootstrapping dotfiles\033[0m"
 
+	if [[ -z ${BRANCH} ]]; then
+		BRANCH="main"
+	fi
 	if [[ ! -d ${DOTPATH} ]]; then
-		if [[ -z ${BRANCH} ]]; then
-			echo -e "📑 \033[1;33mCloning dotfiles...\033[0m"
-			git clone https://github.com/martimlobao/dotfiles.git "${DOTPATH}"
-			echo -e "✅ \033[1;32mCloned Dotfiles to ${DOTPATH}\033[0m"
-		else
-			echo -e "📑 \033[1;33mCloning dotfiles on branch ${BRANCH}...\033[0m"
-			git clone https://github.com/martimlobao/dotfiles.git --branch "${BRANCH}" "${DOTPATH}"
-			echo -e "✅ \033[1;32mCloned Dotfiles to ${DOTPATH} on branch ${BRANCH}\033[0m"
-		fi
+		echo -e "📑 \033[1;33mCloning dotfiles on branch ${BRANCH}...\033[0m"
+		git clone https://github.com/martimlobao/dotfiles.git --branch "${BRANCH}" "${DOTPATH}"
+		echo -e "✅ \033[1;32mCloned Dotfiles to ${DOTPATH} on branch \"${BRANCH}\"\033[0m"
 	else
-		if [[ -z ${BRANCH} ]]; then
-			echo -e "✅ \033[1;34mDotfiles already downloaded to ${DOTPATH}\033[0m"
-		else
-			echo -e "✅ \033[1;34mDotfiles already downloaded to ${DOTPATH}, checking out branch ${BRANCH}\033[0m"
-			cd "${DOTPATH}"
-			git stash
-			git checkout "${BRANCH}"
-			git pull origin "${BRANCH}"
+		echo -e "✅ \033[1;34mDotfiles already downloaded to ${DOTPATH}, checking out branch \"${BRANCH}\"\033[0m"
+		cd "${DOTPATH}"
+		if [[ $(git status -s) ]]; then
+			echo -e "🔄 \033[1;33mStashing existing changes...\033[0m"
+			git stash save "stash created automatically on $(date) by bootstrap.sh"
 		fi
+		git checkout "${BRANCH}"
+		git pull --ff-only origin "${BRANCH}"
 	fi
 
 	cd "${DOTPATH}"
