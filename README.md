@@ -18,8 +18,8 @@ Here's a short description of each script in this repository:
   `aerials`)
 - [`install.sh`](scripts/install.sh) install fonts, tools, and apps using Homebrew,
   [`uv`](https://docs.astral.sh/uv/), and the Mac App Store (callable using `syncapps`)
-- [`app.py`](scripts/app.py) CLI tool to manage applications listed in [`apps.toml`](apps.toml)
-  (callable using `app`)
+- [`app.py`](scripts/app.py) CLI tool to manage and install applications listed in
+  [`apps.toml`](apps.toml) (callable using `app`).
 - [`dock.sh`](scripts/dock.sh) configure macOS dock
 - [`code.sh`](scripts/code.sh) install Cursor extensions
 - [`local.sh`](scripts/local.sh) final local settings, like configuring git user details and
@@ -81,6 +81,20 @@ bash <(curl -sL https://dot.lobao.io) -y
 - Configure git user details
 - Configure SSH client
 - Configure GPG client
+
+## Managing apps with `app`
+
+Use the `app` CLI (backed by [`scripts/app.py`](scripts/app.py)) to keep [`apps.toml`](apps.toml)
+up to date:
+
+```bash
+app add <app> <source> [--group <group>] [--description <text>]
+app remove <app>
+```
+
+By default, adding an app will also install it via the chosen source, and removing an app will
+uninstall it. Pass `--no-install` or `--no-uninstall` to skip those steps while still updating
+`apps.toml`.
 
 ## Aerial live wallpapers
 

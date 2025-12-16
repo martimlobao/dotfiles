@@ -142,7 +142,7 @@ pylint = "uv"  # It's not just a linter that annoys you!
 ruff = "uv"  # Extremely fast Python linter, written in Rust
 rumdl = "uv"  # Markdown Linter and Formatter written in Rust
 tombi = "uv"  # TOML formatter, linter and language server
-ty = "uv"  # Extremely fast Python package installer and resolver, written in Rust
+ty = "uv"  # Extremely fast Python type checker, written in Rust
 
 [utilities]
 6753110395 = "mas"  # Folder Quick Look: Instant Folder & Archive Peek
