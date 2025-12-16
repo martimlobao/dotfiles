@@ -284,7 +284,7 @@ def save_apps(apps_file: Path, document: tomlkit.TOMLDocument) -> None:
 
 
 def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str, str] | None:
-    """Find an app across all sections (case-insensitive).
+    """Finds an app across all sections (case-insensitive).
 
     Args:
         document: The TOML document object.

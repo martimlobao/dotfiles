@@ -19,7 +19,7 @@ Here's a short description of each script in this repository:
 - [`install.sh`](scripts/install.sh) install fonts, tools, and apps using Homebrew,
   [`uv`](https://docs.astral.sh/uv/), and the Mac App Store (callable using `syncapps`)
 - [`app.py`](scripts/app.py) CLI tool to manage and install applications listed in
-  [`apps.toml`](apps.toml) (callable using `app`).
+  [`apps.toml`](apps.toml) (callable using `app`)
 - [`dock.sh`](scripts/dock.sh) configure macOS dock
 - [`code.sh`](scripts/code.sh) install Cursor extensions
 - [`local.sh`](scripts/local.sh) final local settings, like configuring git user details and
