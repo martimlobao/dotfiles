@@ -33,7 +33,7 @@ jobs:
           set -euo pipefail
           oxipng -o 4 --strip safe ./**/*.png
           if ! git diff --quiet; then
-            echo "oxipng would modify files. Please run oxipng locally using the following command and commit the results."
+            echo "oxipng would modify files. Run oxipng locally and commit the results using:"
             echo "oxipng -o 4 --strip safe ./**/*.png"
             echo ""
             echo "Changed files:"
