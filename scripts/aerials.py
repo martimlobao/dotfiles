@@ -619,7 +619,7 @@ def get_content_length(url: str) -> int:
     content_length: int = int(req.headers["Content-Length"])
 
     # Update cache
-    cache[url] = {"length": content_length, "timestamp": time.time()}
+    cache[url] = ContentLengthCacheEntry(length=content_length, timestamp=time.time())
 
     # Save cache
     save_cache(cache)
