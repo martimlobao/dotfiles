@@ -28,6 +28,10 @@ function chrome() {
 	uvx --with "selenium" python -c "from selenium import webdriver; driver = webdriver.Chrome(); input('Press Enter to exit...')"
 }
 
+function boo() {
+	ghostty +boo
+}
+
 function compresspdf() {
 	# from https://superuser.com/a/1217306/1280839
 	if [[ $# -lt 2 || $1 == "-h" || $1 == "--help" ]]; then
@@ -141,7 +145,7 @@ function copy-repo-to-personal() {
 	else
 		curl -u "${GHUSER}":"${GHTOKEN}" https://api.github.com/user/repos -d {\\\"name\\\":\\\""${REPO}"\\\"\\,\\\"private\\\":\\\"true\\\"} --fail
 		git remote add personal git@github.com:"${GHUSER}"/"${REPO}".git
-		git push personal master
+		git push personal main
 	fi
 }
 

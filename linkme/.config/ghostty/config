@@ -15,6 +15,7 @@ window-padding-balance = true
 # for regular use
 window-height = 40
 window-width = 100
+window-save-state=never
 theme = Snazzy Soft
 background = #282a36
 foreground = #eff0eb
@@ -48,6 +49,8 @@ keybind = cmd+alt+up=scroll_to_top
 keybind = cmd+alt+down=scroll_to_bottom
 keybind = ctrl+shift+up=scroll_page_up
 keybind = ctrl+shift+down=scroll_page_down
+keybind = ctrl+q=previous_tab
+keybind = ctrl+w=next_tab
 macos-titlebar-style = tabs
 macos-titlebar-proxy-icon = hidden
 auto-update = download
