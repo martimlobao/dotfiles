@@ -5,6 +5,8 @@
 # dependencies = [
 #     "tomlkit>=0.13.2,<0.14",
 # ]
+# [tool.uv]
+# exclude-newer = "2025-12-16T00:00:00Z"
 # ///
 
 """Manage applications listed in apps.toml.
@@ -29,6 +31,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import tomlkit
+from tomlkit.items import Item, Table
 
 type JSON = dict[str, JSON] | list[JSON] | str | int | float | bool | None
 
@@ -106,7 +109,7 @@ def parse_args() -> argparse.Namespace:
 
 def iter_group_tables(
     document: tomlkit.TOMLDocument,
-) -> Iterator[tuple[str, tomlkit.items.Table]]:
+) -> Iterator[tuple[str, Table]]:
     """Yields (group_name, table) pairs for all table sections.
 
     Args:
@@ -116,7 +119,7 @@ def iter_group_tables(
         A tuple containing the group name and table.
     """
     for group, table in document.items():
-        if isinstance(table, tomlkit.items.Table):
+        if isinstance(table, Table):
             yield group, table
 
 
@@ -267,7 +270,7 @@ def remove_app_from_group(document: tomlkit.TOMLDocument, *, group: str, app_key
         A boolean indicating if the app was removed.
     """
     table = document.get(group)
-    if not isinstance(table, tomlkit.items.Table):
+    if not isinstance(table, Table):
         return False
     if app_key not in table:
         return False
@@ -479,7 +482,7 @@ def fetch_uv_info(document: tomlkit.TOMLDocument, app: str) -> AppInfo:
     if entry is not None:
         group, key = entry
         table = document[group]
-        if isinstance(table, tomlkit.items.Table):
+        if isinstance(table, Table):
             description = _get_item_comment(table[key])
 
     installed = False
@@ -533,14 +536,14 @@ def fetch_app_info(source: str, app: str, document: tomlkit.TOMLDocument) -> App
     raise AppManagerError(f"Unknown source {source!r}.")
 
 
-def sorted_table(items: Iterable[tuple[str, tomlkit.items.Item]]) -> tomlkit.items.Table:
+def sorted_table(items: Iterable[tuple[str, Item]]) -> Table:
     """Sorts a table of items by key.
 
     Args:
         items: The items to sort.
 
     Returns:
-        A sorted tomlkit.items.Table object.
+        A sorted TOMLKit Table object.
     """
     new_table = tomlkit.table()
     for item_key, item_value in sorted(items, key=lambda item: item[0].lower()):
@@ -548,9 +551,7 @@ def sorted_table(items: Iterable[tuple[str, tomlkit.items.Item]]) -> tomlkit.ite
     return new_table
 
 
-def upsert_value(
-    table: tomlkit.items.Table, key: str, value: tomlkit.items.Item
-) -> tuple[tomlkit.items.Table, bool]:
+def upsert_value(table: Table, key: str, value: Item) -> tuple[Table, bool]:
     """Upserts a value into a table.
 
     Args:
@@ -597,9 +598,7 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
                 return value
             print("Group name cannot be empty.")
 
-    groups: list[str] = [
-        group for group, table in document.items() if isinstance(table, tomlkit.items.Table)
-    ]
+    groups: list[str] = [group for group, table in document.items() if isinstance(table, Table)]
     if not sys.stdin.isatty():
         raise AppManagerError(
             "No --group/-g provided and stdin is not interactive. Provide --group explicitly."
@@ -682,7 +681,7 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
     if group_table is None:
         group_table = tomlkit.table()
         document[args.group] = group_table
-    if not isinstance(group_table, tomlkit.items.Table):
+    if not isinstance(group_table, Table):
         raise AppManagerError(f"Section [{args.group}] is not a table in apps.toml.")
 
     value = tomlkit.string(args.source)
@@ -777,14 +776,14 @@ def _ljust_ansi(text: str, width: int) -> str:
     return text + (" " * pad)
 
 
-def _get_item_value(item: tomlkit.items.Item) -> str:
+def _get_item_value(item: Item) -> str:
     value = getattr(item, "value", None)
     if value is None:
         return str(item).strip('"')
     return str(value)
 
 
-def _get_item_comment(item: tomlkit.items.Item) -> str:
+def _get_item_comment(item: Item) -> str:
     trivia = getattr(item, "trivia", None)
     comment = getattr(trivia, "comment", None)
     if not comment:
