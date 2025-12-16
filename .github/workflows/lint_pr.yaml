@@ -21,7 +21,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
       - name: Cache Oxipng
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.cargo/
           key: ${{ runner.os }}-cargo
@@ -31,9 +31,10 @@ jobs:
       - name: Run oxipng
         run: |-
           set -euo pipefail
-          oxipng -o 4 --strip safe **/*.png
+          oxipng -o 4 --strip safe ./**/*.png
           if ! git diff --quiet; then
-            echo "oxipng would modify files. Please run oxipng locally and commit the results."
+            echo "oxipng would modify files. Please run oxipng locally using the following command and commit the results."
+            echo "oxipng -o 4 --strip safe ./**/*.png"
             echo ""
             echo "Changed files:"
             git diff --name-only
