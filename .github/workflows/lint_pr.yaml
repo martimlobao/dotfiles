@@ -14,6 +14,32 @@ jobs:
         uses: actions/checkout@v6
       - name: Run actionlint
         uses: raven-actions/actionlint@963d4779ef039e217e5d0e6fd73ce9ab7764e493 # v2.1.0
+  oxipng:
+    name: Run oxipng
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Cache Oxipng
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/
+          key: ${{ runner.os }}-cargo
+      - name: Install oxipng if it is not installed
+        run: |
+          which oxipng || cargo install oxipng
+      - name: Run oxipng
+        run: |-
+          set -euo pipefail
+          oxipng -o 4 --strip safe ./**/*.png
+          if ! git diff --quiet; then
+            echo "oxipng would modify files. Run oxipng locally and commit the results using:"
+            echo "oxipng -o 4 --strip safe ./**/*.png"
+            echo ""
+            echo "Changed files:"
+            git diff --name-only
+            exit 1
+          fi
   ruff:
     name: Run ruff
     runs-on: ubuntu-latest
