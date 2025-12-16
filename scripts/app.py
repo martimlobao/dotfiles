@@ -9,14 +9,18 @@
 # exclude-newer = "2025-12-16T00:00:00Z"
 # ///
 
-"""Manage applications listed in apps.toml.
+"""Manage and install applications listed in apps.toml.
 
 Examples:
-    app add uv httpie -g cli-tools -d "Nicer cURL replacement"
-    app add cask chromedriver -g utilities
-    app add mas 6753110395
+    app add httpie uv -g cli-tools -d "Nicer cURL replacement"
+    app add chromedriver cask -g utilities
+    app add 6753110395 mas
     app remove httpie
+    app remove chromedriver --no-install
     app list
+
+By default, ``app add`` installs the app and ``app remove`` uninstalls it. Use
+``--no-install`` to skip these actions and only update ``apps.toml``.
 """
 
 import argparse
@@ -53,13 +57,40 @@ class AppInfo:
     installed: bool
 
 
+def _ensure_executable(name: str) -> str:
+    path: str | None = shutil.which(name)
+    if not path:
+        raise AppManagerError(f"Required executable not found on PATH: {name}")
+    return path
+
+
+def _run(
+    command: list[str],
+    *,
+    check: bool = True,
+    capture_output: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    result: subprocess.CompletedProcess[str] = subprocess.run(  # noqa: S603
+        command,
+        check=False,
+        text=True,
+        capture_output=capture_output,
+    )
+    if check and result.returncode != 0:
+        stderr: str = (result.stderr or "").strip()
+        stdout: str = (result.stdout or "").strip()
+        details: str = stderr or stdout or f"Command failed with exit code {result.returncode}"
+        raise AppManagerError(f"Command failed: {' '.join(command)}\n{details}")
+    return result
+
+
 def parse_args() -> argparse.Namespace:
     """Parses the command line arguments.
 
     Returns:
         An argparse.Namespace object.
     """
-    parser = argparse.ArgumentParser(description="Manage entries in apps.toml")
+    parser = argparse.ArgumentParser(description="Manage and install applications using apps.toml")
     parser.add_argument(
         "--apps-file",
         default=APPS_TOML,
@@ -69,13 +100,13 @@ def parse_args() -> argparse.Namespace:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    add_parser = subparsers.add_parser("add", help="Add an app to apps.toml")
+    add_parser = subparsers.add_parser("add", help="Add an app to apps.toml and install it")
+    add_parser.add_argument("app", help="App name or identifier")
     add_parser.add_argument(
         "source",
         choices=list(APP_SOURCES),
         help=f"Source of the app (choices: {', '.join(APP_SOURCES)})",
     )
-    add_parser.add_argument("app", help="App name or identifier")
     add_parser.add_argument(
         "-g",
         "--group",
@@ -90,19 +121,31 @@ def parse_args() -> argparse.Namespace:
             " sources."
         ),
     )
+    add_parser.add_argument(
+        "--no-install",
+        action="store_true",
+        help="Skip installing or uninstalling apps and only update the apps.toml file",
+    )
 
-    remove_parser = subparsers.add_parser("remove", help="Remove an app from apps.toml")
+    remove_parser = subparsers.add_parser(
+        "remove", help="Remove an app from apps.toml and uninstall it"
+    )
     remove_parser.add_argument("app", help="App name or identifier to remove")
+    remove_parser.add_argument(
+        "--no-install",
+        action="store_true",
+        help="Skip installing or uninstalling apps and only update the apps.toml file",
+    )
 
     subparsers.add_parser("list", help="List apps in apps.toml")
 
     info_parser = subparsers.add_parser("info", help="Show app details")
+    info_parser.add_argument("app", help="App name or identifier")
     info_parser.add_argument(
         "source",
         choices=list(APP_SOURCES),
         help=f"Source of the app (choices: {', '.join(APP_SOURCES)})",
     )
-    info_parser.add_argument("app", help="App name or identifier")
 
     return parser.parse_args()
 
@@ -240,7 +283,7 @@ def save_apps(apps_file: Path, document: tomlkit.TOMLDocument) -> None:
         f.write(tomlkit.dumps(document))
 
 
-def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str] | None:
+def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str, str] | None:
     """Finds an app across all sections (case-insensitive).
 
     Args:
@@ -248,13 +291,12 @@ def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str] 
         app: The name of the app.
 
     Returns:
-        (group_name, existing_key) if found, else None.
+        (app_key, app_source, app_group) if found, else None.
     """
-    norm: str = normalize_key(app)
     for group, table in iter_group_tables(document):
         for key in table:
-            if normalize_key(str(key)) == norm:
-                return group, str(key)
+            if normalize_key(key) == normalize_key(app):
+                return key, str(table[key]), group
     return None
 
 
@@ -347,41 +389,29 @@ def fetch_mas_info(app_id: str) -> AppInfo:
     Raises:
         AppManagerError: If mas is not installed or if the app is not found.
     """
-    mas_executable: str | None = shutil.which("mas")
-    if not mas_executable:
-        raise AppManagerError("mas is required to infer descriptions for Mac App Store apps.")
+    mas: str = _ensure_executable("mas")
 
-    result = subprocess.run(  # noqa: S603
-        [mas_executable, "info", app_id],
-        check=False,
-        text=True,
-        capture_output=True,
-    )
+    result: subprocess.CompletedProcess[str] = _run([mas, "info", app_id])
 
-    if result.returncode != 0:
-        msg: str = result.stderr.strip() or result.stdout.strip() or "Unable to fetch mas info."
-        raise AppManagerError(msg)
-
-    description_line = next(
+    description_line: str | None = next(
         (line.strip() for line in result.stdout.splitlines() if line.strip()), None
     )
     if not description_line:
         raise AppManagerError("Could not parse mas info output.")
 
-    match = re.match(r"^(?P<name>.+?)\s+(?P<version>\d[\w.\-]+)(?:\s+\[.*\])?$", description_line)
+    match: re.Match[str] | None = re.match(
+        r"^(?P<name>.+?)\s+(?P<version>\d[\w.\-]+)(?:\s+\[.*\])?$",
+        description_line,
+    )
     name: str = description_line
     version: str | None = None
     if match:
         name = match.group("name").strip()
         version = match.group("version")
 
-    list_result = subprocess.run(  # noqa: S603
-        [mas_executable, "list"],
-        check=False,
-        text=True,
-        capture_output=True,
-    )
-    installed_ids = {
+    list_result: subprocess.CompletedProcess[str] = _run([mas, "list"])
+
+    installed_ids: set[str] = {
         line.split()[0]
         for line in list_result.stdout.splitlines()
         if line.strip() and line.split()[0].isdigit()
@@ -430,21 +460,13 @@ def fetch_brew_info(app: str, source: str) -> AppInfo:
         AppManagerError: If Homebrew is not installed or if the app is not
             found.
     """
-    brew_executable = shutil.which("brew")
-    if not brew_executable:
-        raise AppManagerError(
-            "Homebrew is required to infer descriptions for cask/formula sources."
-        )
-
-    command: list[str] = [brew_executable, "info", "--json=v2"]
+    brew: str = _ensure_executable("brew")
+    command: list[str] = [brew, "info", "--json=v2"]
     if source == "cask":
         command.append("--cask")
     command.append(app)
 
-    result = subprocess.run(command, check=False, text=True, capture_output=True)  # noqa: S603
-    if result.returncode != 0:
-        msg: str = result.stderr.strip() or result.stdout.strip() or "Unable to fetch brew info."
-        raise AppManagerError(msg)
+    result: subprocess.CompletedProcess[str] = _run(command)
 
     data: dict[str, list[dict[str, JSON]]] = json.loads(result.stdout)
     entries_key: str = "casks" if source == "cask" else "formulae"
@@ -480,28 +502,21 @@ def fetch_uv_info(document: tomlkit.TOMLDocument, app: str) -> AppInfo:
     description: str | None = None
     entry = find_app_group(document, app)
     if entry is not None:
-        group, key = entry
+        key, _, group = entry
         table = document[group]
         if isinstance(table, Table):
             description = _get_item_comment(table[key])
 
     installed = False
     version: str | None = None
-    uv_executable: str | None = shutil.which("uv")
-    if uv_executable:
-        result = subprocess.run(  # noqa: S603
-            [uv_executable, "tool", "list"],
-            check=False,
-            text=True,
-            capture_output=True,
-        )
-        if result.returncode == 0:
-            norm: str = normalize_key(app)
-            for line in result.stdout.splitlines():
-                name, version = line.split()
-                if normalize_key(name) == norm and version.startswith("v"):
-                    installed = True
-                    break
+    uv: str = _ensure_executable("uv")
+    result: subprocess.CompletedProcess[str] = _run([uv, "tool", "list"])
+    for line in result.stdout.splitlines():
+        name, version_ = line.split()
+        if normalize_key(name) == normalize_key(app) and version_.startswith("v"):
+            installed = True
+            version = version_
+            break
 
     return AppInfo(
         name=app,
@@ -643,12 +658,18 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
         return resolve_group_name(document, choice)
 
 
-def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
+def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> tuple[bool, str | None]:
     """Adds an app to the apps.toml file.
 
     Args:
         document: The TOML document object.
         args: The argparse.Namespace object.
+
+    Returns:
+        A tuple of (source_changed, previous_source). `source_changed` is a
+            boolean indicating whether the source changed as a result of this
+            operation, and `previous_source` is that source if it existed,
+            otherwise None.
 
     Raises:
         AppManagerError: If unable to add the app to the apps.toml file.
@@ -662,8 +683,10 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
 
     existing = find_app_group(document, args.app)
     moved_from: str | None = None
+    previous_source: str | None = None
     if existing is not None:
-        existing_group, existing_key = existing
+        existing_key, previous_source, existing_group = existing
+
         # Keep the canonical key casing already in the file to avoid duplicates
         # like "Foo" vs "foo".
         args.app = existing_key
@@ -689,6 +712,7 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
     value.trivia.comment_ws = "  "  # two spaces before comment
 
     document[args.group], existed = upsert_value(group_table, args.app, value)
+    source_changed: bool = previous_source is not None and previous_source != args.source
     if moved_from is not None:
         print(
             f"➡️ Moved {args.app!r} from [{moved_from}] to [{args.group}] with source"
@@ -704,9 +728,78 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
             f"✅ Added {args.app!r} to [{args.group}] with source '{args.source}' and description"
             f' "{description}".'
         )
+    return source_changed, previous_source
 
 
-def remove_app(document: tomlkit.TOMLDocument, app: str) -> bool:
+def install_app(document: tomlkit.TOMLDocument, *, source: str, app: str) -> None:
+    """Installs an app using the appropriate package manager.
+
+    Args:
+        document: The TOML document object.
+        source: The source of the app.
+        app: The name of the app to install.
+
+    Raises:
+        AppManagerError: If the app is not found or if the source is unknown.
+    """
+    if fetch_app_info(source, app, document).installed:
+        print(f"✅ {app!r} is already installed via {source}.")
+        return
+
+    print(f"⬇️ Installing {app!r} via {source}...")
+    match source:
+        case "cask":
+            brew: str = _ensure_executable("brew")
+            _run([brew, "install", "--cask", app])
+        case "formula":
+            brew = _ensure_executable("brew")
+            _run([brew, "install", app])
+        case "mas":
+            mas: str = _ensure_executable("mas")
+            _run([mas, "install", app])
+        case "uv":
+            uv: str = _ensure_executable("uv")
+            _run([uv, "tool", "install", app])
+        case _:
+            raise AppManagerError(f"Unknown source {source!r}.")
+    print(f"✅ Installed {app!r}.")
+
+
+def uninstall_app(document: tomlkit.TOMLDocument, *, source: str, app: str) -> None:
+    """Uninstalls an app using the appropriate package manager.
+
+    Args:
+        document: The TOML document object.
+        source: The source of the app.
+        app: The name of the app to uninstall.
+
+    Raises:
+        AppManagerError: If the app is not found or if the source is unknown.
+    """
+    if not fetch_app_info(source, app, document).installed:
+        print(f"✅ {app!r} is not installed; skipping uninstall.")
+        return
+
+    print(f"🗑️ Uninstalling {app!r} via {source}...")
+    match source:
+        case "cask":
+            brew: str = _ensure_executable("brew")
+            _run([brew, "uninstall", "--cask", app])
+        case "formula":
+            brew = _ensure_executable("brew")
+            _run([brew, "uninstall", app])
+        case "mas":
+            mas: str = _ensure_executable("mas")
+            _run([mas, "uninstall", app])
+        case "uv":
+            uv: str = _ensure_executable("uv")
+            _run([uv, "tool", "uninstall", app])
+        case _:
+            raise AppManagerError(f"Unknown source {source!r}.")
+    print(f"🚮 Uninstalled {app!r}.")
+
+
+def remove_app(document: tomlkit.TOMLDocument, app: str) -> tuple[bool, str | None]:
     """Removes an app from the apps.toml file.
 
     Args:
@@ -714,21 +807,21 @@ def remove_app(document: tomlkit.TOMLDocument, app: str) -> bool:
         app: The name of the app to remove.
 
     Returns:
-        A boolean indicating if the app was removed.
+        A tuple of a boolean indicating if the app was removed and its source.
     """
-    existing: tuple[str, str] | None = find_app_group(document, app)
+    existing: tuple[str, str, str] | None = find_app_group(document, app)
     if existing is None:
         print(f"⚠️ {app!r} not found in apps.toml.")
-        return False
+        return False, None
 
-    group, existing_key = existing
+    existing_key, source, group = existing
     removed: bool = remove_app_from_group(document, group=group, app_key=existing_key)
     if not removed:
         print(f"⚠️ {app!r} not found in apps.toml.")
-        return False
+        return False, None
 
     print(f"🗑️ Removed {existing_key!r} from [{group}].")
-    return True
+    return True, source
 
 
 class _Ansi:
@@ -895,13 +988,19 @@ def main() -> None:
     document: tomlkit.TOMLDocument = load_apps(args.apps_file)
 
     if args.command == "add":
-        add_app(document, args)
+        source_changed, previous_source = add_app(document, args)
         save_apps(args.apps_file, document)
+        if not args.no_install:
+            if source_changed and previous_source in APP_SOURCES:
+                uninstall_app(document, source=previous_source, app=args.app)
+            install_app(document, source=args.source, app=args.app)
     elif args.command == "remove":
-        removed: bool = remove_app(document, args.app)
+        removed, source = remove_app(document, args.app)
         if removed:
             # if nothing was removed there's no need to modify the file
             save_apps(args.apps_file, document)
+            if source is not None and not args.no_install:
+                uninstall_app(document, source=source, app=args.app)
     elif args.command == "list":
         list_apps(document)
     elif args.command == "info":
