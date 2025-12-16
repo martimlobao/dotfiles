@@ -3,4 +3,4 @@ repos:
     rev: v10.0.0
     hooks:
       - id: oxipng
-        args: ["-o", "4", "--strip", "safe", "--alpha"]
+        args: ["-o", "4", "--strip", "safe"]
