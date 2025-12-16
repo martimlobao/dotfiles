@@ -93,8 +93,7 @@ app remove <app>
 ```
 
 By default, adding an app will also install it via the chosen source, and removing an app will
-uninstall it. Pass `--no-install` or `--no-uninstall` to skip those steps while still updating
-`apps.toml`.
+uninstall it. Pass `--no-install` to skip those steps and only update `apps.toml`.
 
 ## Aerial live wallpapers
 

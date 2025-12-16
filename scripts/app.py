@@ -16,12 +16,11 @@ Examples:
     app add chromedriver cask -g utilities
     app add 6753110395 mas
     app remove httpie
-    app remove chromedriver --no-uninstall
+    app remove chromedriver --no-install
     app list
 
 By default, ``app add`` installs the app and ``app remove`` uninstalls it. Use
-``--no-install`` or ``--no-uninstall`` to skip these actions while still
-updating ``apps.toml``.
+``--no-install`` to skip these actions and only update ``apps.toml``.
 """
 
 import argparse
@@ -125,7 +124,7 @@ def parse_args() -> argparse.Namespace:
     add_parser.add_argument(
         "--no-install",
         action="store_true",
-        help="Skip installing the app after adding it to apps.toml",
+        help="Skip installing or uninstalling apps and only update the apps.toml file",
     )
 
     remove_parser = subparsers.add_parser(
@@ -133,9 +132,9 @@ def parse_args() -> argparse.Namespace:
     )
     remove_parser.add_argument("app", help="App name or identifier to remove")
     remove_parser.add_argument(
-        "--no-uninstall",
+        "--no-install",
         action="store_true",
-        help="Skip uninstalling the app after removing it from apps.toml",
+        help="Skip installing or uninstalling apps and only update the apps.toml file",
     )
 
     subparsers.add_parser("list", help="List apps in apps.toml")
@@ -284,21 +283,20 @@ def save_apps(apps_file: Path, document: tomlkit.TOMLDocument) -> None:
         f.write(tomlkit.dumps(document))
 
 
-def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str] | None:
-    """Finds an app across all sections (case-insensitive).
+def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str, str] | None:
+    """Find an app across all sections (case-insensitive).
 
     Args:
         document: The TOML document object.
         app: The name of the app.
 
     Returns:
-        (group_name, existing_key) if found, else None.
+        (app_key, app_source, app_group) if found, else None.
     """
-    norm: str = normalize_key(app)
     for group, table in iter_group_tables(document):
         for key in table:
-            if normalize_key(str(key)) == norm:
-                return group, str(key)
+            if normalize_key(key) == normalize_key(app):
+                return key, str(table[key]), group
     return None
 
 
@@ -504,7 +502,7 @@ def fetch_uv_info(document: tomlkit.TOMLDocument, app: str) -> AppInfo:
     description: str | None = None
     entry = find_app_group(document, app)
     if entry is not None:
-        group, key = entry
+        key, _, group = entry
         table = document[group]
         if isinstance(table, Table):
             description = _get_item_comment(table[key])
@@ -660,12 +658,18 @@ def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
         return resolve_group_name(document, choice)
 
 
-def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
+def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> tuple[bool, str | None]:
     """Adds an app to the apps.toml file.
 
     Args:
         document: The TOML document object.
         args: The argparse.Namespace object.
+
+    Returns:
+        A tuple of (source_changed, previous_source). `source_changed` is a
+            boolean indicating whether the source changed as a result of this
+            operation, and `previous_source` is that source if it existed,
+            otherwise None.
 
     Raises:
         AppManagerError: If unable to add the app to the apps.toml file.
@@ -679,8 +683,10 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
 
     existing = find_app_group(document, args.app)
     moved_from: str | None = None
+    previous_source: str | None = None
     if existing is not None:
-        existing_group, existing_key = existing
+        existing_key, previous_source, existing_group = existing
+
         # Keep the canonical key casing already in the file to avoid duplicates
         # like "Foo" vs "foo".
         args.app = existing_key
@@ -706,6 +712,7 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
     value.trivia.comment_ws = "  "  # two spaces before comment
 
     document[args.group], existed = upsert_value(group_table, args.app, value)
+    source_changed: bool = previous_source is not None and previous_source != args.source
     if moved_from is not None:
         print(
             f"➡️ Moved {args.app!r} from [{moved_from}] to [{args.group}] with source"
@@ -721,6 +728,7 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
             f"✅ Added {args.app!r} to [{args.group}] with source '{args.source}' and description"
             f' "{description}".'
         )
+    return source_changed, previous_source
 
 
 def install_app(document: tomlkit.TOMLDocument, *, source: str, app: str) -> None:
@@ -776,10 +784,10 @@ def uninstall_app(document: tomlkit.TOMLDocument, *, source: str, app: str) -> N
     match source:
         case "cask":
             brew: str = _ensure_executable("brew")
-            _run([brew, "uninstall", "--cask", "--zap", app])
+            _run([brew, "uninstall", "--cask", app])
         case "formula":
             brew = _ensure_executable("brew")
-            _run([brew, "uninstall", "--zap", app])
+            _run([brew, "uninstall", app])
         case "mas":
             mas: str = _ensure_executable("mas")
             _run([mas, "uninstall", app])
@@ -801,13 +809,12 @@ def remove_app(document: tomlkit.TOMLDocument, app: str) -> tuple[bool, str | No
     Returns:
         A tuple of a boolean indicating if the app was removed and its source.
     """
-    existing: tuple[str, str] | None = find_app_group(document, app)
+    existing: tuple[str, str, str] | None = find_app_group(document, app)
     if existing is None:
         print(f"⚠️ {app!r} not found in apps.toml.")
         return False, None
 
-    group, existing_key = existing
-    source: str | None = document[group].get(existing_key)
+    existing_key, source, group = existing
     removed: bool = remove_app_from_group(document, group=group, app_key=existing_key)
     if not removed:
         print(f"⚠️ {app!r} not found in apps.toml.")
@@ -981,16 +988,18 @@ def main() -> None:
     document: tomlkit.TOMLDocument = load_apps(args.apps_file)
 
     if args.command == "add":
-        add_app(document, args)
+        source_changed, previous_source = add_app(document, args)
         save_apps(args.apps_file, document)
         if not args.no_install:
+            if source_changed and previous_source in APP_SOURCES:
+                uninstall_app(document, source=previous_source, app=args.app)
             install_app(document, source=args.source, app=args.app)
     elif args.command == "remove":
         removed, source = remove_app(document, args.app)
         if removed:
             # if nothing was removed there's no need to modify the file
             save_apps(args.apps_file, document)
-            if source is not None and not args.no_uninstall:
+            if source is not None and not args.no_install:
                 uninstall_app(document, source=source, app=args.app)
     elif args.command == "list":
         list_apps(document)
