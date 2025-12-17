@@ -53,6 +53,7 @@ class AppInfo:
     name: str
     source: str
     description: str | None
+    website: str | None
     version: str | None
     installed: bool
 
@@ -417,10 +418,18 @@ def fetch_mas_info(app_id: str) -> AppInfo:
         if line.strip() and line.split()[0].isdigit()
     }
 
+    website: str | None = None
+    for raw_line in result.stdout.splitlines():
+        stripped: str = raw_line.strip()
+        if stripped.startswith("From:"):
+            website = stripped.split(":", 1)[1].strip() or None
+            break
+
     return AppInfo(
         name=name,
         source="mas",
         description=name,
+        website=website,
         version=version,
         installed=app_id in installed_ids,
     )
@@ -478,12 +487,17 @@ def fetch_brew_info(app: str, source: str) -> AppInfo:
     description: JSON = entry.get("desc")
     if description is not None and not isinstance(description, str):
         description = str(description)
+    homepage: JSON = entry.get("homepage")
+    website: str | None = None
+    if isinstance(homepage, str) and homepage.strip():
+        website = homepage.strip()
     installed, version = _extract_brew_install(entry)
 
     return AppInfo(
         name=app,
         source=source,
         description=str(description) if description else None,
+        website=website,
         version=version,
         installed=installed,
     )
@@ -522,6 +536,7 @@ def fetch_uv_info(document: tomlkit.TOMLDocument, app: str) -> AppInfo:
         name=app,
         source="uv",
         description=description,
+        website=f"https://pypi.org/project/{app}/",
         version=version,
         installed=installed,
     )
@@ -969,6 +984,7 @@ def print_app_info(info: AppInfo) -> None:
         "Name": info.name,
         "Source": info.source,
         "Description": info.description or "N/A",
+        "Website": info.website or "N/A",
         "Version": info.version or "Unknown",
         "Installed": "Yes" if info.installed else "No",
     }
