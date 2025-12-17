@@ -394,9 +394,18 @@ def fetch_mas_info(app_id: str) -> AppInfo:
 
     result: subprocess.CompletedProcess[str] = _run([mas, "info", app_id])
 
-    description_line: str | None = next(
-        (line.strip() for line in result.stdout.splitlines() if line.strip()), None
-    )
+    description_line: str | None = None
+    website: str | None = None
+    for raw_line in result.stdout.splitlines():
+        stripped: str = raw_line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("From:"):
+            website = stripped.split(":", 1)[1].strip() or None
+            continue
+        if description_line is None:
+            description_line = stripped
+
     if not description_line:
         raise AppManagerError("Could not parse mas info output.")
 
@@ -418,15 +427,8 @@ def fetch_mas_info(app_id: str) -> AppInfo:
         if line.strip() and line.split()[0].isdigit()
     }
 
-    website: str | None = None
-    for raw_line in result.stdout.splitlines():
-        stripped: str = raw_line.strip()
-        if stripped.startswith("From:"):
-            website = stripped.split(":", 1)[1].strip() or None
-            break
-
     return AppInfo(
-        name=name,
+        name=app_id,
         source="mas",
         description=name,
         website=website,
