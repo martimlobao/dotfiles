@@ -1,11 +1,11 @@
 anysphere.cursorpyright
+astral-sh.ty
 batisteo.vscode-django
 bierner.emojisense
 bierner.markdown-mermaid
 charliermarsh.ruff
 christian-kohler.path-intellisense
 compulim.vscode-clock
-davidanson.vscode-markdownlint
 dbaeumer.vscode-eslint
 dnicolson.binary-plist
 donjayamanne.githistory
