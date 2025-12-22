@@ -57,13 +57,13 @@ To run the script without interactive prompts, just add `-y` to the end:
 bash <(curl -sL https://dot.lobao.io) -y
 ```
 
-### 1Password requirements
+### 1Password Requirements
 
 1Password is required to store secrets used by these scripts. These include but are not limited to:
 
 - `op://Private/GitHub/name` to set your git `user.name`
 - `op://Private/GitHub/email` and `op://Private/GitHub/username` to configure git and push to
-  Github
+  GitHub
 - `op://Private/GitHub SSH Commit Signing Key/public key` to configure SSH commit signing
 - `op://Private/iStat Menus 6/registered email` and `op://Private/iStat Menus 6/license key` to
   register iStat Menus 6
@@ -82,7 +82,7 @@ bash <(curl -sL https://dot.lobao.io) -y
 - Configure SSH client
 - Configure GPG client
 
-## Managing apps with `app`
+## Managing Apps with `app`
 
 Use the `app` CLI (backed by [`scripts/app.py`](scripts/app.py)) to keep [`apps.toml`](apps.toml)
 up to date:
@@ -95,7 +95,7 @@ app remove <app>
 By default, adding an app will also install it via the chosen source, and removing an app will
 uninstall it. Pass `--no-install` to skip those steps and only update `apps.toml`.
 
-## Aerial live wallpapers
+## Aerial Live Wallpapers
 
 This repository contains a [script](scripts/aerials.py) that downloads the wallpapers from Apple's
 servers and caches them to your local machine. It can also delete existing wallpapers and list all
@@ -113,7 +113,7 @@ uv run https://raw.githubusercontent.com/martimlobao/dotfiles/refs/heads/main/sc
 
 ![Aerials live wallpapers](static/aerials.png)
 
-## Thanks and inspiration
+## Thanks and Inspiration
 
 Several people and repositories have contributed to or been a source of inspiration for this
 repository:
