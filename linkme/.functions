@@ -74,9 +74,9 @@ function o() {
 # `c` with no arguments opens Cursor in the current directory, otherwise opens at the given location
 function c() {
 	if [[ $# -eq 0 ]]; then
-		cursor .
+		open -a "Cursor" -- .
 	else
-		cursor "$@"
+		open -a "Cursor" -- "$@"
 	fi
 }
 
@@ -129,9 +129,9 @@ function starwars() {
 # Cursor jump
 function jc {
 	if [[ -z $1 || $1 == "." ]]; then
-		cursor .
+		open -a "Cursor" -- .
 	else
-		cursor "$(j "$1")"
+		open -a "Cursor" -- "$(j "$1")"
 	fi
 }
 
