@@ -111,7 +111,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh  # Install uv if not already ins
 uv run https://raw.githubusercontent.com/martimlobao/dotfiles/refs/heads/main/scripts/aerials.py
 ```
 
-![Aerials live wallpapers](static/aerials.png)
+![Aerial Live Wallpapers](static/aerials.png)
 
 ## Thanks and Inspiration
 
