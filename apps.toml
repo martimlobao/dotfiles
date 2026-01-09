@@ -136,6 +136,7 @@ zsh-autosuggestions = "formula"  # Fish-like fast/unobtrusive autosuggestions fo
 zsh-syntax-highlighting = "formula"  # Fish shell like syntax highlighting for zsh
 
 [python-tools]
+checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
 ipython = "uv"  # Interactive computing in Python
 marimo = "uv"  # Reactive notebook for Python [Jupyter alternative]
 mypy = "uv"  # Experimental optional static type checker for Python
