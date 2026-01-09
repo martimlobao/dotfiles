@@ -7,6 +7,9 @@ MAKEFLAGS += -j$(JOBS) --output-sync=target
 .PHONY: check \
         lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
 
+# All tracked shell scripts (recursive, includes repo root).
+SH_FILES := $(shell git ls-files '*.sh')
+
 # High-level aggregate
 check: lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
 
@@ -30,10 +33,10 @@ lint-rumdl:
 	uv run rumdl check
 
 lint-shellcheck:
-	shellcheck -x ./**/*.sh
+	shellcheck -x $(SH_FILES)
 
 lint-shfmt:
-	shfmt -s -d ./**/*.sh
+	shfmt -s -d $(SH_FILES)
 
 lint-tombi:
 	uvx tombi check
