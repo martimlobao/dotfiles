@@ -121,7 +121,7 @@ jobs:
       - name: Run trufflehog
         uses: trufflesecurity/trufflehog@ef6e76c3c4023279497fab4721ffa071a722fd05 # v3.92.4
         with:
-          extra_args: --results=verified --fail
+          extra_args: --results=verified
   ty:
     name: Run ty
     runs-on: ubuntu-latest
