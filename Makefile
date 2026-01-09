@@ -30,7 +30,7 @@ lint-ruff-format:
 	uvx ruff format --check
 
 lint-rumdl:
-	uv run rumdl check
+	uvx rumdl --config linkme/.config/rumdl/rumdl.toml check .
 
 lint-shellcheck:
 	shellcheck -x $(SH_FILES)
@@ -39,8 +39,8 @@ lint-shfmt:
 	shfmt -s -d $(SH_FILES)
 
 lint-tombi:
-	uvx tombi check
-	uvx tombi format --check
+	uvx tombi lint .
+	uvx tombi format --check .
 
 lint-trufflehog:
 	trufflehog git file://. --results=verified --fail
@@ -50,4 +50,4 @@ lint-ty:
 	uvx --with-requirements scripts/app.py ty check scripts/app.py
 
 lint-yamllint:
-	uvx yamllint --strict .
+	uvx yamllint -c linkme/.config/yamllint/config .
