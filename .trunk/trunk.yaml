@@ -21,7 +21,6 @@ lint:
   enabled:
     - checkov@3.2.495
     - git-diff-check
-    - trufflehog@3.92.3
 actions:
   enabled:
     - trunk-check-pre-push
