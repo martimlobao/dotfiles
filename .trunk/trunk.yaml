@@ -21,7 +21,6 @@ lint:
   enabled:
     - checkov@3.2.495
     - git-diff-check
-    - prettier@3.7.4
     - trufflehog@3.92.3
 actions:
   enabled:

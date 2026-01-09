@@ -61,6 +61,16 @@ jobs:
         uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
       - name: Run rumdl
         run: uvx rumdl --config linkme/.config/rumdl/rumdl.toml check .
+  jsort:
+    name: Run jsort
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Install yq and run jsort
+        uses: mikefarah/yq@065b200af9851db0d5132f50bc10b1406ea5c0a8 # v4.50.1
+        with:
+          cmd: jsort
   shellcheck:
     name: Run shellcheck
     runs-on: ubuntu-latest
