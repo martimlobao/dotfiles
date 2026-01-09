@@ -67,7 +67,7 @@
 	ignore = "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/${@:-macos,visualstudiocode,python} ;}; gi"
 	# Delete all squashed branches.
 	# https://github.com/not-an-aardvark/git-delete-squashed#sh
-	cleanup = "!f() { local targetBranch=${1:-main} && git checkout -q $targetBranch && git branch --merged | grep -v \"\\*\" | xargs -n 1 git branch -d && git for-each-ref refs/heads/ \"--format=%(refname:short)\" | while read branch; do mergeBase=$(git merge-base $targetBranch $branch) && [[ $(git cherry $targetBranch $(git commit-tree $(git rev-parse $branch^{tree}) -p $mergeBase -m _)) == \"-\"* ]] && git branch -D $branch; done; }; f"
+	cleanup = "!f() { local targetBranch=${1:-main}; git checkout -q \"$targetBranch\" || return; git branch --merged \"$targetBranch\" | sed -E 's/^[* ] +//' | while IFS= read -r b; do [[ -z \"$b\" || \"$b\" == \"$targetBranch\" ]] && continue; git branch -d \"$b\"; done; git for-each-ref refs/heads/ --format='%(refname:short)' | while IFS= read -r branch; do [[ -z \"$branch\" || \"$branch\" == \"$targetBranch\" ]] && continue; mergeBase=$(git merge-base \"$targetBranch\" \"$branch\") || continue; if [[ $(git cherry \"$targetBranch\" $(git commit-tree $(git rev-parse \"$branch^{tree}\") -p \"$mergeBase\" -m _)) == \"-\"* ]]; then git branch -D \"$branch\"; fi; done; }; f"
 
 [pager]
 	stash = false
