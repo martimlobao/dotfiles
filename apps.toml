@@ -9,6 +9,7 @@ uv = "formula"  # Extremely fast Python package installer and resolver, written 
 
 [developer]
 charles = "cask"  # Web debugging Proxy application
+checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
 codex = "cask"  # OpenAI's coding agent that runs in your terminal
 cursor = "cask"  # Write, edit, and chat about your code with AI
 cursor-cli = "cask"  # Command-line agent for Cursor
@@ -20,10 +21,11 @@ icon-composer = "cask"  # Apple tool to create multi-platform icons
 jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
 "postgresql@15" = "formula"  # Object-relational database system
 redis = "formula"  # Persistent key-value database, with built-in net interface
+rumdl = "uv"  # Markdown Linter and Formatter written in Rust
 shellcheck = "formula"  # Static analysis and lint tool, for (ba)sh scripts
 shfmt = "formula"  # Autoformat shell script source code
 sqlfluff = "uv"  # SQL linter and auto-formatter for Humans
-trunk-io = "cask"  # Developer experience toolkit used to check, test, merge, and monitor code
+tombi = "uv"  # TOML formatter, linter and language server
 yamllint = "uv"  # Linter for YAML files
 
 [work]
@@ -136,7 +138,6 @@ zsh-autosuggestions = "formula"  # Fish-like fast/unobtrusive autosuggestions fo
 zsh-syntax-highlighting = "formula"  # Fish shell like syntax highlighting for zsh
 
 [python-tools]
-checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
 ipython = "uv"  # Interactive computing in Python
 marimo = "uv"  # Reactive notebook for Python [Jupyter alternative]
 mypy = "uv"  # Experimental optional static type checker for Python
@@ -144,8 +145,6 @@ mypy = "uv"  # Experimental optional static type checker for Python
 poetry = "uv"  # Python package management tool
 pylint = "uv"  # It's not just a linter that annoys you!
 ruff = "uv"  # Extremely fast Python linter, written in Rust
-rumdl = "uv"  # Markdown Linter and Formatter written in Rust
-tombi = "uv"  # TOML formatter, linter and language server
 ty = "uv"  # Extremely fast Python type checker, written in Rust
 
 [utilities]
