@@ -15,11 +15,6 @@
 		esac
 	done
 
-	# intentional error for testing
-	false
-	echo "This should not be printed"
-	exit 1
-
 	echo -e "🥾 \033[1;34mBootstrapping dotfiles\033[0m"
 
 	if [[ -z ${BRANCH} ]]; then
