@@ -72,7 +72,7 @@ jobs:
         with:
           cmd: |
             source linkme/.functions
-            jsort
+            jsort check
   shellcheck:
     name: Run shellcheck
     runs-on: ubuntu-latest
