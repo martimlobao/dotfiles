@@ -70,7 +70,9 @@ jobs:
       - name: Install yq and run jsort
         uses: mikefarah/yq@065b200af9851db0d5132f50bc10b1406ea5c0a8 # v4.50.1
         with:
-          cmd: jsort
+          cmd: |
+            source linkme/.functions
+            jsort
   shellcheck:
     name: Run shellcheck
     runs-on: ubuntu-latest
