@@ -80,7 +80,9 @@
     "untrusted"
   ],
   "cursor.composer.shouldChimeAfterChatFinishes": true,
-  "cursor.cpp.disabledLanguages": ["plaintext"],
+  "cursor.cpp.disabledLanguages": [
+    "plaintext"
+  ],
   "cursorpyright.disableLanguageServices": true,
   "editor.acceptSuggestionOnEnter": "on",
   "editor.accessibilitySupport": "off",
@@ -93,7 +95,10 @@
   "editor.minimap.maxColumn": 100,
   "editor.minimap.showSlider": "always",
   "editor.renderWhitespace": "all",
-  "editor.rulers": [99, 119],
+  "editor.rulers": [
+    99,
+    119
+  ],
   "editor.snippetSuggestions": "top",
   "editor.stickyScroll.enabled": true,
   "editor.suggest.preview": true,
@@ -213,7 +218,8 @@
   "workbench.editor.pinnedTabSizing": "compact",
   "workbench.editorAssociations": {
     "*.ipynb": "jupyter-notebook",
-    "*.plist": "default"
+    "*.plist": "default",
+    "*.png": "imagePreview.previewEditor"
   },
   "workbench.preferredDarkColorTheme": "Andromeda Colorizer",
   "workbench.preferredLightColorTheme": "Quiet Light",

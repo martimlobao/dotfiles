@@ -80,7 +80,7 @@ function c() {
 	fi
 }
 
-# Sort keys and arrays in JSON files in place.
+# Case-insensitively sort keys and arrays in JSON files in place
 function jsort() {
 	if [[ $# -lt 1 ]]; then
 		echo "Usage: jsort (fmt|check) [file|directory]" >&2
