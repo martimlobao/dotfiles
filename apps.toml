@@ -122,6 +122,7 @@ pv = "formula"  # Monitor data's progress through a pipe
 superseedr = "formula"  # BitTorrent Client in your Terminal
 telnet = "formula"  # User interface to the TELNET protocol
 tree = "formula"  # Display directories as trees (with optional color/HTML output)
+trufflehog = "formula"  # Find and verify credentials
 wget = "formula"  # Internet file retriever
 xleak = "formula"  # Terminal Excel viewer with an interactive TUI
 yq = "formula"  # Process YAML, JSON, XML, CSV and properties documents from the CLI
