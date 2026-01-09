@@ -80,6 +80,85 @@ function c() {
 	fi
 }
 
+# Case-insensitively sort keys and arrays in JSON files in place
+function jsort() {
+	if [[ $# -lt 1 ]]; then
+		echo "Usage: jsort (fmt|check) [file|directory]" >&2
+		return 2
+	fi
+
+	local mode="$1"
+	shift
+
+	if [[ ${mode} != "fmt" && ${mode} != "check" ]]; then
+		echo "Usage: jsort (fmt|check) [file|directory]" >&2
+		return 2
+	fi
+
+	local target="."
+	if [[ $# -ge 1 ]]; then
+		target="$1"
+		shift
+	fi
+
+	if [[ $# -gt 0 ]]; then
+		echo "Usage: jsort (fmt|check) [file|directory]" >&2
+		return 2
+	fi
+
+	local expr='
+		(... | select(tag == "!!seq")) |= sort_by((select(tag == "!!str") | downcase) // .)
+		|
+		(... | select(tag == "!!map")) |= sort_by(key | downcase)
+	'
+
+	local formatted_count=0
+	local unchanged_count=0
+
+	if [[ ! -e "${target}" ]]; then
+		echo "jsort: no such file or directory: ${target}" >&2
+		return 1
+	fi
+
+	local f
+	while IFS= read -r -d '' f; do
+		if cmp -s <(yq -P -o=json "${expr}" "${f}") "${f}"; then
+			unchanged_count=$((unchanged_count + 1))
+		else
+			formatted_count=$((formatted_count + 1))
+			if [[ ${mode} == "fmt" ]]; then
+				yq -iP -o=json "${expr}" "${f}" || return $?
+			fi
+		fi
+	done < <(
+		if [[ -d "${target}" ]]; then
+			find "${target}" -type f -name '*.json' -print0
+		else
+			printf '%s\0' "${target}"
+		fi
+	)
+
+	if [[ ${mode} == "check" && ${formatted_count} -gt 0 ]]; then
+		local formatted_word="files"
+		if [[ ${formatted_count} -eq 1 ]]; then formatted_word="file"; fi
+		echo "${formatted_count} ${formatted_word} would be formatted" >&2
+		return 1
+	fi
+
+	local formatted_word="files"
+	local unchanged_word="files"
+	if [[ ${formatted_count} -eq 1 ]]; then formatted_word="file"; fi
+	if [[ ${unchanged_count} -eq 1 ]]; then unchanged_word="file"; fi
+
+	if [[ ${formatted_count} -gt 0 ]]; then
+		echo "${formatted_count} ${formatted_word} formatted"
+	fi
+	if [[ ${unchanged_count} -gt 0 ]]; then
+		echo "${unchanged_count} ${unchanged_word} did not need formatting"
+	fi
+	return 0
+}
+
 # Create a new directory and enter it.
 function mkd() {
 	mkdir -p "$@" && cd "${_}" || exit 1
