@@ -5,48 +5,46 @@ JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 MAKEFLAGS += -j$(JOBS) --output-sync=target
 
 .PHONY: check \
-        check-jsort check-oxipng check-ruff check-ruff-format check-rumdl check-shellcheck check-shfmt check-tombi check-trufflehog check-ty check-yamllint
+        lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
 
 # High-level aggregate
-check: check-jsort check-oxipng check-ruff check-ruff-format check-rumdl check-shellcheck check-shfmt check-tombi check-trufflehog check-ty check-yamllint
+check: lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
 
 #################
 # Lint (parallel)
 #################
-check:
-
-check-jsort:
+lint-jsort:
 	. linkme/.functions; \
 	jsort check
 
-# check-oxipng:
+# lint-oxipng:
 # 	oxipng -o 4 --strip safe ./**/*.png
 
-check-ruff:
+lint-ruff:
 	uvx ruff check
 
-check-ruff-format:
+lint-ruff-format:
 	uvx ruff format --check
 
-check-rumdl:
+lint-rumdl:
 	uv run rumdl check
 
-check-shellcheck:
+lint-shellcheck:
 	shellcheck -x ./**/*.sh
 
-check-shfmt:
+lint-shfmt:
 	shfmt -s -d ./**/*.sh
 
-check-tombi:
+lint-tombi:
 	uvx tombi check
 	uvx tombi format --check
 
-check-trufflehog:
+lint-trufflehog:
 	trufflehog git file://. --results=verified --fail
 
-check-ty:
+lint-ty:
 	uvx --with-requirements scripts/aerials.py ty check scripts/aerials.py
 	uvx --with-requirements scripts/app.py ty check scripts/app.py
 
-check-yamllint:
+lint-yamllint:
 	uvx yamllint --strict .
