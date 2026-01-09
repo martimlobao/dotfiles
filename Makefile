@@ -5,17 +5,20 @@ JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 MAKEFLAGS += -j$(JOBS) --output-sync=target
 
 .PHONY: check \
-        lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
+        lint-checkov lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
 
 # All tracked shell scripts (recursive, includes repo root).
 SH_FILES := $(shell git ls-files '*.sh')
 
 # High-level aggregate
-check: lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
+check: lint-checkov lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
 
 #################
 # Lint (parallel)
 #################
+lint-checkov:
+	uvx checkov -d .
+
 lint-jsort:
 	. linkme/.functions; \
 	jsort check
