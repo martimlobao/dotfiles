@@ -8,8 +8,10 @@ uv = "formula"  # Extremely fast Python package installer and resolver, written 
 409203825 = "mas"  # Numbers: Create impressive spreadsheets
 
 [developer]
+auto-claude = "cask"  # Autonomous multi-session AI coding
 charles = "cask"  # Web debugging Proxy application
 checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
+claude-code = "cask"  # Terminal-based AI coding assistant
 codex = "cask"  # OpenAI's coding agent that runs in your terminal
 cursor = "cask"  # Write, edit, and chat about your code with AI
 cursor-cli = "cask"  # Command-line agent for Cursor
