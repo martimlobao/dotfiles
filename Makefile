@@ -21,7 +21,7 @@ lint-checkov:
 
 lint-jsort:
 	. linkme/.functions; \
-	jsort check
+	jsort --sort-arrays check
 
 # lint-oxipng:
 # 	oxipng -o 4 --strip safe ./**/*.png

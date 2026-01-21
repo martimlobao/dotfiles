@@ -80,83 +80,207 @@ function c() {
 	fi
 }
 
-# Case-insensitively sort keys and arrays in JSON files in place
 function jsort() {
-	if [[ $# -lt 1 ]]; then
-		echo "Usage: jsort (fmt|check) [file|directory]" >&2
+	local mode="" target="." sort_arrays=0 no_ignore=0
+
+	_jsort_usage() {
+		echo "Case-insensitively sort keys and arrays in JSON files in place." >&2
+		echo "" >&2
+		echo "Usage: jsort [OPTIONS] <COMMAND>" >&2
+		echo "" >&2
+		echo "Commands:" >&2
+		echo "  fmt     Format the given JSON files or directories" >&2
+		echo "  check   Check if the given JSON files or directories need formatting" >&2
+		echo "" >&2
+		echo "Options:" >&2
+		echo "  -a, --sort-arrays    Sort array elements" >&2
+		echo "  -i, --no-ignore      Do not ignore files in .gitignore" >&2
+		echo "  -h, --help           Print help" >&2
+	}
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+			fmt|check)
+				mode="$1"
+				shift
+				;;
+			-a|--sort-arrays)
+				sort_arrays=1
+				shift
+				;;
+		-i|--no-ignore)
+			no_ignore=1
+			shift
+			;;
+		-h|--help)
+			_jsort_usage
+			return 0
+			;;
+		-*)
+			_jsort_usage
+			return 2
+			;;
+			*)
+				if [[ "${target}" == "." ]]; then
+					target="$1"
+				else
+					_jsort_usage
+					return 2
+				fi
+				shift
+				;;
+		esac
+	done
+
+	if [[ -z "${mode}" ]]; then
+		_jsort_usage
 		return 2
 	fi
-
-	local mode="$1"
-	shift
-
-	if [[ ${mode} != "fmt" && ${mode} != "check" ]]; then
-		echo "Usage: jsort (fmt|check) [file|directory]" >&2
-		return 2
-	fi
-
-	local target="."
-	if [[ $# -ge 1 ]]; then
-		target="$1"
-		shift
-	fi
-
-	if [[ $# -gt 0 ]]; then
-		echo "Usage: jsort (fmt|check) [file|directory]" >&2
-		return 2
-	fi
-
-	local expr='
-		(... | select(tag == "!!seq")) |= sort_by((select(tag == "!!str") | downcase) // .)
-		|
-		(... | select(tag == "!!map")) |= sort_by(key | downcase)
-	'
-
-	local formatted_count=0
-	local unchanged_count=0
 
 	if [[ ! -e "${target}" ]]; then
 		echo "jsort: no such file or directory: ${target}" >&2
 		return 1
 	fi
 
-	local f
-	while IFS= read -r -d '' f; do
-		if cmp -s <(yq -P -o=json "${expr}" "${f}") "${f}"; then
-			unchanged_count=$((unchanged_count + 1))
+	# Build expression based on flags
+	local expr
+	if [[ ${sort_arrays} -eq 1 ]]; then
+		expr='
+			(... | select(tag == "!!seq")) |= sort_by((select(tag == "!!str") | downcase) // .)
+			|
+			(... | select(tag == "!!map")) |= sort_by(key | downcase)
+		'
+	else
+		expr='
+			(... | select(tag == "!!map")) |= sort_by(key | downcase)
+		'
+	fi
+
+	# Determine number of parallel jobs
+	local jobs
+	jobs=$(sysctl -n hw.ncpu 2>/dev/null)
+	if [[ -z "${jobs}" || ! "${jobs}" =~ ^[0-9]+$ ]]; then
+		jobs=4
+	fi
+	if [[ ${jobs} -lt 1 ]]; then
+		jobs=1
+	fi
+
+	# Temporary files
+	local result_file expr_file
+	result_file=$(mktemp) || return 1
+	expr_file=$(mktemp) || { rm -f "${result_file}"; return 1; }
+	trap "rm -f '${result_file}' '${expr_file}'" EXIT
+	printf '%s' "${expr}" >"${expr_file}"
+
+	# Helper function to process a single file
+	_jsort_process_file() {
+		local file="$1" mode="$2" result_file="$3" expr_file="$4" tmp_file expr
+
+		expr=$(cat "${expr_file}")
+		tmp_file=$(mktemp) || { echo "error" >>"${result_file}"; return 1; }
+		if ! yq -P -o=json "${expr}" "${file}" >"${tmp_file}" 2>/dev/null; then
+			rm -f "${tmp_file}"
+			echo "error" >>"${result_file}"
+			return 1
+		fi
+
+		if cmp -s "${tmp_file}" "${file}" 2>/dev/null; then
+			rm -f "${tmp_file}"
+			echo "unchanged" >>"${result_file}"
 		else
-			formatted_count=$((formatted_count + 1))
 			if [[ ${mode} == "fmt" ]]; then
-				yq -iP -o=json "${expr}" "${f}" || return $?
+				mv "${tmp_file}" "${file}" || { rm -f "${tmp_file}"; echo "error" >>"${result_file}"; return 1; }
+			else
+				rm -f "${tmp_file}"
+			fi
+			echo "formatted" >>"${result_file}"
+		fi
+	}
+
+	# Process files
+	if [[ -d "${target}" ]]; then
+		find "${target}" -type f -name '*.json' -print0 | xargs -0 -P "${jobs}" -I {} bash -c '
+			file="$1"
+			mode="$2"
+			result_file="$3"
+			expr_file="$4"
+			no_ignore="$5"
+			# Skip if file is ignored by .gitignore (unless --no-ignore is set)
+			if [[ ${no_ignore} -eq 0 ]] && command -v git &>/dev/null; then
+				if git check-ignore -q "${file}" 2>/dev/null; then
+					exit 0
+				fi
+			fi
+			expr=$(cat "${expr_file}")
+			tmp_file=$(mktemp) || { echo "error" >>"${result_file}"; exit 1; }
+			if ! yq -P -o=json "${expr}" "${file}" >"${tmp_file}" 2>/dev/null; then
+				rm -f "${tmp_file}"
+				echo "error" >>"${result_file}"
+				exit 1
+			fi
+			if cmp -s "${tmp_file}" "${file}" 2>/dev/null; then
+				rm -f "${tmp_file}"
+				echo "unchanged" >>"${result_file}"
+			else
+				if [[ ${mode} == "fmt" ]]; then
+					mv "${tmp_file}" "${file}" || { rm -f "${tmp_file}"; echo "error" >>"${result_file}"; exit 1; }
+				else
+					rm -f "${tmp_file}"
+				fi
+				echo "formatted" >>"${result_file}"
+			fi
+		' _ {} "${mode}" "${result_file}" "${expr_file}" "${no_ignore}"
+	else
+		# For single file, check .gitignore unless --no-ignore is set
+		if [[ ${no_ignore} -eq 0 ]] && command -v git &>/dev/null; then
+			if git check-ignore -q "${target}" 2>/dev/null; then
+				echo "jsort: file is ignored by .gitignore (use --no-ignore to process it)" >&2
+				return 0
 			fi
 		fi
-	done < <(
-		if [[ -d "${target}" ]]; then
-			find "${target}" -type f -name '*.json' -print0
+		_jsort_process_file "${target}" "${mode}" "${result_file}" "${expr_file}"
+	fi
+
+	# Count results
+	local formatted_count unchanged_count error_count total_count
+	formatted_count=$(grep -c "^formatted$" "${result_file}" 2>/dev/null)
+	formatted_count=${formatted_count:-0}
+	unchanged_count=$(grep -c "^unchanged$" "${result_file}" 2>/dev/null)
+	unchanged_count=${unchanged_count:-0}
+	error_count=$(grep -c "^error$" "${result_file}" 2>/dev/null)
+	error_count=${error_count:-0}
+	total_count=$((formatted_count + unchanged_count + error_count))
+
+	if [[ ${total_count} -eq 0 ]]; then
+		if [[ ${mode} == "check" ]]; then
+			echo "No files linted"
 		else
-			printf '%s\0' "${target}"
+			echo "No files formatted"
 		fi
-	)
+		return 0
+	fi
+
+	if [[ ${error_count} -gt 0 ]]; then
+		echo "jsort: ${error_count} file(s) had errors" >&2
+	fi
 
 	if [[ ${mode} == "check" && ${formatted_count} -gt 0 ]]; then
-		local formatted_word="files"
-		if [[ ${formatted_count} -eq 1 ]]; then formatted_word="file"; fi
-		echo "${formatted_count} ${formatted_word} would be formatted" >&2
+		local word=$([[ ${formatted_count} -eq 1 ]] && echo "file" || echo "files")
+		echo "${formatted_count} ${word} would be formatted" >&2
 		return 1
 	fi
 
-	local formatted_word="files"
-	local unchanged_word="files"
-	if [[ ${formatted_count} -eq 1 ]]; then formatted_word="file"; fi
-	if [[ ${unchanged_count} -eq 1 ]]; then unchanged_word="file"; fi
-
 	if [[ ${formatted_count} -gt 0 ]]; then
-		echo "${formatted_count} ${formatted_word} formatted"
+		local word=$([[ ${formatted_count} -eq 1 ]] && echo "file" || echo "files")
+		echo "${formatted_count} ${word} formatted"
 	fi
 	if [[ ${unchanged_count} -gt 0 ]]; then
-		echo "${unchanged_count} ${unchanged_word} did not need formatting"
+		local word=$([[ ${unchanged_count} -eq 1 ]] && echo "file" || echo "files")
+		echo "${unchanged_count} ${word} did not need formatting"
 	fi
-	return 0
+
+	[[ ${error_count} -eq 0 ]]
 }
 
 # Create a new directory and enter it.

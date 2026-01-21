@@ -35,7 +35,7 @@ jobs:
         with:
           cmd: |
             source linkme/.functions
-            jsort check
+            jsort --sort-arrays check
   oxipng:
     name: Run oxipng
     runs-on: ubuntu-latest
