@@ -6,10 +6,12 @@
 
 	DOTPATH=${HOME}/.dotfiles
 	BRANCH=""
+	DIRTY=false
 	YES=false
-	while getopts b:y flag; do
+	while getopts b:dy flag; do
 		case "${flag}" in
 		b) BRANCH=${OPTARG} ;;
+		d) DIRTY=true ;;
 		y) YES=true ;;
 		*) echo "Invalid option: -${OPTARG}" && exit 1 ;;
 		esac
@@ -27,7 +29,7 @@
 	else
 		echo -e "✅ \033[1;34mDotfiles already downloaded to ${DOTPATH}, checking out branch \"${BRANCH}\"\033[0m"
 		cd "${DOTPATH}"
-		if [[ $(git status -s) ]]; then
+		if [[ $(git status -s) ]] && [[ ${DIRTY} == false ]]; then
 			echo -e "🔄 \033[1;33mStashing existing changes...\033[0m"
 			git stash save "stash created automatically on $(date) by bootstrap.sh"
 		fi
