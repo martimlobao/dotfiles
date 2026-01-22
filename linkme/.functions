@@ -80,6 +80,7 @@ function c() {
 	fi
 }
 
+# Case-insensitively sort keys and arrays in JSON files in place
 function jsort() {
 	local mode="" target="." sort_arrays=0 no_ignore=0
 
