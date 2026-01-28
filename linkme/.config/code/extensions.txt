@@ -19,7 +19,6 @@ github.remotehub
 github.vscode-github-actions
 github.vscode-pull-request-github
 golang.go
-grapecity.gc-excelviewer
 hashicorp.terraform
 hediet.vscode-drawio
 hoovercj.vscode-power-mode
