@@ -16,6 +16,7 @@ codex = "cask"  # OpenAI's coding agent that runs in your terminal
 cursor = "cask"  # Write, edit, and chat about your code with AI
 cursor-cli = "cask"  # Command-line agent for Cursor
 docker-desktop = "cask"  # App to build and share containerised applications and microservices
+gcloud-cli = "cask"  # Set of tools to manage resources and applications hosted on Google Cloud
 gh = "formula"  # GitHub command-line tool
 ghostty = "cask"  # Terminal emulator that uses platform-native UI and GPU acceleration
 git-who = "formula"  # Git blame for file trees
