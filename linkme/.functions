@@ -45,6 +45,11 @@ function compresspdf() {
 	fi
 }
 
+# Export environment variables from .env file (TIL this is not the same as `source .env`)
+function exportenv() {
+	export $(grep -v '^#' "${1:-".env"}" | xargs)
+}
+
 # Start screensaver.
 function ss() {
 	open -a ScreenSaverEngine
