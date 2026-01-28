@@ -26,6 +26,9 @@ show_always = false
 [sudo]
 disabled = false
 
+[gcloud]
+detect_env_vars = ["GCP"]
+
 # Disable these modules, they're noisy
 [aws]
 disabled = true
