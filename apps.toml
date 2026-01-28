@@ -125,6 +125,7 @@ prek = "uv"  # Pre-commit re-implemented in Rust
 pv = "formula"  # Monitor data's progress through a pipe
 superseedr = "formula"  # BitTorrent Client in your Terminal
 telnet = "formula"  # User interface to the TELNET protocol
+testdisk = "formula"  # Powerful free data recovery utility
 tree = "formula"  # Display directories as trees (with optional color/HTML output)
 trufflehog = "formula"  # Find and verify credentials
 wget = "formula"  # Internet file retriever
