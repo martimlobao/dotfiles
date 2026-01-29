@@ -174,3 +174,4 @@ fastfetch = "formula"  # Like neofetch, but much faster because written mostly i
 gitlogue = "formula"  # Cinematic Git commit replay tool
 lolcat = "formula"  # Rainbows and unicorns in your console!
 lucky-commit = "formula"  # Customize your git commit hashes!
+scc = "formula"  # Fast and accurate code counter with complexity and COCOMO estimates
