@@ -89,7 +89,6 @@ source $ZSH/oh-my-zsh.sh
 # Activate Homebrew-installed plugins
 source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-source $(brew --prefix)/share/zsh-you-should-use/you-should-use.plugin.zsh
 
 # 1Password completion and plugins
 eval "$(op completion zsh)"; compdef _op op

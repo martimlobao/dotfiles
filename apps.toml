@@ -140,7 +140,6 @@ starship = "formula"  # Cross-shell prompt for astronauts
 thefuck = "formula"  # Programmatically correct mistyped console commands
 zsh-autosuggestions = "formula"  # Fish-like fast/unobtrusive autosuggestions for zsh
 zsh-syntax-highlighting = "formula"  # Fish shell like syntax highlighting for zsh
-zsh-you-should-use = "formula"  # ZSH plugin that reminds you to use existing aliases for commands you just typed
 
 [python-tools]
 ipython = "uv"  # Interactive computing in Python
