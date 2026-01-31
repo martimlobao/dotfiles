@@ -1,1 +1,2 @@
 *.plist diff=plist
+*.csv diff=csv
