@@ -102,6 +102,9 @@ eval "$(uv generate-shell-completion zsh)"
 eval "$(uvx --generate-shell-completion zsh)"
 eval "$(ruff generate-shell-completion zsh)"
 
+# Shell completion for rumdl
+eval "$(rumdl completions zsh)"
+
 # Load the shell dotfiles, and then some:
 # * ~/.extra can be used for other settings you don't want to commit.
 for file in ~/.{aliases,exports,functions,extra}; do
