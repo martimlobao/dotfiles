@@ -1,4 +1,4 @@
-name: require-owner-approval
+name: Require Owner Approval
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   owner-approval:
+    name: Require owner approval
     runs-on: ubuntu-latest
     steps:
       - name: Check owner approval
