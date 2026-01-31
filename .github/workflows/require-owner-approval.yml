@@ -1,0 +1,50 @@
+name: require-owner-approval
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  pull-requests: read
+  contents: read
+
+jobs:
+  owner-approval:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check owner approval
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner.toLowerCase(); // repo owner/org
+            const pr = context.payload.pull_request || (await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            })).data;
+
+            const author = pr.user.login.toLowerCase();
+
+            if (author === owner) {
+              core.info(`PR author is repo owner (${owner}); passing.`);
+              return;
+            }
+
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100
+            });
+
+            // GitHub counts the latest state per reviewer; find an APPROVED by the owner
+            const ownerApproved = reviews
+              .filter(r => (r.user?.login || "").toLowerCase() === owner)
+              .some(r => r.state === "APPROVED");
+
+            if (!ownerApproved) {
+              core.setFailed(`Missing required approval from repo owner @${owner}.`);
+            } else {
+              core.info(`Owner @${owner} has approved.`);
+            }
