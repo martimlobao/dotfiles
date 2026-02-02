@@ -22,7 +22,7 @@ designed primarily for macOS. Uses 1Password for secure credential management.
 ### Linting
 
 ```bash
-make check              # Run all linters in parallel
+make check              # Run all linters in parallel - run before committing
 make lint-shellcheck    # Shell script static analysis
 make lint-shfmt         # Shell formatting
 make lint-ruff          # Python linting
@@ -34,6 +34,8 @@ make lint-yamllint      # YAML linting
 make lint-trufflehog    # Secret detection
 make lint-checkov       # Infrastructure security
 ```
+
+Always run `make check` before committing to ensure CI will pass.
 
 ### App Management
 
@@ -74,7 +76,7 @@ uv run scripts/app.py       # CLI managed via shell function `app`
 
 PR titles are validated by `action-semantic-pull-request` using conventional commits format:
 
-```
+```text
 type(scope): description
 ```
 
