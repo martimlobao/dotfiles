@@ -8,6 +8,7 @@ on:
 permissions:
   pull-requests: read
   contents: read
+  statuses: write
 
 jobs:
   owner-approval:
@@ -18,7 +19,7 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
-            const owner = context.repo.owner.toLowerCase(); // repo owner/org
+            const owner = context.repo.owner.toLowerCase();
             const pr = context.payload.pull_request || (await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -26,9 +27,23 @@ jobs:
             })).data;
 
             const author = pr.user.login.toLowerCase();
+            const headSha = pr.head.sha;
+
+            // Helper to set commit status (ensures check appears on PR for review events)
+            async function setStatus(state, description) {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: headSha,
+                state: state,
+                context: 'Require owner approval',
+                description: description
+              });
+            }
 
             if (author === owner) {
               core.info(`PR author is repo owner (${owner}); passing.`);
+              await setStatus('success', `PR author is repo owner`);
               return;
             }
 
@@ -39,13 +54,14 @@ jobs:
               per_page: 100
             });
 
-            // GitHub counts the latest state per reviewer; find an APPROVED by the owner
             const ownerApproved = reviews
               .filter(r => (r.user?.login || "").toLowerCase() === owner)
               .some(r => r.state === "APPROVED");
 
             if (!ownerApproved) {
+              await setStatus('failure', `Missing approval from @${owner}`);
               core.setFailed(`Missing required approval from repo owner @${owner}.`);
             } else {
+              await setStatus('success', `Approved by @${owner}`);
               core.info(`Owner @${owner} has approved.`);
             }
