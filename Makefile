@@ -17,7 +17,7 @@ check: lint-checkov lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl
 # Lint (parallel)
 #################
 lint-checkov:
-	uvx checkov -d .
+	uvx checkov --quiet -d .
 
 lint-jsort:
 	. linkme/.functions; \

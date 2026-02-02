@@ -32,6 +32,3 @@ detect_env_vars = ["GCP"]
 # Disable these modules, they're noisy
 [aws]
 disabled = true
-
-[package]
-disabled = true
