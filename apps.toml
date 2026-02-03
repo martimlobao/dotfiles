@@ -8,11 +8,11 @@ uv = "formula"  # Extremely fast Python package installer and resolver, written 
 409203825 = "mas"  # Numbers: Create impressive spreadsheets
 
 [developer]
-auto-claude = "cask"  # Autonomous multi-session AI coding
 charles = "cask"  # Web debugging Proxy application
 checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
 claude-code = "cask"  # Terminal-based AI coding assistant
 codex = "cask"  # OpenAI's coding agent that runs in your terminal
+codex-app = "cask"  # OpenAI's Codex desktop app for managing coding agents
 cursor = "cask"  # Write, edit, and chat about your code with AI
 cursor-cli = "cask"  # Command-line agent for Cursor
 docker-desktop = "cask"  # App to build and share containerised applications and microservices
@@ -89,6 +89,7 @@ font-with-a-syntax-highlighter = "cask"  # Font With A Syntax Highlighter
 blip = "cask"  # Send any size file between devices
 calibre = "cask"  # E-books management software
 chatgpt-atlas = "cask"  # OpenAI's official browser with ChatGPT built in
+claude = "cask"  # Anthropic's official Claude AI desktop app
 comet = "cask"  # Web browser with integrated AI assistant
 dropbox = "cask"  # Client for the Dropbox cloud storage service
 google-drive = "cask"  # Client for the Google Drive storage service
@@ -100,6 +101,7 @@ rocket = "cask"  # Emoji picker optimised for blind people
 the-unarchiver = "cask"  # Unpacks archive files
 thebrowsercompany-dia = "cask"  # Web browser
 transmission = "cask"  # Open-source BitTorrent client
+utm = "cask"  # Virtual machines UI using QEMU
 yubico-authenticator = "cask"  # Application for generating TOTP and HOTP codes
 
 [cli-tools]
