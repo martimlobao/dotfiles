@@ -29,7 +29,6 @@ jobs:
             const author = pr.user.login.toLowerCase();
             const headSha = pr.head.sha;
 
-            // Helper to set commit status (ensures check appears on PR for review events)
             async function setStatus(state, description) {
               await github.rest.repos.createCommitStatus({
                 owner: context.repo.owner,
@@ -41,6 +40,7 @@ jobs:
               });
             }
 
+            // If owner authored the PR -> pass
             if (author === owner) {
               core.info(`PR author is repo owner (${owner}); passing.`);
               await setStatus('success', `PR author is repo owner`);
@@ -54,14 +54,25 @@ jobs:
               per_page: 100
             });
 
-            const ownerApproved = reviews
-              .filter(r => (r.user?.login || "").toLowerCase() === owner)
-              .some(r => r.state === "APPROVED");
+            // only count the latest review state per reviewer
+            const latestByUser = new Map();
+            for (const r of reviews) {
+              const u = (r.user?.login || '').toLowerCase();
+              if (!u) continue;
+              const prev = latestByUser.get(u);
+              if (!prev || new Date(r.submitted_at) > new Date(prev.submitted_at)) {
+                latestByUser.set(u, r);
+              }
+            }
+
+            const ownerReview = latestByUser.get(owner);
+            const ownerApproved = ownerReview?.state === 'APPROVED';
 
             if (!ownerApproved) {
               await setStatus('failure', `Missing approval from @${owner}`);
-              core.setFailed(`Missing required approval from repo owner @${owner}.`);
-            } else {
-              await setStatus('success', `Approved by @${owner}`);
-              core.info(`Owner @${owner} has approved.`);
+              core.warning(`Missing required approval from repo owner @${owner}.`);
+              return;
             }
+
+            await setStatus('success', `Approved by @${owner}`);
+            core.info(`Owner @${owner} has approved.`);
