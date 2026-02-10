@@ -80,6 +80,8 @@ sources=()
 [[ ${install_mas} == true ]] && sources+=("mas")
 echo -e "📋 \033[1;34mSources: ${sources[*]:-none}\033[0m"
 
+os=$(uname)
+
 # Ensure yq is installed to parse the apps.toml file
 if ! command -v yq &>/dev/null; then
 	echo -e "⬇️ \033[1;34mInstalling yq to parse apps.toml...\033[0m"
@@ -295,6 +297,23 @@ populate_installed_apps
 # shellcheck disable=2016
 parsed_toml=$(yq e 'to_entries | .[] | .key as $category | .value | to_entries[] | [$category, .key, .value] | @tsv' "${apps_toml}")
 
+# Precompute macOS-only formulas on Linux (one batched brew info call)
+macos_only_formulas=()
+if [[ ${os} != "Darwin" && ${install_formula} == true ]]; then
+	formula_list=$(echo "${parsed_toml}" | awk -F'\t' '$3 == "formula" {print $2}' | sort -u)
+	if [[ -n ${formula_list} ]]; then
+		formula_args=()
+		while IFS= read -r f; do
+			[[ -n ${f} ]] && formula_args+=("${f}")
+		done <<<"${formula_list}"
+		while IFS= read -r name; do
+			[[ -n ${name} ]] && macos_only_formulas+=("${name}")
+		done < <(brew info --json=v2 "${formula_args[@]}" 2>/dev/null |
+			yq eval '.formulae[] | select(.requirements[]?.name == "macos") | (.full_name, .name)' - 2>/dev/null |
+			sort -u)
+	fi
+fi
+
 # Install apps from each category in the apps.toml file
 current_category=""
 echo "${parsed_toml}" | while IFS=$'\t' read -r category app method; do
@@ -304,6 +323,14 @@ echo "${parsed_toml}" | while IFS=$'\t' read -r category app method; do
 	uv) [[ ${install_uv} != true ]] && continue ;;
 	mas) [[ ${install_mas} != true ]] && continue ;;
 	esac
+	# Skip formulas that require macOS when running on Linux
+	if [[ ${os} != "Darwin" && ${method} == "formula" ]]; then
+		app_name_for_check="${app##*/}"
+		if in_array "${app}" "${macos_only_formulas[@]}" || in_array "${app_name_for_check}" "${macos_only_formulas[@]}"; then
+			echo -e "⏭️  Skipping ${app_name_for_check} (macOS only)"
+			continue
+		fi
+	fi
 	if [[ ${category} != "${current_category}" ]]; then
 		suffix=$([[ ${category} == *s ]] && echo "" || echo " apps")
 		echo -e "\n📦 \033[1;35mInstalling ${category}${suffix}...\033[0m"

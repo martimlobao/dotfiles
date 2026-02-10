@@ -73,7 +73,7 @@ fi
 ###############################################################################
 if [[ ${CI-} == "true" ]]; then
 	echo
-	echo -e "⛔️ \033[1;33mWarning: macOS is not supported in CI after this point.\033[0m"
+	echo -e "⛔️ \033[1;33mWarning: CI is not supported after this point.\033[0m"
 	exit 0
 fi
 
