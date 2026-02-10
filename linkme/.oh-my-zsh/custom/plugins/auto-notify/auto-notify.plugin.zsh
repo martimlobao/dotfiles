@@ -15,6 +15,9 @@
 # Sound to play if the command fails
 [[ -z "$AUTO_NOTIFY_SOUND_ERROR" ]] &&
 	export AUTO_NOTIFY_SOUND_ERROR='Sosumi'
+# If true, do not print an alert when notify-send is missing on Linux (default: false)
+[[ -z "$AUTO_NOTIFY_QUIET_IF_NOTIFY_SEND_MISSING" ]] &&
+	export AUTO_NOTIFY_QUIET_IF_NOTIFY_SEND_MISSING=false
 
 # List of commands/programs to ignore sending notifications for
 [[ -z "$AUTO_NOTIFY_IGNORE" ]] &&
@@ -213,8 +216,10 @@ _auto_notify_reset_tracking
 
 platform="$(uname)"
 if [[ "$platform" == "Linux" ]] && ! type notify-send > /dev/null; then
-	printf "'notify-send' must be installed for zsh-auto-notify to work\n"
-	printf "Please install it with your relevant package manager\n"
+	if [[ "$AUTO_NOTIFY_QUIET_IF_NOTIFY_SEND_MISSING" != "true" ]]; then
+		printf "'notify-send' must be installed for zsh-auto-notify to work\n"
+		printf "Please install it with your relevant package manager\n"
+	fi
 else
 	enable_auto_notify
 fi

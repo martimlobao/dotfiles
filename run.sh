@@ -59,28 +59,21 @@ sleep 1
 ./scripts/dotsync.sh "${1-}"
 
 ###############################################################################
-# Linux exit                                                                  #
-###############################################################################
-if [[ ${os} == "Linux" ]]; then
-	echo
-	echo -e "⛔️ \033[1;33mWarning: Linux is not supported after this point.\033[0m"
-	exit 0
-fi
-
-###############################################################################
 # macOS preferences                                                           #
 ###############################################################################
-sleep 1
-echo
-echo -e "🚀 \033[1;33mRunning macos.sh...\033[0m"
-./scripts/macos.sh "${1-}"
+if [[ ${os} == "Darwin" ]]; then
+	sleep 1
+	echo
+	echo -e "🚀 \033[1;33mRunning macos.sh...\033[0m"
+	./scripts/macos.sh "${1-}"
+fi
 
 ###############################################################################
 # CI exit                                                                     #
 ###############################################################################
 if [[ ${CI-} == "true" ]]; then
 	echo
-	echo -e "⛔️ \033[1;33mWarning: macOS is not supported in CI after this point.\033[0m"
+	echo -e "⛔️ \033[1;33mWarning: CI is not supported after this point.\033[0m"
 	exit 0
 fi
 
@@ -90,7 +83,32 @@ fi
 echo
 echo -e "🚀 \033[1;33mRunning install.sh...\033[0m"
 sleep 1
-./scripts/install.sh "${1-}"
+if [[ ${os} == "Darwin" ]]; then
+	./scripts/install.sh ${1+"$1"}
+elif [[ ${os} == "Linux" ]]; then
+	./scripts/install.sh --no-mas --no-cask ${1+"$1"}
+fi
+
+###############################################################################
+# Change shell to zsh                                                         #
+###############################################################################
+echo
+echo -e "🚀 \033[1;33mChanging shell to zsh...\033[0m"
+sleep 1
+./scripts/chshell.sh "${1-}"
+
+###############################################################################
+# Linux exit                                                                  #
+###############################################################################
+if [[ ${os} == "Linux" ]]; then
+	echo
+	echo -e "⛔️ \033[1;33mWarning: Linux is not supported after this point.\033[0m"
+	exit 0
+fi
+
+###############################################################################
+# Configure macOS Dock                                                        #
+###############################################################################
 echo
 echo -e "🚀 \033[1;33mRunning dock.sh...\033[0m"
 sleep 1

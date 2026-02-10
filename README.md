@@ -17,6 +17,7 @@ Here's a short description of each script in this repository:
 - [`macos.sh`](scripts/macos.sh) configure several macOS settings
 - [`aerials.py`](scripts/aerials.py) download macOS Aerial live wallpapers (callable using
   `aerials`)
+- [`chshell.sh`](scripts/chshell.sh) change shell to zsh
 - [`install.sh`](scripts/install.sh) install fonts, tools, and apps using Homebrew,
   [`uv`](https://docs.astral.sh/uv/), and the Mac App Store (callable using `syncapps`)
 - [`app.py`](scripts/app.py) CLI tool to manage and install applications listed in
