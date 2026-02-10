@@ -126,5 +126,35 @@
   {
     "command": "composerMode.agent",
     "key": "cmd+i"
+  },
+  {
+    "command": "-workbench.view.debug",
+    "key": "shift+cmd+d",
+    "when": "viewContainer.workbench.view.debug.enabled"
+  },
+  {
+    "command": "-composer.fixerrormessage",
+    "key": "shift+cmd+d",
+    "when": "!chatModeMenuFocused && !composerFocused && @composer.isCursorOnLint"
+  },
+  {
+    "command": "notebook.selectAllFindMatches",
+    "key": "shift+cmd+d",
+    "when": "config.notebook.multiCursor.enabled && notebookFindWidgetFocused || config.notebook.multiCursor.enabled && notebookCellEditorFocused && activeEditor == 'workbench.editor.notebook'"
+  },
+  {
+    "command": "-notebook.selectAllFindMatches",
+    "key": "shift+cmd+l",
+    "when": "config.notebook.multiCursor.enabled && notebookFindWidgetFocused || config.notebook.multiCursor.enabled && notebookCellEditorFocused && activeEditor == 'workbench.editor.notebook'"
+  },
+  {
+    "command": "editor.action.selectHighlights",
+    "key": "shift+cmd+d",
+    "when": "editorFocus"
+  },
+  {
+    "command": "-editor.action.selectHighlights",
+    "key": "shift+cmd+l",
+    "when": "editorFocus"
   }
 ]
