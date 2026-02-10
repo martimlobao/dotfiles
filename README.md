@@ -120,7 +120,7 @@ uv run https://raw.githubusercontent.com/martimlobao/dotfiles/refs/heads/main/sc
 Several people and repositories have contributed to or been a source of inspiration for this
 repository:
 
-- [@mathiasbyens](https://mathiasbynens.be/)/[dotfiles](https://github.com/mathiasbynens/dotfiles),
+- [@mathiasbynens](https://mathiasbynens.be/)/[dotfiles](https://github.com/mathiasbynens/dotfiles),
   off of which this repository was initially based
 - [@kevinsuttle](https://kevinsuttle.com/)/[macOS-Defaults](https://github.com/kevinSuttle/macOS-Defaults)
 - [@ryanpavlick](https://github.com/rpavlick)/[add_to_dock](https://github.com/rpavlick/add_to_dock)
