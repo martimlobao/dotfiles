@@ -11,7 +11,7 @@ source "${root}/bash_traceback.sh"
 ###############################################################################
 
 function dotlink() {
-	find "linkme" -type d -mindepth 1 | sed "s|^linkme/||" |
+	find "linkme" -mindepth 1 -type d | sed "s|^linkme/||" |
 		while read -r dir; do mkdir -p "${HOME}/${dir}"; done
 	find "linkme" -type f -not -name '.DS_Store' | sed "s|^linkme/||" |
 		while read -r file; do
