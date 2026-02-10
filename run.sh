@@ -84,9 +84,9 @@ echo
 echo -e "🚀 \033[1;33mRunning install.sh...\033[0m"
 sleep 1
 if [[ ${os} == "Darwin" ]]; then
-	./scripts/install.sh "${1-}"
+	./scripts/install.sh ${1+"$1"}
 elif [[ ${os} == "Linux" ]]; then
-	./scripts/install.sh --no-mas --no-cask "${1-}"
+	./scripts/install.sh --no-mas --no-cask ${1+"$1"}
 fi
 
 ###############################################################################
