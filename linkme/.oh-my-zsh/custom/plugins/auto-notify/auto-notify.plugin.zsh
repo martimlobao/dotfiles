@@ -216,7 +216,7 @@ _auto_notify_reset_tracking
 
 platform="$(uname)"
 if [[ "$platform" == "Linux" ]] && ! type notify-send > /dev/null; then
-	if [[ "$AUTO_NOTIFY_WARN_NOTIFY_SEND_MISSING" != "false" ]]; then
+	if [[ "$AUTO_NOTIFY_WARN_NOTIFY_SEND_MISSING" = "true" ]]; then
 		printf "'notify-send' must be installed for zsh-auto-notify to work\n"
 		printf "Please install it with your relevant package manager\n"
 	fi
