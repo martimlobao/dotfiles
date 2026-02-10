@@ -94,23 +94,23 @@ installed_formulas=()
 installed_mas=()
 installed_uv=()
 
-# Populate the arrays with installed apps
+# Populate the arrays with installed apps (skip sources that aren't available)
 populate_installed_apps() {
 	while IFS= read -r app; do
 		installed_casks+=("${app}")
-	done < <(brew list --cask)
+	done < <(brew list --cask 2>/dev/null || true)
 
 	while IFS= read -r app; do
 		installed_formulas+=("${app}")
-	done < <(brew list --formula)
+	done < <(brew list --formula 2>/dev/null || true)
 
 	while IFS= read -r app; do
 		installed_mas+=("${app}")
-	done < <(mas list | cut -d' ' -f1)
+	done < <(command -v mas &>/dev/null && mas list 2>/dev/null | cut -d' ' -f1 || true)
 
 	while IFS= read -r app; do
 		installed_uv+=("${app}")
-	done < <(uv tool list | cut -d' ' -f1)
+	done < <(command -v uv &>/dev/null && uv tool list 2>/dev/null | cut -d' ' -f1 || true)
 }
 
 # Function to check if an item is in an array
