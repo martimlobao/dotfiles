@@ -12,7 +12,8 @@ Here's a short description of each script in this repository:
 - [`bootstrap.sh`](bootstrap.sh) bootstrap install everything, including cloning this repository
   (callable using `bootstrap`)
 - [`run.sh`](run.sh) install Homebrew and run all the following scripts
-- [`dotsync.sh`](scripts/dotsync.sh) sync and symlink dotfiles from this repository to your home directory
+- [`dotsync.sh`](scripts/dotsync.sh) sync and symlink dotfiles from this repository to your home
+  directory
 - [`macos.sh`](scripts/macos.sh) configure several macOS settings
 - [`aerials.py`](scripts/aerials.py) download macOS Aerial live wallpapers (callable using
   `aerials`)
@@ -73,7 +74,8 @@ bash <(curl -sL https://dot.lobao.io) -y
 ## Features
 
 - Symlink dotfiles from this repository to your home directory
-- Install apps, fonts, and tools using Homebrew, [`uv`](https://docs.astral.sh/uv/), and the Mac App Store
+- Install apps, fonts, and tools using Homebrew, [`uv`](https://docs.astral.sh/uv/), and the Mac
+  App Store
 - Set up straightforward Python configuration using `uv`
 - Set up macOS Dock with most used apps
 - Register and configure iStat Menus 6, Charles, 1Password, AWS CLI, and GitHub CLI
@@ -118,7 +120,8 @@ uv run https://raw.githubusercontent.com/martimlobao/dotfiles/refs/heads/main/sc
 Several people and repositories have contributed to or been a source of inspiration for this
 repository:
 
-- [@mathiasbyens](https://mathiasbynens.be/)/[dotfiles](https://github.com/mathiasbynens/dotfiles), off of which this repository was initially based
+- [@mathiasbyens](https://mathiasbynens.be/)/[dotfiles](https://github.com/mathiasbynens/dotfiles),
+  off of which this repository was initially based
 - [@kevinsuttle](https://kevinsuttle.com/)/[macOS-Defaults](https://github.com/kevinSuttle/macOS-Defaults)
 - [@ryanpavlick](https://github.com/rpavlick)/[add_to_dock](https://github.com/rpavlick/add_to_dock)
 - [@mikeswanson](https://github.com/mikeswanson)/[WallGet](https://github.com/mikeswanson/WallGet)

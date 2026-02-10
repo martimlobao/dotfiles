@@ -59,6 +59,9 @@ url-inline = true  # Allow [https://example.com](https://example.com)
 [MD055]
 style = "leading-and-trailing"
 
+[MD057]
+absolute-links = "warn"
+
 [MD060]
 enabled = true
 style = "aligned"
