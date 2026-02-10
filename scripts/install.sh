@@ -309,7 +309,7 @@ if [[ ${os} != "Darwin" && ${install_formula} == true ]]; then
 		while IFS= read -r name; do
 			[[ -n ${name} ]] && macos_only_formulas+=("${name}")
 		done < <(brew info --json=v2 "${formula_args[@]}" 2>/dev/null |
-			yq eval '.formulae[] | select(.requirements[]?.name == "macos") | (.full_name, .name)' - 2>/dev/null |
+			yq eval '.formulae[] | select(.requirements[]?.name == "macos") | select((.bottle.stable.files // {} | keys | map(select(test("linux"))) | length) == 0) | (.full_name, .name)' - 2>/dev/null |
 			sort -u)
 	fi
 fi
@@ -323,18 +323,18 @@ echo "${parsed_toml}" | while IFS=$'\t' read -r category app method; do
 	uv) [[ ${install_uv} != true ]] && continue ;;
 	mas) [[ ${install_mas} != true ]] && continue ;;
 	esac
-	# Skip formulas that require macOS when running on Linux
-	if [[ ${os} != "Darwin" && ${method} == "formula" ]]; then
-		app_name_for_check="${app##*/}"
-		if in_array "${app}" "${macos_only_formulas[@]}" || in_array "${app_name_for_check}" "${macos_only_formulas[@]}"; then
-			echo -e "⏭️  Skipping ${app_name_for_check} (macOS only)"
-			continue
-		fi
-	fi
 	if [[ ${category} != "${current_category}" ]]; then
 		suffix=$([[ ${category} == *s ]] && echo "" || echo " apps")
 		echo -e "\n📦 \033[1;35mInstalling ${category}${suffix}...\033[0m"
 		current_category="${category}"
+	fi
+	# Skip formulas that require macOS when running on Linux
+	if [[ ${os} != "Darwin" && ${method} == "formula" ]]; then
+		app_name_for_check="${app##*/}"
+		if in_array "${app}" "${macos_only_formulas[@]}" || in_array "${app_name_for_check}" "${macos_only_formulas[@]}"; then
+			echo -e "⏭️ \033[1;31mSkipping ${app_name_for_check} (macOS only)\033[0m"
+			continue
+		fi
 	fi
 	install "${app}" "${method}"
 done
