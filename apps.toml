@@ -165,6 +165,7 @@ syntax-highlight = "cask"  # Quicklook extension for source files
 bash = "formula"  # Bourne-Again SHell, a UNIX command interpreter
 git = "formula"  # Distributed revision control system
 grep = "formula"  # GNU grep, egrep and fgrep [command: ggrep]
+zsh = "formula"  # UNIX shell (command interpreter)
 
 [languages]
 go = "formula"  # Open source programming language to build simple/reliable/efficient software

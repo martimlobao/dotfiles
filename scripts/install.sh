@@ -12,11 +12,73 @@ source "${root}/bash_traceback.sh"
 
 echo -e "📲 \033[1;34mInstalling apps and packages...\033[0m"
 
-# Check if the first argument is -y or --yes
+# Feature flags: all enabled by default
 auto_yes=false
-if [[ ${1-} == "-y" ]] || [[ ${1-} == "--yes" ]]; then
-	auto_yes=true
-fi
+install_cask=true
+install_formula=true
+install_uv=true
+install_mas=true
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+	-y | --yes)
+		auto_yes=true
+		;;
+	--cask)
+		install_cask=true
+		;;
+	--no-cask)
+		install_cask=false
+		;;
+	--formula)
+		install_formula=true
+		;;
+	--no-formula)
+		install_formula=false
+		;;
+	--uv)
+		install_uv=true
+		;;
+	--no-uv)
+		install_uv=false
+		;;
+	--mas)
+		install_mas=true
+		;;
+	--no-mas)
+		install_mas=false
+		;;
+	-h | --help)
+		echo "Usage: $(basename "$0") [OPTIONS]"
+		echo ""
+		echo "Options:"
+		echo "  -y, --yes       Auto-confirm uninstall prompts"
+		echo "  --cask          Enable cask install/sync/upgrade (default: on)"
+		echo "  --no-cask       Disable cask"
+		echo "  --formula       Enable formula install/sync/upgrade (default: on)"
+		echo "  --no-formula    Disable formula"
+		echo "  --uv            Enable uv install/sync/upgrade (default: on)"
+		echo "  --no-uv         Disable uv"
+		echo "  --mas           Enable mas install/sync/upgrade (default: on)"
+		echo "  --no-mas        Disable mas"
+		echo "  -h, --help      Show this help"
+		exit 0
+		;;
+	*)
+		echo -e "❌ \033[1;31mUnknown option: $1\033[0m" >&2
+		exit 1
+		;;
+	esac
+	shift
+done
+
+# Show which sources are enabled
+sources=()
+[[ ${install_cask} == true ]] && sources+=("cask")
+[[ ${install_formula} == true ]] && sources+=("formula")
+[[ ${install_uv} == true ]] && sources+=("uv")
+[[ ${install_mas} == true ]] && sources+=("mas")
+echo -e "📋 \033[1;34mSources: ${sources[*]:-none}\033[0m"
 
 # Ensure yq is installed to parse the apps.toml file
 if ! command -v yq &>/dev/null; then
@@ -110,25 +172,26 @@ install() {
 }
 
 brew_sync() {
+	[[ ${install_cask} != true && ${install_formula} != true ]] && return 0
+
 	local toml_apps
 	toml_apps=$(yq eval 'to_entries | map(.value | to_entries | map(select(.value == "cask" or .value == "formula") | .key)) | flatten | .[]' "${apps_toml}")
 	toml_apps_without_taps=$(echo "${toml_apps}" | sed -E 's|.*/||') # get name from tapped apps (slashes in name)
-	# combine toml_apps_without_taps with toml_apps
 	toml_apps=$(echo -e "${toml_apps_without_taps}\n${toml_apps}" | sort -u)
 
-	local missing_formulae
-	missing_formulae=$(comm -23 <(brew leaves | sort) <(echo "${toml_apps}" | sort))
-	local missing_casks
-	missing_casks=$(comm -23 <(brew list --cask | sort) <(echo "${toml_apps}" | sort))
+	local missing_formulae="" missing_casks=""
+	[[ ${install_formula} == true ]] && missing_formulae=$(comm -23 <(brew leaves | sort) <(echo "${toml_apps}" | sort))
+	[[ ${install_cask} == true ]] && missing_casks=$(comm -23 <(brew list --cask | sort) <(echo "${toml_apps}" | sort))
+
 	local missing_apps
 	missing_apps=$(echo -e "${missing_formulae}\n${missing_casks}" | sort -u)
 
 	if [[ -n ${missing_apps} ]]; then
 		echo -e "❗️ \033[1;31mThe following Homebrew-installed formulae and casks are missing from apps.toml:\033[0m"
 		# shellcheck disable=SC2001
-		echo "${missing_formulae}" | sed 's/^/  /'
+		[[ -n ${missing_formulae} ]] && echo "${missing_formulae}" | sed 's/^/  /'
 		# shellcheck disable=SC2001
-		echo "${missing_casks}" | sed 's/^/  /'
+		[[ -n ${missing_casks} ]] && echo "${missing_casks}" | sed 's/^/  /'
 		if [[ ${auto_yes} == false ]]; then
 			read -rp $'❓ \e[1;31mDo you want to uninstall these apps? (y/n)\e[0m ' choice
 		else
@@ -235,6 +298,12 @@ parsed_toml=$(yq e 'to_entries | .[] | .key as $category | .value | to_entries[]
 # Install apps from each category in the apps.toml file
 current_category=""
 echo "${parsed_toml}" | while IFS=$'\t' read -r category app method; do
+	case "${method}" in
+	cask) [[ ${install_cask} != true ]] && continue ;;
+	formula) [[ ${install_formula} != true ]] && continue ;;
+	uv) [[ ${install_uv} != true ]] && continue ;;
+	mas) [[ ${install_mas} != true ]] && continue ;;
+	esac
 	if [[ ${category} != "${current_category}" ]]; then
 		suffix=$([[ ${category} == *s ]] && echo "" || echo " apps")
 		echo -e "\n📦 \033[1;35mInstalling ${category}${suffix}...\033[0m"
@@ -245,15 +314,17 @@ done
 
 echo -e "\n🔄 \033[1;35mSyncing installed apps to apps.toml...\033[0m"
 brew_sync
-uv_sync
-mas_sync
+[[ ${install_uv} == true ]] && uv_sync
+[[ ${install_mas} == true ]] && mas_sync
 
 # Update Homebrew and installed formulas, casks and uv apps
 echo -e "\n🔼 \033[1;35mUpdating existing apps and packages...\033[0m"
-brew update
-brew upgrade
-uv tool upgrade --all
-mas upgrade
+if [[ ${install_cask} == true || ${install_formula} == true ]]; then
+	brew update
+	brew upgrade
+fi
+[[ ${install_uv} == true ]] && uv tool upgrade --all
+[[ ${install_mas} == true ]] && mas upgrade
 
 # Remove outdated versions from the cellar
-brew cleanup
+[[ ${install_cask} == true || ${install_formula} == true ]] && brew cleanup
