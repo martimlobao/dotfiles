@@ -110,7 +110,7 @@ def test_install_app_skips_when_already_installed() -> None:
 def test_install_app_runs_command() -> None:
     with (
         patch.object(app_module, "fetch_app_info") as fetch_info,
-        patch.object(app_module, "_ensure_executable", return_value="brew"),
+        patch.object(app_module, "_get_executable", return_value="brew"),
         patch.object(app_module, "_run") as run,
     ):
         fetch_info.return_value = app_module.AppInfo(
@@ -122,13 +122,13 @@ def test_install_app_runs_command() -> None:
             installed=False,
         )
         app_module.install_app(tomlkit.document(), source="formula", app="foo")
-        run.assert_called_once_with(["brew", "install", "foo"])
+        run.assert_called_once_with(["brew", "install", "--formula", "foo"])
 
 
 def test_uninstall_app_runs_command() -> None:
     with (
         patch.object(app_module, "fetch_app_info") as fetch_info,
-        patch.object(app_module, "_ensure_executable", return_value="uv"),
+        patch.object(app_module, "_get_executable", return_value="uv"),
         patch.object(app_module, "_run") as run,
     ):
         fetch_info.return_value = app_module.AppInfo(

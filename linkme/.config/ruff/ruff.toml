@@ -68,5 +68,8 @@ convention = "google"
 [lint.pycodestyle]
 max-doc-length = 79
 
+[lint.pylint]
+max-args = 7
+
 [format]
 docstring-code-format = true
