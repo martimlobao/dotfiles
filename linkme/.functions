@@ -5,9 +5,9 @@ function app() {
 	uv run "${DOTPATH}/scripts/app.py" "$@"
 }
 
-# Run install.sh
+# Sync apps from apps.toml
 function syncapps() {
-	bash "${DOTPATH}/scripts/install.sh"
+	app sync "$@"
 }
 
 # Run aerials.py

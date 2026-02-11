@@ -51,7 +51,7 @@ app list                                                          # List all app
 
 ```bash
 ./run.sh          # Full setup (Homebrew, dotfiles, apps, macOS settings)
-syncapps          # Run install.sh to sync apps from apps.toml
+syncapps          # Run app sync to sync apps from apps.toml
 bootstrap         # Run bootstrap.sh
 aerials           # Download/manage macOS Aerial wallpapers
 ```
