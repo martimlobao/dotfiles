@@ -35,7 +35,14 @@ make lint-trufflehog    # Secret detection
 make lint-checkov       # Infrastructure security
 ```
 
+### Testing
+
+```bash
+make test-app           # Run scripts/app.py unit tests
+```
+
 Always run `make check` before committing to ensure CI will pass.
+`make check` includes `make test-app`, which runs the `scripts/app.py` unit tests.
 
 ### App Management
 

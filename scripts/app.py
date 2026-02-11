@@ -42,6 +42,12 @@ type JSON = dict[str, JSON] | list[JSON] | str | int | float | bool | None
 DOTPATH: Path = Path(os.environ.get("DOTPATH", Path(__file__).resolve().parent.parent))
 APPS_TOML: Path = DOTPATH / "apps.toml"
 APP_SOURCES: frozenset[str] = frozenset({"uv", "cask", "formula", "mas"})
+SOURCE_FLAG_ARGS: dict[str, str] = {
+    "cask": "install_cask",
+    "formula": "install_formula",
+    "uv": "install_uv",
+    "mas": "install_mas",
+}
 
 
 class AppManagerError(Exception):
@@ -800,72 +806,48 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> tuple[b
     return source_changed, previous_source
 
 
-def install_app(document: tomlkit.TOMLDocument, *, source: str, app: str) -> None:
-    """Installs an app using the appropriate package manager.
-
-    Args:
-        document: The TOML document object.
-        source: The source of the app.
-        app: The name of the app to install.
-
-    Raises:
-        AppManagerError: If the app is not found or if the source is unknown.
-    """
-    if fetch_app_info(source, app, document).installed:
-        print(f"✅ {app!r} is already installed via {source}.")
-        return
-
-    print(f"⬇️ Installing {app!r} via {source}...")
+def _package_command(*, source: str, app: str, install: bool) -> list[str]:
+    action = "install" if install else "uninstall"
     match source:
         case "cask":
-            brew: str = _ensure_executable("brew")
-            _run([brew, "install", "--cask", app])
+            return ["brew", action, "--cask", app]
         case "formula":
-            brew = _ensure_executable("brew")
-            _run([brew, "install", app])
+            return ["brew", action, app]
         case "mas":
-            mas: str = _ensure_executable("mas")
-            _run([mas, "install", app])
+            return ["mas", action, app]
         case "uv":
-            uv: str = _ensure_executable("uv")
-            _run([uv, "tool", "install", app])
-        case _:
-            raise AppManagerError(f"Unknown source {source!r}.")
-    print(f"✅ Installed {app!r}.")
+            return ["uv", "tool", action, app]
+    raise AppManagerError(f"Unknown source {source!r}.")
 
 
-def uninstall_app(document: tomlkit.TOMLDocument, *, source: str, app: str) -> None:
-    """Uninstalls an app using the appropriate package manager.
-
-    Args:
-        document: The TOML document object.
-        source: The source of the app.
-        app: The name of the app to uninstall.
-
-    Raises:
-        AppManagerError: If the app is not found or if the source is unknown.
-    """
-    if not fetch_app_info(source, app, document).installed:
+def _set_install_state(
+    document: tomlkit.TOMLDocument, *, source: str, app: str, install: bool
+) -> None:
+    is_installed = fetch_app_info(source, app, document).installed
+    if install and is_installed:
+        print(f"✅ {app!r} is already installed via {source}.")
+        return
+    if not install and not is_installed:
         print(f"✅ {app!r} is not installed; skipping uninstall.")
         return
 
-    print(f"🗑️ Uninstalling {app!r} via {source}...")
-    match source:
-        case "cask":
-            brew: str = _ensure_executable("brew")
-            _run([brew, "uninstall", "--cask", app])
-        case "formula":
-            brew = _ensure_executable("brew")
-            _run([brew, "uninstall", app])
-        case "mas":
-            mas: str = _ensure_executable("mas")
-            _run([mas, "uninstall", app])
-        case "uv":
-            uv: str = _ensure_executable("uv")
-            _run([uv, "tool", "uninstall", app])
-        case _:
-            raise AppManagerError(f"Unknown source {source!r}.")
-    print(f"🚮 Uninstalled {app!r}.")
+    if install:
+        print(f"⬇️ Installing {app!r} via {source}...")
+    else:
+        print(f"🗑️ Uninstalling {app!r} via {source}...")
+
+    command = _package_command(source=source, app=app, install=install)
+    command[0] = _ensure_executable(command[0])
+    _run(command)
+    print(f"{'✅ Installed' if install else '🚮 Uninstalled'} {app!r}.")
+
+
+def install_app(document: tomlkit.TOMLDocument, *, source: str, app: str) -> None:
+    _set_install_state(document, source=source, app=app, install=True)
+
+
+def uninstall_app(document: tomlkit.TOMLDocument, *, source: str, app: str) -> None:
+    _set_install_state(document, source=source, app=app, install=False)
 
 
 def remove_app(document: tomlkit.TOMLDocument, app: str) -> tuple[bool, str | None]:
@@ -1102,53 +1084,44 @@ def _iter_apps_by_source(document: tomlkit.TOMLDocument) -> dict[str, list[tuple
     return by_source
 
 
+def _source_enabled(source: str, args: argparse.Namespace) -> bool:
+    field = SOURCE_FLAG_ARGS.get(source)
+    return bool(field and getattr(args, field, False))
+
+
+def _enabled_sources(args: argparse.Namespace) -> list[str]:
+    return [source for source in SOURCE_FLAG_ARGS if _source_enabled(source, args)]
+
+
 def _install_from_source(*, app: str, source: str, state: InstalledState) -> None:
     app_name: str = app.rsplit("/", maxsplit=1)[-1]
+    is_installed: bool
+    installed_name: str
 
-    source_configs: dict[str, tuple[bool, str, list[str], str]] = {
-        "cask": (app_name in state.casks, app_name, ["brew", "install", "--cask", app], app_name),
-        "formula": (
-            app_name in state.formulas,
-            app_name,
-            ["brew", "install", "--formula", app],
-            app_name,
-        ),
-        "uv": (app in state.uv, app, ["uv", "tool", "install", app], app),
-        "mas": (app in state.mas, state.mas.get(app, app), ["mas", "install", app], app),
-    }
-    if source not in source_configs:
-        raise AppManagerError(f"Unknown installation source: {source}.")
+    match source:
+        case "cask":
+            is_installed = app_name in state.casks
+            installed_name = app_name
+        case "formula":
+            is_installed = app_name in state.formulas
+            installed_name = app_name
+        case "uv":
+            is_installed = app in state.uv
+            installed_name = app
+        case "mas":
+            is_installed = app in state.mas
+            installed_name = state.mas.get(app, app)
+        case _:
+            raise AppManagerError(f"Unknown installation source: {source}.")
 
-    is_installed, installed_name, command, installing_name = source_configs[source]
     if is_installed:
         _print_colored("✅", f"{installed_name} is already installed.", _Ansi.GREEN)
         return
 
-    _print_colored("⬇️", f"Installing {installing_name}...", _Ansi.BLUE)
+    _print_colored("⬇️", f"Installing {app}...", _Ansi.BLUE)
+    command = _package_command(source=source, app=app, install=True)
     command[0] = _ensure_executable(command[0])
     _run(command, capture_output=False)
-
-
-def _enabled_sources(args: argparse.Namespace) -> list[str]:
-    enabled: list[str] = []
-    if args.install_cask:
-        enabled.append("cask")
-    if args.install_formula:
-        enabled.append("formula")
-    if args.install_uv:
-        enabled.append("uv")
-    if args.install_mas:
-        enabled.append("mas")
-    return enabled
-
-
-def _source_enabled(source: str, args: argparse.Namespace) -> bool:
-    return {
-        "cask": args.install_cask,
-        "formula": args.install_formula,
-        "uv": args.install_uv,
-        "mas": args.install_mas,
-    }.get(source, False)
 
 
 def _build_installed_state(args: argparse.Namespace) -> InstalledState:
@@ -1236,19 +1209,30 @@ def _sync_homebrew(
         _print_colored("🚮", f"Uninstalled {app}.", _Ansi.MAGENTA)
 
 
+def _sync_missing(header: str, ok_message: str, missing: list[str], *, auto_yes: bool) -> bool:
+    if not missing:
+        _print_colored("✅", ok_message, _Ansi.GREEN)
+        return False
+
+    _print_missing_apps(header, missing)
+    if not _confirm_uninstall(auto_yes=auto_yes):
+        _print_colored("🆗", "No apps were uninstalled.", _Ansi.MAGENTA)
+        return False
+    return True
+
+
 def _sync_uv(apps_by_source: dict[str, list[tuple[str, str]]], args: argparse.Namespace) -> None:
     if not args.install_uv:
         return
 
     managed_uv = {name for _, name in apps_by_source["uv"]}
     missing_uv = sorted(set(_list_installed_uv()) - managed_uv)
-    if not missing_uv:
-        _print_colored("✅", "All uv-installed apps are present in apps.toml.", _Ansi.GREEN)
-        return
-
-    _print_missing_apps("The following uv-installed apps are missing from apps.toml:", missing_uv)
-    if not _confirm_uninstall(auto_yes=args.yes):
-        _print_colored("🆗", "No apps were uninstalled.", _Ansi.MAGENTA)
+    if not _sync_missing(
+        "The following uv-installed apps are missing from apps.toml:",
+        "All uv-installed apps are present in apps.toml.",
+        missing_uv,
+        auto_yes=args.yes,
+    ):
         return
 
     uv = _ensure_executable("uv")
@@ -1266,17 +1250,13 @@ def _sync_mas(apps_by_source: dict[str, list[tuple[str, str]]], args: argparse.N
     missing_mas = {
         app_id: name for app_id, name in installed_mas_now.items() if app_id not in managed_mas
     }
-    if not missing_mas:
-        _print_colored("✅", "All Mac App Store apps are present in apps.toml.", _Ansi.GREEN)
-        return
-
     missing_items = [f"{name} ({app_id})" for app_id, name in sorted(missing_mas.items())]
-    _print_missing_apps(
+    if not _sync_missing(
         "The following Mac App Store apps are missing from apps.toml:",
+        "All Mac App Store apps are present in apps.toml.",
         missing_items,
-    )
-    if not _confirm_uninstall(auto_yes=args.yes):
-        _print_colored("🆗", "No apps were uninstalled.", _Ansi.MAGENTA)
+        auto_yes=args.yes,
+    ):
         return
 
     mas = _ensure_executable("mas")
