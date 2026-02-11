@@ -18,6 +18,7 @@ Examples:
     app remove httpie
     app remove chromedriver --no-install
     app list
+    app sync
 
 By default, ``app add`` installs the app and ``app remove`` uninstalls it. Use
 ``--no-install`` to skip these actions and only update ``apps.toml``.
@@ -653,7 +654,7 @@ def upsert_value(table: Table, key: str, value: Item) -> tuple[Table, bool]:
         A tuple of the sorted table and a boolean indicating if the value
             already existed.
     """
-    items = list(table.items())
+    items: list[tuple[str, Item]] = list(table.items())
     for index, (item_key, _) in enumerate(items):
         if item_key == key:
             items[index] = (key, value)
@@ -807,17 +808,20 @@ def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> tuple[b
 
 
 def _package_command(*, source: str, app: str, install: bool) -> list[str]:
-    action = "install" if install else "uninstall"
+    action: str = "install" if install else "uninstall"
     match source:
         case "cask":
-            return ["brew", action, "--cask", app]
+            command: list[str] = ["brew", action, "--cask", app]
         case "formula":
-            return ["brew", action, app]
+            command: list[str] = ["brew", action, "--formula", app]
         case "mas":
-            return ["mas", action, app]
+            command: list[str] = ["mas", action, app]
         case "uv":
-            return ["uv", "tool", action, app]
-    raise AppManagerError(f"Unknown source {source!r}.")
+            command: list[str] = ["uv", "tool", action, app]
+        case _:
+            raise AppManagerError(f"Unknown source {source!r}.")
+    command[0] = _ensure_executable(command[0])
+    return command
 
 
 def _set_install_state(
@@ -836,8 +840,7 @@ def _set_install_state(
     else:
         print(f"🗑️ Uninstalling {app!r} via {source}...")
 
-    command = _package_command(source=source, app=app, install=install)
-    command[0] = _ensure_executable(command[0])
+    command: list[str] = _package_command(source=source, app=app, install=install)
     _run(command)
     print(f"{'✅ Installed' if install else '🚮 Uninstalled'} {app!r}.")
 
@@ -875,27 +878,27 @@ def remove_app(document: tomlkit.TOMLDocument, app: str) -> tuple[bool, str | No
     return True, source
 
 
-class _Ansi:
+class Ansi:
     RESET = "\x1b[0m"
     BOLD = "\x1b[1m"
     DIM = "\x1b[2m"
-    CYAN = "\x1b[36m"
+    RED = "\x1b[31m"
     GREEN = "\x1b[32m"
     YELLOW = "\x1b[33m"
-    MAGENTA = "\x1b[35m"
     BLUE = "\x1b[34m"
-    RED = "\x1b[31m"
+    MAGENTA = "\x1b[35m"
+    CYAN = "\x1b[36m"
 
 
-_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+ANSI_RE: re.Pattern[str] = re.compile(r"\x1b\[[0-9;]*m")
 
 
 def _paint(text: str, *styles: str) -> str:
-    return "".join(styles) + text + _Ansi.RESET
+    return "".join(styles) + text + Ansi.RESET
 
 
 def _paint_bold(text: str, color: str) -> str:
-    return _paint(text, _Ansi.BOLD, color)
+    return _paint(text, Ansi.BOLD, color)
 
 
 def _print_colored(icon: str, message: str, color: str) -> None:
@@ -909,7 +912,7 @@ def _supports_color() -> bool:
 def _c(text: str, *styles: str) -> str:
     if not _supports_color() or not styles:
         return text
-    return "".join(styles) + text + _Ansi.RESET
+    return "".join(styles) + text + Ansi.RESET
 
 
 def _truncate(text: str, width: int) -> str:
@@ -923,7 +926,7 @@ def _truncate(text: str, width: int) -> str:
 
 
 def _visible_len(text: str) -> int:
-    return len(_ANSI_RE.sub("", text))
+    return len(ANSI_RE.sub("", text))
 
 
 def _ljust_ansi(text: str, width: int) -> str:
@@ -995,13 +998,13 @@ def list_apps(document: tomlkit.TOMLDocument) -> None:
     def color_source(s: str) -> str:
         match s:
             case "uv":
-                return _c(s, _Ansi.GREEN)
+                return _c(s, Ansi.GREEN)
             case "cask":
-                return _c(s, _Ansi.MAGENTA)
+                return _c(s, Ansi.MAGENTA)
             case "formula":
-                return _c(s, _Ansi.YELLOW)
+                return _c(s, Ansi.YELLOW)
             case "mas":
-                return _c(s, _Ansi.BLUE)
+                return _c(s, Ansi.BLUE)
             case _:
                 return s
 
@@ -1010,15 +1013,15 @@ def list_apps(document: tomlkit.TOMLDocument) -> None:
             continue
 
         group_header = f"{group:<{col1_w}} | {'Source':<{source_w}} | {'Description':<{desc_w}}"
-        print(_c(group_header, _Ansi.CYAN, _Ansi.BOLD))
-        print(_c(sep, _Ansi.DIM))
+        print(_c(group_header, Ansi.CYAN, Ansi.BOLD))
+        print(_c(sep, Ansi.DIM))
 
         for app, source, description in group_rows:
             desc = _truncate(description, desc_w)
             print(
-                f"{_ljust_ansi(_c(app, _Ansi.BOLD), col1_w)} | "
+                f"{_ljust_ansi(_c(app, Ansi.BOLD), col1_w)} | "
                 f"{_ljust_ansi(color_source(source), source_w)} | "
-                f"{_c(desc, _Ansi.DIM) if desc else ''}"
+                f"{_c(desc, Ansi.DIM) if desc else ''}"
             )
         print()
 
@@ -1070,7 +1073,7 @@ def _list_installed_mas() -> dict[str, str]:
 def _confirm_uninstall(*, auto_yes: bool) -> bool:
     if auto_yes:
         return True
-    choice = input(f"❓ {_paint_bold('Do you want to uninstall these apps? (y/n)', _Ansi.RED)} ")
+    choice: str = input(f"❓ {_paint_bold('Do you want to uninstall these apps? (y/n)', Ansi.RED)} ")
     return choice == "y"
 
 
@@ -1115,12 +1118,11 @@ def _install_from_source(*, app: str, source: str, state: InstalledState) -> Non
             raise AppManagerError(f"Unknown installation source: {source}.")
 
     if is_installed:
-        _print_colored("✅", f"{installed_name} is already installed.", _Ansi.GREEN)
+        _print_colored("✅", f"{installed_name} is already installed.", Ansi.GREEN)
         return
 
-    _print_colored("⬇️", f"Installing {app}...", _Ansi.BLUE)
+    _print_colored("⬇️", f"Installing {app}...", Ansi.BLUE)
     command = _package_command(source=source, app=app, install=True)
-    command[0] = _ensure_executable(command[0])
     _run(command, capture_output=False)
 
 
@@ -1149,14 +1151,14 @@ def _install_declared_apps(
 
             if group != current_group:
                 suffix = "" if group.endswith("s") else " apps"
-                _print_colored("📦", f"Installing {group}{suffix}...", _Ansi.MAGENTA)
+                _print_colored("\n📦", f"Installing {group}{suffix}...", Ansi.MAGENTA)
                 current_group = group
 
             _install_from_source(app=str(app), source=source_name, state=state)
 
 
 def _print_missing_apps(header: str, items: list[str]) -> None:
-    _print_colored("❗️", header, _Ansi.RED)
+    _print_colored("❗️", header, Ansi.RED)
     for item in items:
         print(f"  {item}")
 
@@ -1187,7 +1189,7 @@ def _sync_homebrew(
         _print_colored(
             "✅",
             "All Homebrew-installed formulae and casks are present in apps.toml.",
-            _Ansi.GREEN,
+            Ansi.GREEN,
         )
         return
 
@@ -1196,27 +1198,27 @@ def _sync_homebrew(
         missing,
     )
     if not _confirm_uninstall(auto_yes=args.yes):
-        _print_colored("🆗", "No apps were uninstalled.", _Ansi.MAGENTA)
+        _print_colored("🆗", "No apps were uninstalled.", Ansi.MAGENTA)
         return
 
     for app in missing_formulae:
-        _print_colored("🗑️", f"Uninstalling {app}...", _Ansi.MAGENTA)
+        _print_colored("🗑️", f"Uninstalling {app}...", Ansi.MAGENTA)
         _run([brew, "uninstall", "--zap", app], capture_output=False)
-        _print_colored("🚮", f"Uninstalled {app}.", _Ansi.MAGENTA)
+        _print_colored("🚮", f"Uninstalled {app}.", Ansi.MAGENTA)
     for app in missing_casks:
-        _print_colored("🗑️", f"Uninstalling {app}...", _Ansi.MAGENTA)
+        _print_colored("🗑️", f"Uninstalling {app}...", Ansi.MAGENTA)
         _run([brew, "uninstall", "--cask", "--zap", app], capture_output=False)
-        _print_colored("🚮", f"Uninstalled {app}.", _Ansi.MAGENTA)
+        _print_colored("🚮", f"Uninstalled {app}.", Ansi.MAGENTA)
 
 
 def _sync_missing(header: str, ok_message: str, missing: list[str], *, auto_yes: bool) -> bool:
     if not missing:
-        _print_colored("✅", ok_message, _Ansi.GREEN)
+        _print_colored("✅", ok_message, Ansi.GREEN)
         return False
 
     _print_missing_apps(header, missing)
     if not _confirm_uninstall(auto_yes=auto_yes):
-        _print_colored("🆗", "No apps were uninstalled.", _Ansi.MAGENTA)
+        _print_colored("🆗", "No apps were uninstalled.", Ansi.MAGENTA)
         return False
     return True
 
@@ -1238,7 +1240,7 @@ def _sync_uv(apps_by_source: dict[str, list[tuple[str, str]]], args: argparse.Na
     uv = _ensure_executable("uv")
     for app in missing_uv:
         _run([uv, "tool", "uninstall", app], capture_output=False)
-        _print_colored("🚮", f"Uninstalled {app}.", _Ansi.MAGENTA)
+        _print_colored("🚮", f"Uninstalled {app}.", Ansi.MAGENTA)
 
 
 def _sync_mas(apps_by_source: dict[str, list[tuple[str, str]]], args: argparse.Namespace) -> None:
@@ -1266,14 +1268,14 @@ def _sync_mas(apps_by_source: dict[str, list[tuple[str, str]]], args: argparse.N
             _print_colored(
                 "❌",
                 f"Failed to uninstall {name} ({app_id}). Please uninstall it manually.",
-                _Ansi.RED,
+                Ansi.RED,
             )
             continue
-        _print_colored("🚮", f"Uninstalled {name} ({app_id}).", _Ansi.MAGENTA)
+        _print_colored("🚮", f"Uninstalled {name} ({app_id}).", Ansi.MAGENTA)
 
 
 def _update_and_cleanup(args: argparse.Namespace) -> None:
-    _print_colored("🔼", "Updating existing apps and packages...", _Ansi.MAGENTA)
+    _print_colored("\n🔼", "Updating existing apps and packages...", Ansi.MAGENTA)
     if args.install_cask or args.install_formula:
         brew = _ensure_executable("brew")
         _run([brew, "update"], capture_output=False)
@@ -1288,14 +1290,14 @@ def _update_and_cleanup(args: argparse.Namespace) -> None:
 
 
 def sync_apps(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
-    _print_colored("📲", "Installing apps and packages...", _Ansi.BLUE)
+    _print_colored("📲", "Installing apps and packages...", Ansi.BLUE)
     sources = _enabled_sources(args)
-    _print_colored("📋", f"Sources: {' '.join(sources) if sources else 'none'}", _Ansi.BLUE)
+    _print_colored("📋", f"Sources: {' '.join(sources) if sources else 'none'}", Ansi.BLUE)
 
     apps_by_source = _iter_apps_by_source(document)
     _install_declared_apps(document, args, _build_installed_state(args))
 
-    _print_colored("🔄", "Syncing installed apps to apps.toml...", _Ansi.MAGENTA)
+    _print_colored("\n🔄", "Syncing installed apps to apps.toml...", Ansi.MAGENTA)
     _sync_homebrew(apps_by_source, args)
     _sync_uv(apps_by_source, args)
     _sync_mas(apps_by_source, args)
@@ -1341,3 +1343,5 @@ if __name__ == "__main__":
         main()
     except AppManagerError as error:
         raise SystemExit(f"❌ {error}") from None
+    except KeyboardInterrupt:
+        raise SystemExit("\n❌ Operation cancelled by user.") from None
