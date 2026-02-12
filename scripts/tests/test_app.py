@@ -1127,6 +1127,163 @@ def test_install_declared_apps() -> None:
         install_from.assert_called_once_with(app="httpie", source="uv", state=state)
 
 
+def test_get_macos_only_formulas_returns_macos_only_formulas() -> None:
+    brew_json = json.dumps({
+        "formulae": [
+            {
+                "name": "macos-only-tool",
+                "full_name": "homebrew/core/macos-only-tool",
+                "requirements": [{"name": "macos"}],
+                "bottle": {
+                    "stable": {
+                        "files": {"arm64_monterey": {}, "x86_64_sonoma": {}},
+                    },
+                },
+            },
+        ],
+    })
+    with (
+        patch.object(app_module, "_get_executable", return_value="brew"),
+        patch.object(
+            app_module,
+            "_run",
+            return_value=SimpleNamespace(stdout=brew_json, returncode=0, stderr=""),
+        ),
+    ):
+        result = app_module._get_macos_only_formulas(["macos-only-tool"])
+    assert "macos-only-tool" in result
+    assert "homebrew/core/macos-only-tool" in result
+
+
+def test_get_macos_only_formulas_excludes_linux_capable() -> None:
+    brew_json = json.dumps({
+        "formulae": [
+            {
+                "name": "linux-tool",
+                "full_name": "homebrew/core/linux-tool",
+                "requirements": [],
+                "bottle": {
+                    "stable": {
+                        "files": {"x86_64_linux": {}, "arm64_linux": {}},
+                    },
+                },
+            },
+        ],
+    })
+    with (
+        patch.object(app_module, "_get_executable", return_value="brew"),
+        patch.object(
+            app_module,
+            "_run",
+            return_value=SimpleNamespace(stdout=brew_json, returncode=0, stderr=""),
+        ),
+    ):
+        result = app_module._get_macos_only_formulas(["linux-tool"])
+    assert result == set()
+
+
+def test_get_macos_only_formulas_empty_list() -> None:
+    result = app_module._get_macos_only_formulas([])
+    assert result == set()
+
+
+def test_get_macos_only_formulas_invalid_json_returns_empty() -> None:
+    with (
+        patch.object(app_module, "_get_executable", return_value="brew"),
+        patch.object(
+            app_module,
+            "_run",
+            return_value=SimpleNamespace(stdout="invalid json", returncode=1, stderr=""),
+        ),
+    ):
+        result = app_module._get_macos_only_formulas(["foo"])
+    assert result == set()
+
+
+def test_install_declared_apps_skips_macos_only_on_linux(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    doc = tomlkit.parse('[cli]\nmacos-tool = "formula"\nlinux-tool = "formula"\n')
+    args = SimpleNamespace(
+        install_cask=True,
+        install_formula=True,
+        install_uv=True,
+        install_mas=True,
+    )
+    state = app_module.InstalledState(casks=set(), formulas=set(), uv=set(), mas={})
+    brew_json = json.dumps({
+        "formulae": [
+            {
+                "name": "macos-tool",
+                "full_name": "homebrew/core/macos-tool",
+                "requirements": [{"name": "macos"}],
+                "bottle": {"stable": {"files": {"arm64_monterey": {}}}},
+            },
+            {
+                "name": "linux-tool",
+                "full_name": "homebrew/core/linux-tool",
+                "requirements": [],
+                "bottle": {"stable": {"files": {"x86_64_linux": {}}}},
+            },
+        ],
+    })
+    with (
+        patch.object(app_module, "platform") as platform_mock,
+        patch.object(platform_mock, "system", return_value="Linux"),
+        patch.object(app_module, "_get_executable", return_value="brew"),
+        patch.object(
+            app_module,
+            "_run",
+            return_value=SimpleNamespace(stdout=brew_json, returncode=0, stderr=""),
+        ),
+        patch.object(app_module, "_install_from_source") as install_from,
+    ):
+        app_module._install_declared_apps(doc, args, state)
+    output = capsys.readouterr().out
+    assert "Skipping macos-tool (macOS only)" in output
+    assert "linux-tool" not in output or "Skipping" not in output
+    install_from.assert_called_once_with(app="linux-tool", source="formula", state=state)
+
+
+def test_install_app_skips_macos_only_on_linux(capsys: pytest.CaptureFixture[str]) -> None:
+    doc = tomlkit.parse("")
+    brew_json = json.dumps({
+        "formulae": [
+            {
+                "name": "macos-only-tool",
+                "full_name": "homebrew/core/macos-only-tool",
+                "requirements": [{"name": "macos"}],
+                "bottle": {"stable": {"files": {"arm64_monterey": {}}}},
+            },
+        ],
+    })
+    with (
+        patch.object(app_module, "platform") as platform_mock,
+        patch.object(platform_mock, "system", return_value="Linux"),
+        patch.object(
+            app_module,
+            "fetch_app_info",
+            return_value=app_module.AppInfo(
+                name="macos-only-tool",
+                source="formula",
+                description="A tool",
+                website=None,
+                version=None,
+                installed=False,
+            ),
+        ),
+        patch.object(app_module, "_get_executable", return_value="brew"),
+        patch.object(
+            app_module,
+            "_run",
+            return_value=SimpleNamespace(stdout=brew_json, returncode=0, stderr=""),
+        ),
+    ):
+        app_module.install_app(doc, source="formula", app="macos-only-tool")
+    output = capsys.readouterr().out
+    assert "Skipping macos-only-tool (macOS only)" in output
+
+
 def test_confirm_uninstall_auto_yes() -> None:
     assert app_module._confirm_uninstall(auto_yes=True)
 
