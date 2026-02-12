@@ -4,14 +4,14 @@ SHELL=/bin/bash
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 MAKEFLAGS += -j$(JOBS) --output-sync=target
 
-.PHONY: check \
+.PHONY: check test-app \
         lint-checkov lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
 
 # All tracked shell scripts (recursive, includes repo root).
 SH_FILES := $(shell git ls-files '*.sh')
 
 # High-level aggregate
-check: lint-checkov lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
+check: lint-checkov lint-jsort lint-oxipng lint-ruff lint-ruff-format lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint test-app
 
 #################
 # Lint (parallel)
@@ -54,3 +54,7 @@ lint-ty:
 
 lint-yamllint:
 	uvx yamllint -c linkme/.config/yamllint/config .
+
+test-app:
+	uvx --with-requirements scripts/tests/test_app.py pytest scripts/tests/test_app.py \
+		--cov=app_module --cov-report=term-missing --cov-fail-under=95
