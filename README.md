@@ -18,10 +18,8 @@ Here's a short description of each script in this repository:
 - [`aerials.py`](scripts/aerials.py) download macOS Aerial live wallpapers (callable using
   `aerials`)
 - [`chshell.sh`](scripts/chshell.sh) change shell to zsh
-- [`install.sh`](scripts/install.sh) install fonts, tools, and apps using Homebrew,
-  [`uv`](https://docs.astral.sh/uv/), and the Mac App Store (callable using `syncapps`)
-- [`app.py`](scripts/app.py) CLI tool to manage and install applications listed in
-  [`apps.toml`](apps.toml) (callable using `app`)
+- [`app.py`](scripts/app.py) CLI tool to manage and sync fonts, tools, and apps using Homebrew,
+  [`uv`](https://docs.astral.sh/uv/), and the Mac App Store, listed in[`apps.toml`](apps.toml)
 - [`dock.sh`](scripts/dock.sh) configure macOS dock
 - [`code.sh`](scripts/code.sh) install Cursor extensions
 - [`local.sh`](scripts/local.sh) final local settings, like configuring git user details and
@@ -93,6 +91,7 @@ up to date:
 ```bash
 app add <app> <source> [--group <group>] [--description <text>]
 app remove <app>
+app sync [--yes] [--no-cask] [--no-formula] [--no-uv] [--no-mas]
 ```
 
 By default, adding an app will also install it via the chosen source, and removing an app will

@@ -35,7 +35,14 @@ make lint-trufflehog    # Secret detection
 make lint-checkov       # Infrastructure security
 ```
 
+### Testing
+
+```bash
+make test-app           # Run scripts/app.py unit tests
+```
+
 Always run `make check` before committing to ensure CI will pass.
+`make check` includes `make test-app`, which runs the `scripts/app.py` unit tests.
 
 ### App Management
 
@@ -51,7 +58,6 @@ app list                                                          # List all app
 
 ```bash
 ./run.sh          # Full setup (Homebrew, dotfiles, apps, macOS settings)
-syncapps          # Run install.sh to sync apps from apps.toml
 bootstrap         # Run bootstrap.sh
 aerials           # Download/manage macOS Aerial wallpapers
 ```
@@ -69,7 +75,7 @@ uv run scripts/app.py       # CLI managed via shell function `app`
 - **`run.sh`** - Orchestrates full setup: Homebrew → dotsync → macos → install → dock → aerials →
   code → local
 - **`apps.toml`** - TOML file listing all apps with source (cask/formula/mas/uv) and category
-- **`linkme/.functions`** - Shell functions including `app`, `syncapps`, `aerials`, `bootstrap`
+- **`linkme/.functions`** - Shell functions including `app`, `aerials`, `bootstrap`
 - **`linkme/.aliases`** - Shell aliases (`ls` → `eza`, navigation shortcuts, etc.)
 
 ## Commit/PR Title Format
