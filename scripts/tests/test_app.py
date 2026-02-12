@@ -17,7 +17,7 @@ import json
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 import tomlkit
@@ -26,8 +26,47 @@ SPEC = importlib.util.spec_from_file_location("app_module", Path("scripts/app.py
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError("failed to load scripts/app.py")
 app = importlib.util.module_from_spec(SPEC)
+sys.modules["app_module"] = app
 SPEC.loader.exec_module(app)
 app_module: ModuleType = app
+
+
+def make_result(
+    *,
+    stdout: str = "",
+    returncode: int = 0,
+    stderr: str = "",
+) -> SimpleNamespace:
+    return SimpleNamespace(stdout=stdout, returncode=returncode, stderr=stderr)
+
+
+def build_facade(
+    tmp_path: Path,
+    *,
+    content: str = "",
+    runner: object | None = None,
+) -> tuple[object, Path, object]:
+    apps_file = tmp_path / "apps.toml"
+    if content:
+        apps_file.write_text(content)
+    console = app_module.Console()
+    repo = app_module.AppsRepository(apps_file, console=console)
+    runner = runner or Mock(spec=app_module.CommandRunner)
+    facade = app_module.AppManagerFacade(repository=repo, runner=runner, console=console)
+    return facade, apps_file, runner
+
+
+def test_source_registry_has_expected_sources() -> None:
+    assert set(app_module.SourceRegistry.source_names()) == {"cask", "formula", "uv", "mas"}
+
+
+def test_source_registry_create_unknown_raises() -> None:
+    with pytest.raises(app_module.AppManagerError, match="Unknown source"):
+        app_module.SourceRegistry.create(
+            "unknown",
+            runner=Mock(spec=app_module.CommandRunner),
+            console=app_module.Console(),
+        )
 
 
 def test_parse_args_add_command() -> None:
@@ -51,826 +90,809 @@ def test_parse_args_sync_flags() -> None:
     assert args.install_mas
 
 
-def test_resolve_group_name_case_insensitive() -> None:
-    document = tomlkit.parse('[CLI-Tools]\nhttpie = "uv"\n')
-    assert app_module.resolve_group_name(document, "cli-tools") == "CLI-Tools"
+def test_command_runner_get_executable_raises() -> None:
+    runner = app_module.CommandRunner()
+    with (
+        patch.object(app_module.shutil, "which", return_value=None),
+        pytest.raises(app_module.AppManagerError, match="not found"),
+    ):
+        runner.get_executable("missing")
 
 
-def test_validate_duplicates_across_groups() -> None:
-    document = tomlkit.parse('[one]\nfoo = "uv"\n[two]\nFoo = "cask"\n')
+def test_command_runner_run_raises_on_nonzero() -> None:
+    runner = app_module.CommandRunner()
+    with (
+        patch.object(
+            app_module.subprocess,
+            "run",
+            return_value=app_module.subprocess.CompletedProcess(["false"], 1, "", "failed"),
+        ),
+        pytest.raises(app_module.AppManagerError, match="Command failed"),
+    ):
+        runner.run(["false"])
+
+
+def test_console_paint_with_icon(capsys: pytest.CaptureFixture[str]) -> None:
+    console = app_module.Console()
+    console.paint("hello", app_module.Ansi.GREEN, icon="✅")
+    output = capsys.readouterr().out
+    assert "hello" in output
+    assert "✅" in output
+
+
+def test_console_prompt_yes_no_auto() -> None:
+    console = app_module.Console()
+    assert console.prompt_yes_no("Proceed? ", auto_yes=True)
+
+
+def test_console_prompt_yes_no_input() -> None:
+    console = app_module.Console()
+    with patch.object(builtins, "input", return_value="n"):
+        assert not console.prompt_yes_no("Proceed? ", auto_yes=False)
+
+
+def test_console_render_records_empty(capsys: pytest.CaptureFixture[str]) -> None:
+    console = app_module.Console()
+    console.render_records([])
+    assert "No apps found." in capsys.readouterr().out
+
+
+def test_repository_resolve_group_name_case_insensitive(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[CLI-Tools]\nhttpie = "uv"\n')
+    document = facade.repository.load()
+    assert facade.repository.resolve_group_name(document, "cli-tools") == "CLI-Tools"
+
+
+def test_repository_resolve_group_name_empty_raises(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    with pytest.raises(app_module.AppManagerError, match="cannot be empty"):
+        facade.repository.resolve_group_name(tomlkit.document(), "  ")
+
+
+def test_repository_validate_duplicates_raises(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    doc = tomlkit.parse('[one]\nfoo = "uv"\n[two]\nFoo = "cask"\n')
     with pytest.raises(app_module.AppManagerError, match="Duplicate apps found"):
-        app_module.validate_no_duplicate_apps(document, apps_file=Path("apps.toml"))
+        facade.repository.validate_no_duplicates(doc)
 
 
-def test_load_apps_creates_missing_file(tmp_path: Path) -> None:
-    path = tmp_path / "apps.toml"
-    document = app_module.load_apps(path)
-    assert path.exists()
+def test_repository_load_creates_missing_file(tmp_path: Path) -> None:
+    facade, apps_file, _ = build_facade(tmp_path)
+    document = facade.repository.load()
+    assert apps_file.exists()
     assert list(document.items()) == []
 
 
-def test_find_app_group_case_insensitive() -> None:
-    document = tomlkit.parse('[dev]\nHTTPie = "uv"\n')
-    assert app_module.find_app_group(document, "httpie") == ("HTTPie", "uv", "dev")
+def test_repository_find_app_case_insensitive(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nHTTPie = "uv"\n')
+    document = facade.repository.load()
+    record = facade.repository.find_app(document, "httpie")
+    assert record is not None
+    assert record.key == "HTTPie"
+    assert record.source == "uv"
 
 
-def test_add_app_updates_in_place(capsys: pytest.CaptureFixture[str]) -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"  # old\n')
-    args = argparse.Namespace(
-        app="foo",
-        source="cask",
-        group="dev",
-        description="new desc",
-        no_install=True,
-    )
-    with patch.object(
-        app_module,
-        "fetch_app_info",
-        return_value=app_module.AppInfo(
-            name="foo",
-            source="formula",
-            description="old",
-            website=None,
-            version=None,
-            installed=False,
-        ),
-    ):
-        changed, previous = app_module.add_app(document, args)
-    assert changed
-    assert previous == "formula"
-    assert "Updated" in capsys.readouterr().out
+def test_repository_sanitize_comment() -> None:
+    assert app_module.AppsRepository.sanitize_toml_inline_comment("a\nb\nc") == "a b c"
 
 
-def test_add_app_raise_when_remove_fails() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n[tools]\nbar = "cask"\n')
-    args = argparse.Namespace(
-        app="foo",
-        source="cask",
-        group="tools",
-        description="desc",
-        no_install=True,
-    )
-    with (
-        patch.object(
-            app_module,
-            "remove_app_from_group",
-            return_value=False,
-        ),
-        pytest.raises(app_module.AppManagerError, match="could not be removed"),
-    ):
-        app_module.add_app(document, args)
-
-
-def test_add_app_new_group() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n')
-    args = argparse.Namespace(
-        app="bar",
-        source="cask",
-        group="tools",
-        description="new",
-        no_install=True,
-    )
-    changed, previous = app_module.add_app(document, args)
-    assert not changed
-    assert previous is None
-    assert "tools" in document
-    assert document["tools"]["bar"] == "cask"
-
-
-def test_add_app_updates_existing_and_moves_group() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n')
-    args = argparse.Namespace(
-        app="foo",
-        source="cask",
-        group="tools",
-        description="new",
-        no_install=True,
-    )
-    changed, previous = app_module.add_app(document, args)
-    assert changed
-    assert previous == "formula"
-    assert "tools" in document
+def test_repository_remove_app_from_group_removes_section(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"\n')
+    document = facade.repository.load()
+    removed = facade.repository.remove_app_from_group(document, group="dev", app_key="foo")
+    assert removed
     assert "dev" not in document
 
 
-def test_remove_app_returns_source() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n')
-    removed, source = app_module.remove_app(document, "foo")
+def test_repository_remove_app_from_group_keeps_section(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"\nbar = "cask"\n')
+    document = facade.repository.load()
+    removed = facade.repository.remove_app_from_group(document, group="dev", app_key="foo")
     assert removed
-    assert source == "formula"
+    assert "dev" in document
+    assert "bar" in document["dev"]
 
 
-def test_infer_description_requires_uv_description() -> None:
-    with pytest.raises(app_module.AppManagerError):
-        app_module.infer_description("uv", "httpie", None, tomlkit.document())
-
-
-def test_install_app_skips_when_already_installed() -> None:
-    with (
-        patch.object(app_module, "fetch_app_info") as fetch_info,
-        patch.object(app_module, "_run") as run,
-    ):
-        fetch_info.return_value = app_module.AppInfo(
-            name="foo",
-            source="formula",
-            description=None,
-            website=None,
-            version=None,
-            installed=True,
-        )
-        app_module.install_app(tomlkit.document(), source="formula", app="foo")
-        run.assert_not_called()
-
-
-def test_install_app_runs_command() -> None:
-    with (
-        patch.object(app_module, "fetch_app_info") as fetch_info,
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(app_module, "_run") as run,
-        patch.object(app_module, "platform") as platform_mock,
-    ):
-        platform_mock.system.return_value = "Darwin"
-        fetch_info.return_value = app_module.AppInfo(
-            name="foo",
-            source="formula",
-            description=None,
-            website=None,
-            version=None,
-            installed=False,
-        )
-        app_module.install_app(tomlkit.document(), source="formula", app="foo")
-        run.assert_called_once_with(["brew", "install", "--formula", "foo"])
-
-
-def test_uninstall_app_runs_command() -> None:
-    with (
-        patch.object(app_module, "fetch_app_info") as fetch_info,
-        patch.object(app_module, "_get_executable", return_value="uv"),
-        patch.object(app_module, "_run") as run,
-    ):
-        fetch_info.return_value = app_module.AppInfo(
-            name="foo",
-            source="uv",
-            description=None,
-            website=None,
-            version=None,
-            installed=True,
-        )
-        app_module.uninstall_app(tomlkit.document(), source="uv", app="foo")
-        run.assert_called_once_with(["uv", "tool", "uninstall", "foo"])
-
-
-def test_uninstall_app_skips_when_not_installed(capsys: pytest.CaptureFixture[str]) -> None:
-    with (
-        patch.object(app_module, "fetch_app_info") as fetch_info,
-        patch.object(app_module, "_run") as run,
-    ):
-        fetch_info.return_value = app_module.AppInfo(
-            name="foo",
-            source="uv",
-            description=None,
-            website=None,
-            version=None,
-            installed=False,
-        )
-        app_module.uninstall_app(tomlkit.document(), source="uv", app="foo")
-        run.assert_not_called()
-        output = capsys.readouterr().out
-        assert "skipping uninstall" in output
-
-
-def test_install_app_unknown_source_raises() -> None:
-    with pytest.raises(app_module.AppManagerError, match="Unknown source"):
-        app_module.install_app(tomlkit.document(), source="unknown", app="foo")
-
-
-def test_uninstall_app_unknown_source_raises() -> None:
-    with pytest.raises(app_module.AppManagerError, match="Unknown source"):
-        app_module.uninstall_app(tomlkit.document(), source="unknown", app="foo")
-
-
-def test_package_command_unknown_source_raises() -> None:
-    with pytest.raises(app_module.AppManagerError, match="Unknown source"):
-        app_module._package_command(source="invalid", app="foo", install=True)
-
-
-def test_install_from_source_unknown_source_raises() -> None:
-    state = app_module.InstalledState(casks=set(), formulas=set(), uv=set(), mas={})
-    with pytest.raises(app_module.AppManagerError, match="Unknown installation source"):
-        app_module._install_from_source(
-            app="foo",
-            source="bad_source",
-            state=state,
-        )
-
-
-def test_list_apps_empty(capsys: pytest.CaptureFixture[str]) -> None:
-    app_module.list_apps(tomlkit.document())
-    output = capsys.readouterr().out
-    assert "No apps found." in output
-
-
-def test_print_app_info(capsys: pytest.CaptureFixture[str]) -> None:
-    info = app_module.AppInfo(
-        name="httpie",
-        source="uv",
-        description="cli",
-        website="https://pypi.org/project/httpie/",
-        version="v1.0.0",
-        installed=True,
+def test_repository_add_or_update_new(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"\n')
+    document = facade.repository.load()
+    outcome = facade.repository.add_or_update(
+        document,
+        app="bar",
+        source="cask",
+        group="tools",
+        description="new desc",
     )
-    app_module.print_app_info(info)
-    output = capsys.readouterr().out
-    assert "Name" in output
-    assert "httpie" in output
+    assert not outcome.existed
+    assert outcome.previous_source is None
+    assert document["tools"]["bar"] == "cask"
 
 
-def test_fetch_app_info_cask() -> None:
-    brew_json = json.dumps({"casks": [{"desc": "x", "homepage": "", "installed": "1"}]})
+def test_repository_add_or_update_existing_move_and_source_change(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"\n')
+    document = facade.repository.load()
+    outcome = facade.repository.add_or_update(
+        document,
+        app="foo",
+        source="cask",
+        group="tools",
+        description="new",
+    )
+    assert not outcome.existed
+    assert outcome.moved_from == "dev"
+    assert outcome.previous_source == "formula"
+    assert "dev" not in document
+    assert document["tools"]["foo"] == "cask"
+
+
+def test_repository_add_or_update_raises_when_remove_fails(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(
+        tmp_path, content='[dev]\nfoo = "formula"\n[tools]\nbar = "cask"\n'
+    )
+    document = facade.repository.load()
     with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout=brew_json, returncode=0),
-        ),
+        patch.object(facade.repository, "remove_app_from_group", return_value=False),
+        pytest.raises(app_module.AppManagerError, match="could not be removed"),
     ):
-        info = app_module.fetch_app_info("cask", "chrome", tomlkit.document())
-    assert info.source == "cask"
+        facade.repository.add_or_update(
+            document,
+            app="foo",
+            source="cask",
+            group="tools",
+            description="desc",
+        )
 
 
-def test_fetch_app_info_uv() -> None:
-    with (
-        patch.object(app_module, "_get_executable", return_value="uv"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout="foo  v1.0\n", returncode=0),
-        ),
-    ):
-        info = app_module.fetch_app_info("uv", "foo", tomlkit.document())
-    assert info.source == "uv"
+def test_repository_remove_existing(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"\n')
+    document = facade.repository.load()
+    outcome = facade.repository.remove(document, "foo")
+    assert outcome.removed
+    assert outcome.source == "formula"
 
 
-def test_fetch_app_info_mas() -> None:
-    with (
-        patch.object(app_module, "_get_executable", return_value="mas"),
-        patch.object(
-            app_module,
-            "_run",
-            side_effect=[
-                SimpleNamespace(stdout="App 1.0\n", returncode=0),
-                SimpleNamespace(stdout="123 App (1.0)\n", returncode=0),
-            ],
-        ),
-    ):
-        info = app_module.fetch_app_info("mas", "123", tomlkit.document())
-    assert info.source == "mas"
+def test_repository_remove_missing(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"\n')
+    document = facade.repository.load()
+    outcome = facade.repository.remove(document, "bar")
+    assert not outcome.removed
 
 
-def test_fetch_app_info_unknown_source_raises() -> None:
-    with pytest.raises(app_module.AppManagerError, match="Unknown source"):
-        app_module.fetch_app_info("unknown", "foo", tomlkit.document())
+def test_repository_list_grouped_records(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(
+        tmp_path,
+        content='[cli]\nhttpie = "uv"  # HTTP client\n[dev]\ngh = "formula"  # GitHub CLI\n',
+    )
+    grouped = facade.repository.list_grouped_records(facade.repository.load())
+    assert grouped
+    assert grouped[0][0] == "cli"
+    assert grouped[0][1][0].description == "HTTP client"
 
 
-def test_fetch_brew_info_cask() -> None:
-    brew_json = json.dumps({
-        "casks": [
-            {
-                "desc": "Browser",
-                "homepage": "https://example.com",
-                "installed": "1.0",
-            }
-        ],
-    })
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout=brew_json, returncode=0),
-        ),
-    ):
-        info = app_module.fetch_brew_info("chrome", "cask")
-    assert info.name == "chrome"
+def test_brew_cask_fetch_info() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(
+        stdout=json.dumps({
+            "casks": [{"desc": "Browser", "homepage": "https://example.com", "installed": "1.0"}]
+        }),
+    )
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    info = service.fetch_info("chrome", repo=Mock(), document=tomlkit.document())
     assert info.source == "cask"
     assert info.description == "Browser"
     assert info.installed
     assert info.version == "1.0"
 
 
-def test_fetch_brew_info_formula() -> None:
-    brew_json = json.dumps({
-        "formulae": [
-            {
-                "desc": "GitHub CLI",
-                "homepage": "https://cli.github.com",
-                "installed": [{"version": "2.0"}],
-            }
-        ],
-    })
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout=brew_json, returncode=0),
-        ),
-    ):
-        info = app_module.fetch_brew_info("gh", "formula")
-    assert info.name == "gh"
+def test_brew_formula_fetch_info_uninstalled_with_stable_version() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(
+        stdout=json.dumps({
+            "formulae": [
+                {
+                    "desc": "CLI",
+                    "homepage": "https://example.com",
+                    "versions": {"stable": "2.0"},
+                }
+            ],
+        })
+    )
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    info = service.fetch_info("gh", repo=Mock(), document=tomlkit.document())
     assert info.source == "formula"
-    assert info.installed
-
-
-def test_fetch_brew_info_uninstalled_with_versions() -> None:
-    brew_json = json.dumps({
-        "formulae": [
-            {
-                "desc": "CLI",
-                "homepage": "https://example.com",
-                "versions": {"stable": "2.0"},
-            }
-        ],
-    })
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout=brew_json, returncode=0),
-        ),
-    ):
-        info = app_module.fetch_brew_info("gh", "formula")
     assert not info.installed
     assert info.version == "2.0"
 
 
-def test_fetch_brew_info_not_found_raises() -> None:
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout=json.dumps({"casks": []}), returncode=0),
-        ),
-        pytest.raises(app_module.AppManagerError, match="No casks"),
-    ):
-        app_module.fetch_brew_info("nonexistent", "cask")
+def test_brew_fetch_info_raises_when_empty() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(stdout=json.dumps({"casks": []}))
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    with pytest.raises(app_module.AppManagerError, match="No casks"):
+        service.fetch_info("missing", repo=Mock(), document=tomlkit.document())
 
 
-def test_fetch_mas_info() -> None:
-    mas_info = "Numbers  1.0 [foo]\nFrom: https://example.com\n"
-    mas_list = "409203825 Numbers (1.0)\n"
-    with (
-        patch.object(app_module, "_get_executable", return_value="mas"),
-        patch.object(
-            app_module,
-            "_run",
-            side_effect=[
-                SimpleNamespace(stdout=mas_info, returncode=0),
-                SimpleNamespace(stdout=mas_list, returncode=0),
-            ],
-        ),
-    ):
-        info = app_module.fetch_mas_info("409203825")
-    assert info.name == "409203825"
-    assert info.source == "mas"
-    assert info.installed
-    assert info.description == "Numbers"
-    assert info.website == "https://example.com"
+def test_brew_cask_find_unmanaged() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(stdout="managed\norphan\n")
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    missing = service.find_unmanaged({"managed"})
+    assert [item.identifier for item in missing] == ["orphan"]
 
 
-def test_fetch_uv_info() -> None:
-    with (
-        patch.object(app_module, "_get_executable", return_value="uv"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(
-                stdout="httpie  v1.0.0\nother  v2.0\n",
-                returncode=0,
-            ),
-        ),
-    ):
-        info = app_module.fetch_uv_info(tomlkit.document(), "httpie")
-    assert info.name == "httpie"
-    assert info.installed
-    assert info.version == "v1.0.0"
+def test_brew_formula_find_unmanaged() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(stdout="managed\norphan\n")
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    missing = service.find_unmanaged({"managed"})
+    assert [item.identifier for item in missing] == ["orphan"]
 
 
-def test_fetch_uv_info_from_document() -> None:
-    document = tomlkit.parse('[cli]\nhttpie = "uv"  # HTTP client\n')
-    with (
-        patch.object(app_module, "_get_executable", return_value="uv"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout="other  v1.0\n", returncode=0),
-        ),
-    ):
-        info = app_module.fetch_uv_info(document, "httpie")
-    assert info.description == "HTTP client"
-
-
-def test_list_apps_with_groups(capsys: pytest.CaptureFixture[str]) -> None:
-    document = tomlkit.parse(
-        '[cli]\nhttpie = "uv"  # HTTP client\n[dev]\ngh = "formula"  # GitHub CLI\n'
+def test_brew_cask_uninstall_unmanaged_uses_zap() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    service.uninstall_unmanaged("orphan")
+    runner.run.assert_called_once_with(
+        ["brew", "uninstall", "--cask", "--zap", "orphan"],
+        capture_output=False,
     )
-    app_module.list_apps(document)
-    output = capsys.readouterr().out
-    assert "httpie" in output
-    assert "gh" in output
-    assert "cli" in output
-    assert "dev" in output
-    assert "uv" in output or "formula" in output
 
 
-def test_list_apps_no_groups(capsys: pytest.CaptureFixture[str]) -> None:
-    document = tomlkit.parse("[empty]\n")
-    app_module.list_apps(document)
-    output = capsys.readouterr().out
-    assert "No apps found" in output
+def test_formula_get_macos_only_formulas() -> None:
+    brew_json = json.dumps({
+        "formulae": [
+            {
+                "name": "macos-tool",
+                "full_name": "homebrew/core/macos-tool",
+                "requirements": [{"name": "macos"}],
+                "bottle": {"stable": {"files": {"arm64_monterey": {}}}},
+            },
+        ]
+    })
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(stdout=brew_json)
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    result = service.get_macos_only_formulas(["macos-tool"])
+    assert "macos-tool" in result
+    assert "homebrew/core/macos-tool" in result
 
 
-def test_remove_app_not_found(capsys: pytest.CaptureFixture[str]) -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n')
-    removed, source = app_module.remove_app(document, "bar")
-    assert not removed
-    assert source is None
-    assert "not found" in capsys.readouterr().out
+def test_formula_get_macos_only_formulas_invalid_json_returns_empty() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(stdout="invalid", returncode=1)
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    assert service.get_macos_only_formulas(["x"]) == set()
 
 
-def test_load_apps_existing_file(tmp_path: Path) -> None:
-    path = tmp_path / "apps.toml"
-    path.write_text('[dev]\nfoo = "formula"\n')
-    document = app_module.load_apps(path)
-    assert "dev" in document
-    assert document["dev"]["foo"] == "formula"
+def test_formula_pre_install_check_skips_on_linux() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    with patch.object(app_module.platform, "system", return_value="Linux"):
+        service._linux_macos_only_cache = {"macos-only-tool"}
+        result = service.pre_install_check("macos-only-tool")
+    assert result is not None
+    assert result.skipped
+    assert "Skipping" in result.message
 
 
-def test_save_apps(tmp_path: Path) -> None:
-    path = tmp_path / "apps.toml"
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n')
-    app_module.save_apps(path, document)
-    assert path.read_text() == '[dev]\nfoo = "formula"\n'
+def test_formula_pre_install_check_none_on_darwin() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    with patch.object(app_module.platform, "system", return_value="Darwin"):
+        assert service.pre_install_check("anything") is None
 
 
-def test_resolve_group_name_empty_raises() -> None:
-    document = tomlkit.document()
-    with pytest.raises(app_module.AppManagerError, match="cannot be empty"):
-        app_module.resolve_group_name(document, "   ")
+def test_uv_list_installed_parses_output() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "uv"
+    runner.run.return_value = make_result(stdout="httpie  v1.0\n-rust-something\n")
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+    installed = service.list_installed()
+    assert "httpie" in installed
+    assert "-rust-something" not in installed
 
 
-def test_pick_group_interactively_select_by_number() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n[tools]\nbar = "cask"\n')
+def test_uv_fetch_info_with_description(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[cli]\nhttpie = "uv"  # HTTP client\n')
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "uv"
+    runner.run.return_value = make_result(stdout="httpie  v1.0.0\n")
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+    info = service.fetch_info("httpie", repo=facade.repository, document=facade.repository.load())
+    assert info.description == "HTTP client"
+    assert info.installed
+
+
+def test_uv_find_unmanaged() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "uv"
+    runner.run.return_value = make_result(stdout="managed  v1\norphan  v2\n")
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+    missing = service.find_unmanaged({"managed"})
+    assert [item.identifier for item in missing] == ["orphan"]
+
+
+def test_mas_list_installed() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "mas"
+    runner.run.return_value = make_result(stdout="409203825 Numbers (1.0)\n")
+    service = app_module.MasSourceService(runner=runner, console=app_module.Console())
+    installed = service.list_installed()
+    assert installed["409203825"] == "Numbers"
+
+
+def test_mas_fetch_info() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "mas"
+    runner.run.side_effect = [
+        make_result(stdout="Numbers  1.0 [foo]\nFrom: https://example.com\n"),
+        make_result(stdout="409203825 Numbers (1.0)\n"),
+    ]
+    service = app_module.MasSourceService(runner=runner, console=app_module.Console())
+    info = service.fetch_info("409203825", repo=Mock(), document=tomlkit.document())
+    assert info.source == "mas"
+    assert info.description == "Numbers"
+    assert info.installed
+
+
+def test_mas_fetch_info_parse_error_raises() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "mas"
+    runner.run.return_value = make_result(stdout="\n")
+    service = app_module.MasSourceService(runner=runner, console=app_module.Console())
+    with pytest.raises(app_module.AppManagerError, match="Could not parse"):
+        service.fetch_info("1", repo=Mock(), document=tomlkit.document())
+
+
+def test_mas_uninstall_failure_returns_failed_result() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "mas"
+    runner.run.return_value = make_result(returncode=1)
+    service = app_module.MasSourceService(runner=runner, console=app_module.Console())
+    result = service.uninstall("1")
+    assert not result.success
+
+
+def test_base_strategy_ensure_installed_skips_when_installed() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+    with patch.object(service, "is_installed", return_value=True):
+        result = service.ensure_installed("foo")
+    assert result.skipped
+
+
+def test_base_strategy_ensure_uninstalled_skips_when_not_installed() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+    with patch.object(service, "is_installed", return_value=False):
+        result = service.ensure_uninstalled("foo")
+    assert result.skipped
+
+
+def test_base_strategy_ensure_uninstalled_success() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+    with (
+        patch.object(service, "is_installed", return_value=True),
+        patch.object(service, "uninstall", return_value=app_module.OperationResult.ok("")),
+    ):
+        result = service.ensure_uninstalled("foo")
+    assert result.success
+    assert not result.skipped
+
+
+def test_facade_infer_description_requires_uv(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    with pytest.raises(app_module.AppManagerError, match="Description is required"):
+        facade._infer_description(
+            source="uv",
+            app="httpie",
+            description=None,
+            document=tomlkit.document(),
+        )
+
+
+def test_facade_infer_description_from_source(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    service = Mock()
+    service.fetch_info.return_value = app_module.AppInfo(
+        name="gh",
+        source="formula",
+        description="GitHub CLI",
+        website=None,
+        version=None,
+        installed=False,
+    )
+    with patch.object(facade, "get_service", return_value=service):
+        description = facade._infer_description(
+            source="formula",
+            app="gh",
+            description=None,
+            document=tomlkit.document(),
+        )
+    assert description == "GitHub CLI"
+
+
+def test_facade_pick_group_interactively_number(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(
+        tmp_path, content='[dev]\nfoo = "formula"\n[tools]\nbar = "cask"\n'
+    )
+    document = facade.repository.load()
     with (
         patch.object(app_module.sys.stdin, "isatty", return_value=True),
         patch.object(builtins, "input", side_effect=["1"]),
     ):
-        result = app_module.pick_group_interactively(document)
-    assert result == "dev"
+        assert facade.pick_group_interactively(document) == "dev"
 
 
-def test_pick_group_interactively_select_new_group() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n')
+def test_facade_pick_group_interactively_new_group(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"\n')
+    document = facade.repository.load()
     with (
         patch.object(app_module.sys.stdin, "isatty", return_value=True),
         patch.object(builtins, "input", side_effect=["0", "newgroup"]),
     ):
-        result = app_module.pick_group_interactively(document)
-    assert result == "newgroup"
+        assert facade.pick_group_interactively(document) == "newgroup"
 
 
-def test_pick_group_interactively_empty_file() -> None:
-    document = tomlkit.document()
-    with (
-        patch.object(app_module.sys.stdin, "isatty", return_value=True),
-        patch.object(builtins, "input", return_value="first"),
-    ):
-        result = app_module.pick_group_interactively(document)
-    assert result == "first"
-
-
-def test_pick_group_interactively_select_by_name() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n[tools]\nbar = "cask"\n')
-    with (
-        patch.object(app_module.sys.stdin, "isatty", return_value=True),
-        patch.object(builtins, "input", return_value="tools"),
-    ):
-        result = app_module.pick_group_interactively(document)
-    assert result == "tools"
-
-
-def test_pick_group_interactively_new_group_by_name() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n')
-    with (
-        patch.object(app_module.sys.stdin, "isatty", return_value=True),
-        patch.object(builtins, "input", return_value="mygroup"),
-    ):
-        result = app_module.pick_group_interactively(document)
-    assert result == "mygroup"
-
-
-def test_pick_group_interactively_invalid_number_retries() -> None:
-    document = tomlkit.parse("[dev]\n[tools]\n")
-    with (
-        patch.object(app_module.sys.stdin, "isatty", return_value=True),
-        patch.object(builtins, "input", side_effect=["99", "1"]),
-    ):
-        result = app_module.pick_group_interactively(document)
-    assert result == "dev"
-
-
-def test_pick_group_interactively_not_tty_raises() -> None:
+def test_facade_pick_group_interactively_not_tty_raises(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
     with (
         patch.object(app_module.sys.stdin, "isatty", return_value=False),
         pytest.raises(app_module.AppManagerError, match="not interactive"),
     ):
-        app_module.pick_group_interactively(tomlkit.document())
+        facade.pick_group_interactively(tomlkit.document())
 
 
-def test_resolve_group_name_normalizes_to_existing() -> None:
-    document = tomlkit.parse('[Dev-Tools]\nfoo = "formula"\n')
-    assert app_module.resolve_group_name(document, "dev-tools") == "Dev-Tools"
-
-
-def test_validate_duplicates_same_group_allowed() -> None:
-    document = tomlkit.parse('[one]\nfoo = "uv"\nbar = "cask"\n')
-    app_module.validate_no_duplicate_apps(document, apps_file=Path("apps.toml"))
-
-
-def test_remove_app_from_group_removes_section_when_empty() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n')
-    removed = app_module.remove_app_from_group(document, group="dev", app_key="foo")
-    assert removed
-    assert "dev" not in document
-
-
-def test_remove_app_from_group_key_not_in_table() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\n')
-    removed = app_module.remove_app_from_group(document, group="dev", app_key="bar")
-    assert not removed
-
-
-def test_remove_app_from_group_group_not_table() -> None:
-    document = tomlkit.document()
-    document["dev"] = "not a table"
-    removed = app_module.remove_app_from_group(document, group="dev", app_key="foo")
-    assert not removed
-
-
-def test_remove_app_from_group_keeps_section_with_others() -> None:
-    document = tomlkit.parse('[dev]\nfoo = "formula"\nbar = "cask"\n')
-    removed = app_module.remove_app_from_group(document, group="dev", app_key="foo")
-    assert removed
-    assert "dev" in document
-    assert "bar" in document["dev"]
-
-
-def test_install_from_source_already_installed_cask(capsys: pytest.CaptureFixture[str]) -> None:
-    state = app_module.InstalledState(
-        casks={"chromedriver"},
-        formulas=set(),
-        uv=set(),
-        mas={},
+def test_facade_add_app_no_install(tmp_path: Path) -> None:
+    facade, apps_file, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"\n')
+    facade.add_app(
+        app="bar",
+        source="cask",
+        group="tools",
+        description="desc",
+        no_install=True,
     )
-    with patch.object(app_module, "_run") as run:
-        app_module._install_from_source(
-            app="chromedriver",
-            source="cask",
-            state=state,
-        )
-        run.assert_not_called()
-    assert "already installed" in capsys.readouterr().out
+    text = apps_file.read_text()
+    assert "[tools]" in text
+    assert 'bar = "cask"' in text
 
 
-def test_install_from_source_installs_cask() -> None:
-    state = app_module.InstalledState(casks=set(), formulas=set(), uv=set(), mas={})
-    with (
-        patch.object(app_module, "_get_executable", return_value="/opt/homebrew/bin/brew"),
-        patch.object(app_module, "_run") as run,
-    ):
-        app_module._install_from_source(
-            app="chromedriver",
-            source="cask",
-            state=state,
-        )
-        run.assert_called_once()
-        call_args = run.call_args[0][0]
-        assert "brew" in call_args[0] or call_args[0] == "/opt/homebrew/bin/brew"
-        assert "install" in call_args
-        assert "--cask" in call_args
-        assert "chromedriver" in call_args
+def test_facade_add_app_source_change_calls_uninstall_and_install(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[cli]\nhttpie = "formula"\n')
+    previous_source_service = Mock()
+    previous_source_service.ensure_uninstalled.return_value = app_module.OperationResult.ok("ok")
+    new_source_service = Mock()
+    new_source_service.ensure_installed.return_value = app_module.OperationResult.ok("ok")
 
+    def service_for(source: str) -> object:
+        return {"formula": previous_source_service, "uv": new_source_service}[source]
 
-def test_install_from_source_installs_formula() -> None:
-    state = app_module.InstalledState(casks=set(), formulas=set(), uv=set(), mas={})
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(app_module, "_run") as run,
-    ):
-        app_module._install_from_source(
-            app="gh",
-            source="formula",
-            state=state,
-        )
-        run.assert_called_once()
-        call_args = run.call_args[0][0]
-        assert "install" in call_args
-        assert "--formula" in call_args
-
-
-def test_install_from_source_installs_uv() -> None:
-    state = app_module.InstalledState(casks=set(), formulas=set(), uv=set(), mas={})
-    with (
-        patch.object(app_module, "_get_executable", return_value="uv"),
-        patch.object(app_module, "_run") as run,
-    ):
-        app_module._install_from_source(
+    with patch.object(facade, "get_service", side_effect=service_for):
+        facade.add_app(
             app="httpie",
             source="uv",
-            state=state,
+            group="cli",
+            description="desc",
+            no_install=False,
         )
-        run.assert_called_once()
-        call_args = run.call_args[0][0]
-        assert "uv" in call_args[0].lower() or "tool" in call_args
-        assert "install" in call_args
-        assert "httpie" in call_args
+
+    previous_source_service.ensure_uninstalled.assert_called_once_with("httpie")
+    new_source_service.ensure_installed.assert_called_once_with("httpie")
 
 
-def test_install_from_source_installs_mas() -> None:
-    state = app_module.InstalledState(casks=set(), formulas=set(), uv=set(), mas={})
+def test_facade_add_app_rolls_back_when_install_fails(tmp_path: Path) -> None:
+    initial_text = '[cli]\nfoo = "formula"\n'
+    facade, apps_file, _ = build_facade(tmp_path, content=initial_text)
+    service = Mock()
+    service.ensure_installed.side_effect = app_module.AppManagerError("install failed")
+
     with (
-        patch.object(app_module, "_get_executable", return_value="mas"),
-        patch.object(app_module, "_run") as run,
+        patch.object(facade, "get_service", return_value=service),
+        pytest.raises(app_module.AppManagerError, match="install failed"),
     ):
-        app_module._install_from_source(
-            app="409203825",
-            source="mas",
-            state=state,
+        facade.add_app(
+            app="bar",
+            source="uv",
+            group="cli",
+            description="desc",
+            no_install=False,
         )
-        run.assert_called_once()
-        call_args = run.call_args[0][0]
-        assert "install" in call_args or "mas" in call_args[0].lower()
+
+    assert apps_file.read_text() == initial_text
 
 
-def test_paint_with_style_when_tty(capsys: pytest.CaptureFixture[str]) -> None:
-    with patch.object(app_module.sys.stdout, "isatty", return_value=True):
-        result = app_module.paint("hello", app_module.Ansi.GREEN, print_it=True)
-    output = capsys.readouterr().out
-    assert "hello" in output
-    assert result  # contains ANSI codes when TTY
+def test_facade_remove_app_not_found(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[cli]\nhttpie = "uv"\n')
+    facade.remove_app(app="missing", no_install=False)
+    assert "not found" in capsys.readouterr().out
 
 
-def test_paint_returns_string_when_print_it_false() -> None:
-    result = app_module.paint("hello", app_module.Ansi.GREEN, print_it=False)
-    assert "hello" in result
+def test_facade_remove_app_with_uninstall(tmp_path: Path) -> None:
+    facade, apps_file, _ = build_facade(tmp_path, content='[cli]\nhttpie = "uv"\n')
+    service = Mock()
+    service.ensure_uninstalled.return_value = app_module.OperationResult.ok("ok")
+    with patch.object(facade, "get_service", return_value=service):
+        facade.remove_app(app="httpie", no_install=False)
+    assert "httpie" not in apps_file.read_text()
+    service.ensure_uninstalled.assert_called_once_with("httpie")
 
 
-def test_paint_with_icon(capsys: pytest.CaptureFixture[str]) -> None:
-    app_module.paint("msg", app_module.Ansi.RED, icon="❌")
-    output = capsys.readouterr().out
-    assert "❌" in output
-    assert "msg" in output
+def test_facade_list_apps_calls_console(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[x]\nfoo = "uv"\n')
+    with patch.object(facade.console, "render_records") as render:
+        facade.list_apps()
+        render.assert_called_once()
 
 
-def test_truncate() -> None:
-    assert app_module._truncate("hello", 3) == "he…"
-    assert app_module._truncate("hi", 10) == "hi"
-    assert app_module._truncate("x", 1) == "x"
-
-
-def test_visible_len_strips_ansi() -> None:
-    colored = "\x1b[31mred\x1b[0m"
-    assert app_module._visible_len(colored) == 3
-
-
-def test_ljust_ansi_pads_correctly() -> None:
-    colored = "\x1b[1mab\x1b[0m"
-    result = app_module._ljust_ansi(colored, 5)
-    assert app_module._visible_len(result) == 5
-
-
-def test_get_executable_raises_when_not_found() -> None:
+def test_facade_print_info_calls_service(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    service = Mock()
+    service.fetch_info.return_value = app_module.AppInfo(
+        name="gh",
+        source="formula",
+        description="GitHub CLI",
+        website=None,
+        version="1",
+        installed=True,
+    )
     with (
-        patch.object(app_module.shutil, "which", return_value=None),
-        pytest.raises(app_module.AppManagerError, match="not found"),
+        patch.object(facade, "get_service", return_value=service),
+        patch.object(facade.console, "print_info") as printer,
     ):
-        app_module._get_executable("nonexistent-binary-xyz")
+        facade.print_info(app="gh", source="formula")
+        printer.assert_called_once()
 
 
-def test_run_raises_on_nonzero_exit() -> None:
+def test_facade_prime_source_caches_formula(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    runner = Mock(spec=app_module.CommandRunner)
+    formula_service = app_module.BrewFormulaSourceService(runner=runner, console=facade.console)
+    grouped = [("dev", [app_module.AppRecord("dev", "gh", "formula", "")])]
+    options = app_module.SyncOptions(yes=False, enabled_sources={"formula"})
     with (
+        patch.object(facade, "get_service", return_value=formula_service),
+        patch.object(formula_service, "prime_linux_skip_cache") as prime,
+    ):
+        facade._prime_source_caches(grouped, options)
+        prime.assert_called_once_with(["gh"])
+
+
+def test_facade_install_declared_skips_disabled_source(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    uv_service = Mock()
+    uv_service.ensure_installed.return_value = app_module.OperationResult.ok("ok")
+    cask_service = Mock()
+    grouped = [
+        (
+            "cli",
+            [
+                app_module.AppRecord("cli", "httpie", "uv", ""),
+                app_module.AppRecord("cli", "chrome", "cask", ""),
+            ],
+        )
+    ]
+    options = app_module.SyncOptions(yes=False, enabled_sources={"uv"})
+
+    def service_for(source: str) -> object:
+        return {"uv": uv_service, "cask": cask_service}[source]
+
+    with patch.object(facade, "get_service", side_effect=service_for):
+        facade._install_declared(grouped, options)
+
+    uv_service.ensure_installed.assert_called_once_with("httpie")
+    cask_service.ensure_installed.assert_not_called()
+
+
+def test_facade_sync_unmanaged_no_missing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    uv_service = Mock()
+    uv_service.maintenance_key = "uv"
+    uv_service.managed_aliases.return_value = {"httpie"}
+    uv_service.find_unmanaged.return_value = []
+    grouped = [("cli", [app_module.AppRecord("cli", "httpie", "uv", "")])]
+    options = app_module.SyncOptions(yes=False, enabled_sources={"uv"})
+
+    with patch.object(facade, "get_service", return_value=uv_service):
+        facade._sync_unmanaged(grouped, options)
+
+    output = capsys.readouterr().out
+    assert "All uv-installed apps are present" in output
+
+
+def test_facade_sync_unmanaged_decline(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    uv_service = Mock()
+    uv_service.maintenance_key = "uv"
+    uv_service.managed_aliases.return_value = {"httpie"}
+    uv_service.find_unmanaged.return_value = [
+        app_module.UnmanagedApp(source="uv", identifier="orphan", display="orphan")
+    ]
+    grouped = [("cli", [app_module.AppRecord("cli", "httpie", "uv", "")])]
+    options = app_module.SyncOptions(yes=False, enabled_sources={"uv"})
+
+    with (
+        patch.object(facade, "get_service", return_value=uv_service),
+        patch.object(facade.console, "prompt_yes_no", return_value=False),
+    ):
+        facade._sync_unmanaged(grouped, options)
+
+    output = capsys.readouterr().out
+    assert "No apps were uninstalled" in output
+    uv_service.uninstall_unmanaged.assert_not_called()
+
+
+def test_facade_sync_unmanaged_uninstalls(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    uv_service = Mock()
+    uv_service.maintenance_key = "uv"
+    uv_service.managed_aliases.return_value = {"httpie"}
+    uv_service.find_unmanaged.return_value = [
+        app_module.UnmanagedApp(source="uv", identifier="orphan", display="orphan")
+    ]
+    uv_service.uninstall_unmanaged.return_value = app_module.OperationResult.ok("")
+    grouped = [("cli", [app_module.AppRecord("cli", "httpie", "uv", "")])]
+    options = app_module.SyncOptions(yes=True, enabled_sources={"uv"})
+
+    with patch.object(facade, "get_service", return_value=uv_service):
+        facade._sync_unmanaged(grouped, options)
+
+    uv_service.uninstall_unmanaged.assert_called_once_with("orphan")
+
+
+def test_facade_sync_unmanaged_handles_failure(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    mas_service = Mock()
+    mas_service.maintenance_key = "mas"
+    mas_service.managed_aliases.return_value = {"123"}
+    mas_service.find_unmanaged.return_value = [
+        app_module.UnmanagedApp(source="mas", identifier="999", display="Orphan (999)")
+    ]
+    mas_service.uninstall_unmanaged.return_value = app_module.OperationResult.failed("failed")
+
+    grouped = [("apple", [app_module.AppRecord("apple", "123", "mas", "")])]
+    options = app_module.SyncOptions(yes=True, enabled_sources={"mas"})
+
+    with patch.object(facade, "get_service", return_value=mas_service):
+        facade._sync_unmanaged(grouped, options)
+
+    assert "failed" in capsys.readouterr().out
+
+
+def test_facade_upgrade_sources_deduplicates_provider(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    cask = Mock()
+    cask.maintenance_key = "brew"
+    formula = Mock()
+    formula.maintenance_key = "brew"
+
+    def service_for(source: str) -> object:
+        return {"cask": cask, "formula": formula}[source]
+
+    with patch.object(facade, "get_service", side_effect=service_for):
+        facade._upgrade_sources(
+            app_module.SyncOptions(yes=True, enabled_sources={"cask", "formula"})
+        )
+
+    total_calls = cask.upgrade_all.call_count + formula.upgrade_all.call_count
+    assert total_calls == 1
+
+
+def test_facade_sync_apps_orchestrates(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "uv"\n')
+    with (
+        patch.object(facade, "_prime_source_caches") as prime,
+        patch.object(facade, "_install_declared") as install_declared,
+        patch.object(facade, "_sync_unmanaged") as sync_unmanaged,
+        patch.object(facade, "_upgrade_sources") as upgrade,
+    ):
+        facade.sync_apps(app_module.SyncOptions(yes=True, enabled_sources={"uv"}))
+    prime.assert_called_once()
+    install_declared.assert_called_once()
+    sync_unmanaged.assert_called_once()
+    upgrade.assert_called_once()
+
+
+def test_provider_sync_messages() -> None:
+    header, ok = app_module.AppManagerFacade._provider_sync_messages("brew")
+    assert "Homebrew" in header
+    assert "present" in ok
+
+
+def test_provider_sync_messages_default() -> None:
+    header, ok = app_module.AppManagerFacade._provider_sync_messages("custom")
+    assert "custom" in header
+    assert "custom" in ok
+
+
+def test_dispatcher_unknown_command_raises(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    dispatcher = app_module.CommandDispatcher(facade=facade)
+    with pytest.raises(app_module.AppManagerError, match="Unknown command"):
+        dispatcher.dispatch(argparse.Namespace(command="nope"))
+
+
+def test_add_command_executes_facade(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    with patch.object(facade, "add_app") as add:
+        cmd = app_module.AddAppCommand(facade=facade)
+        cmd.execute(
+            argparse.Namespace(
+                app="foo",
+                source="uv",
+                group="cli",
+                description="desc",
+                no_install=True,
+            )
+        )
+        add.assert_called_once()
+
+
+def test_remove_command_executes_facade(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    with patch.object(facade, "remove_app") as remove:
+        cmd = app_module.RemoveAppCommand(facade=facade)
+        cmd.execute(argparse.Namespace(app="foo", no_install=True))
+        remove.assert_called_once_with(app="foo", no_install=True)
+
+
+def test_list_command_executes_facade(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    with patch.object(facade, "list_apps") as list_apps:
+        cmd = app_module.ListAppsCommand(facade=facade)
+        cmd.execute(argparse.Namespace())
+        list_apps.assert_called_once()
+
+
+def test_info_command_executes_facade(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    with patch.object(facade, "print_info") as info:
+        cmd = app_module.InfoAppCommand(facade=facade)
+        cmd.execute(argparse.Namespace(app="gh", source="formula"))
+        info.assert_called_once_with(app="gh", source="formula")
+
+
+def test_sync_command_builds_options_and_executes_facade(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    args = argparse.Namespace(
+        command="sync",
+        yes=True,
+        install_cask=False,
+        install_formula=True,
+        install_uv=True,
+        install_mas=False,
+    )
+    with patch.object(facade, "sync_apps") as sync:
+        cmd = app_module.SyncAppsCommand(facade=facade)
+        cmd.execute(args)
+        sync.assert_called_once()
+        options = sync.call_args[0][0]
+        assert options.enabled_sources == {"formula", "uv"}
+
+
+def test_main_list_command(capsys: pytest.CaptureFixture[str]) -> None:
+    with (
+        patch.object(sys, "argv", ["app", "--apps-file", "apps.toml", "list"]),
         patch.object(
-            app_module.subprocess,
-            "run",
-            return_value=app_module.subprocess.CompletedProcess(
-                ["false"], 1, "", "command failed"
-            ),
+            app_module.AppsRepository, "load", return_value=tomlkit.parse('[x]\nfoo = "uv"\n')
         ),
-        pytest.raises(app_module.AppManagerError, match="Command failed"),
-    ):
-        app_module._run(["false"])
-
-
-def test_main_add_command_with_install(tmp_path: Path) -> None:
-    apps_file = tmp_path / "apps.toml"
-    argv = [
-        "app",
-        "--apps-file",
-        str(apps_file),
-        "add",
-        "httpie",
-        "uv",
-        "-g",
-        "cli",
-        "-d",
-        "desc",
-    ]
-    with (
-        patch.object(sys, "argv", argv),
-        patch.object(app_module, "install_app") as install,
-        patch.object(app_module, "uninstall_app") as uninstall,
     ):
         app_module.main()
-        install.assert_called_once()
-        uninstall.assert_not_called()
-
-
-def test_main_add_with_source_change_calls_uninstall(tmp_path: Path) -> None:
-    apps_file = tmp_path / "apps.toml"
-    apps_file.write_text('[cli]\nhttpie = "formula"\n')
-    argv = [
-        "app",
-        "--apps-file",
-        str(apps_file),
-        "add",
-        "httpie",
-        "uv",
-        "-g",
-        "cli",
-        "-d",
-        "desc",
-    ]
-    with (
-        patch.object(sys, "argv", argv),
-        patch.object(app_module, "install_app") as install,
-        patch.object(app_module, "uninstall_app") as uninstall,
-    ):
-        app_module.main()
-        install.assert_called_once()
-        uninstall.assert_called_once()
-        call_kwargs = uninstall.call_args[1]
-        assert call_kwargs["source"] == "formula"
-        assert call_kwargs["app"] == "httpie"
-
-
-def test_main_add_command(tmp_path: Path) -> None:
-    apps_file = tmp_path / "apps.toml"
-    argv = [
-        "app",
-        "--apps-file",
-        str(apps_file),
-        "add",
-        "httpie",
-        "uv",
-        "-g",
-        "cli",
-        "-d",
-        "desc",
-        "--no-install",
-    ]
-    with (
-        patch.object(sys, "argv", argv),
-        patch.object(app_module, "save_apps") as save,
-    ):
-        app_module.main()
-        save.assert_called_once()
-
-
-def test_main_remove_command_with_install() -> None:
-    doc = tomlkit.parse('[cli]\nhttpie = "uv"\n')
-    with (
-        patch.object(sys, "argv", ["app", "remove", "httpie"]),
-        patch.object(app_module, "load_apps", return_value=doc),
-        patch.object(app_module, "save_apps") as save,
-        patch.object(app_module, "uninstall_app") as uninstall,
-    ):
-        app_module.main()
-        save.assert_called_once()
-        uninstall.assert_called_once_with(doc, source="uv", app="httpie")
-
-
-def test_main_remove_command() -> None:
-    doc = tomlkit.parse('[cli]\nhttpie = "uv"\n')
-    with (
-        patch.object(sys, "argv", ["app", "remove", "httpie", "--no-install"]),
-        patch.object(app_module, "load_apps", return_value=doc),
-        patch.object(app_module, "save_apps") as save,
-    ):
-        app_module.main()
-        save.assert_called_once()
+    output = capsys.readouterr().out
+    assert "foo" in output or "No apps" in output
 
 
 def test_main_info_command(capsys: pytest.CaptureFixture[str]) -> None:
@@ -885,63 +907,22 @@ def test_main_info_command(capsys: pytest.CaptureFixture[str]) -> None:
                 apps_file=Path("apps.toml"),
             ),
         ),
-        patch.object(
-            app_module,
-            "load_apps",
-            return_value=tomlkit.parse('[dev]\ngh = "formula"\n'),
-        ),
-        patch.object(
-            app_module,
-            "fetch_app_info",
-            return_value=app_module.AppInfo(
-                name="gh",
-                source="formula",
-                description="GitHub CLI",
-                website="https://cli.github.com",
-                version="2.0",
-                installed=True,
-            ),
-        ),
+        patch.object(app_module.SourceRegistry, "create") as create,
     ):
+        service = Mock()
+        service.fetch_info.return_value = app_module.AppInfo(
+            name="gh",
+            source="formula",
+            description="GitHub CLI",
+            website="https://cli.github.com",
+            version="2.0",
+            installed=True,
+        )
+        create.return_value = service
         app_module.main()
     output = capsys.readouterr().out
     assert "gh" in output
     assert "formula" in output
-
-
-def test_main_sync_command() -> None:
-    with (
-        patch.object(
-            app_module,
-            "parse_args",
-            return_value=argparse.Namespace(
-                command="sync",
-                apps_file=Path("apps.toml"),
-                install_cask=True,
-                install_formula=True,
-                install_uv=True,
-                install_mas=True,
-            ),
-        ),
-        patch.object(app_module, "load_apps", return_value=tomlkit.document()),
-        patch.object(app_module, "sync_apps") as sync,
-    ):
-        app_module.main()
-        sync.assert_called_once()
-
-
-def test_main_list_command(capsys: pytest.CaptureFixture[str]) -> None:
-    with (
-        patch.object(sys, "argv", ["app", "list"]),
-        patch.object(
-            app_module,
-            "load_apps",
-            return_value=tomlkit.parse('[x]\nfoo = "uv"\n'),
-        ),
-    ):
-        app_module.main()
-    output = capsys.readouterr().out
-    assert "foo" in output or "No apps" in output
 
 
 def test_main_unknown_command_raises() -> None:
@@ -954,624 +935,467 @@ def test_main_unknown_command_raises() -> None:
                 apps_file=Path("apps.toml"),
             ),
         ),
-        patch.object(app_module, "load_apps", return_value=tomlkit.document()),
         pytest.raises(app_module.AppManagerError, match="Unknown command"),
     ):
         app_module.main()
 
 
-def test_infer_description_from_fetch() -> None:
-    with (
-        patch.object(
-            app_module,
-            "fetch_app_info",
-            return_value=app_module.AppInfo(
-                name="gh",
-                source="formula",
-                description="GitHub CLI",
-                website=None,
-                version=None,
-                installed=False,
-            ),
-        ),
-    ):
-        result = app_module.infer_description("formula", "gh", None, tomlkit.document())
-    assert result == "GitHub CLI"
-
-
-def test_infer_description_raises_when_unknown() -> None:
-    with (
-        patch.object(
-            app_module,
-            "fetch_app_info",
-            return_value=app_module.AppInfo(
-                name="gh",
-                source="formula",
-                description=None,
-                website=None,
-                version=None,
-                installed=False,
-            ),
-        ),
-        pytest.raises(
-            app_module.AppManagerError,
-            match="Could not determine description",
-        ),
-    ):
-        app_module.infer_description("formula", "gh", None, tomlkit.document())
-
-
-def test_list_installed_uv() -> None:
-    with (
-        patch.object(app_module, "_get_executable", return_value="uv"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(
-                stdout="httpie  v1.0.0\n-rust-something\n",
-                returncode=0,
-            ),
-        ),
-    ):
-        result = app_module._list_installed_uv()
-    assert "httpie" in result
-
-
-def test_list_installed_mas() -> None:
-    with (
-        patch.object(app_module, "_get_executable", return_value="mas"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(
-                stdout="409203825 Numbers (1.0)\n",
-                returncode=0,
-            ),
-        ),
-    ):
-        result = app_module._list_installed_mas()
-    assert "409203825" in result
-    assert result["409203825"] == "Numbers"
-
-
-def test_print_missing_apps(capsys: pytest.CaptureFixture[str]) -> None:
-    app_module._print_missing_apps("Header", ["item1", "item2"])
-    output = capsys.readouterr().out
-    assert "Header" in output
-    assert "item1" in output
-    assert "item2" in output
-
-
-def test_sanitize_toml_inline_comment() -> None:
-    assert app_module.sanitize_toml_inline_comment("a\nb\nc") == "a b c"
-
-
-def test_iter_apps_by_source() -> None:
-    doc = tomlkit.parse('[dev]\ngh = "formula"\n[x]\nfoo = "cask"\n')
-    by_source = app_module._iter_apps_by_source(doc)
-    assert "formula" in by_source
-    assert "cask" in by_source
-    assert ("dev", "gh") in by_source["formula"]
-    assert ("x", "foo") in by_source["cask"]
-
-
-def test_source_enabled() -> None:
-    args = SimpleNamespace(install_cask=True, install_formula=False)
-    assert app_module._source_enabled("cask", args)
-    assert not app_module._source_enabled("formula", args)
-
-
-def test_enabled_sources() -> None:
-    args = SimpleNamespace(
-        install_cask=True,
-        install_formula=True,
-        install_uv=False,
-        install_mas=True,
+def test_add_app_outcome_source_changed_property() -> None:
+    outcome = app_module.AddAppOutcome(
+        app_key="foo",
+        group="dev",
+        description="desc",
+        existed=True,
+        moved_from=None,
+        previous_source="formula",
     )
-    sources = app_module._enabled_sources(args)
-    assert "cask" in sources
-    assert "formula" in sources
-    assert "mas" in sources
-    assert "uv" not in sources
+    assert outcome.source_changed
 
 
-def test_build_installed_state() -> None:
-    args = SimpleNamespace(
-        install_cask=True,
-        install_formula=True,
-        install_uv=True,
-        install_mas=True,
-    )
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout="", returncode=0),
-        ),
-        patch.object(app_module, "_list_installed_uv", return_value=[]),
-        patch.object(app_module, "_list_installed_mas", return_value={}),
-    ):
-        state = app_module._build_installed_state(args)
-    assert state.casks == set()
-    assert state.formulas == set()
-    assert state.uv == set()
-    assert state.mas == {}
+def test_command_runner_get_executable_success() -> None:
+    runner = app_module.CommandRunner()
+    with patch.object(app_module.shutil, "which", return_value="/bin/echo"):
+        assert runner.get_executable("echo") == "/bin/echo"
 
 
-def test_install_declared_apps_skips_disabled_source() -> None:
-    doc = tomlkit.parse('[cli]\nhttpie = "uv"\n[casks]\nchrome = "cask"\n')
-    args = SimpleNamespace(
-        install_cask=False,
-        install_formula=True,
-        install_uv=True,
-        install_mas=True,
-    )
-    state = app_module.InstalledState(casks=set(), formulas=set(), uv=set(), mas={})
-    with patch.object(app_module, "_install_from_source") as install_from:
-        app_module._install_declared_apps(doc, args, state)
-        install_from.assert_called_once_with(app="httpie", source="uv", state=state)
+def test_command_runner_run_success() -> None:
+    runner = app_module.CommandRunner()
+    completed = app_module.subprocess.CompletedProcess(["echo"], 0, "ok", "")
+    with patch.object(app_module.subprocess, "run", return_value=completed):
+        result = runner.run(["echo"])
+    assert result.stdout == "ok"
 
 
-def test_install_declared_apps() -> None:
-    doc = tomlkit.parse('[cli]\nhttpie = "uv"\n')
-    args = SimpleNamespace(
-        install_cask=True,
-        install_formula=True,
-        install_uv=True,
-        install_mas=True,
-    )
-    state = app_module.InstalledState(casks=set(), formulas=set(), uv=set(), mas={})
-    with (
-        patch.object(app_module, "_install_from_source") as install_from,
-    ):
-        app_module._install_declared_apps(doc, args, state)
-        install_from.assert_called_once_with(app="httpie", source="uv", state=state)
+def test_console_paint_styles_when_tty() -> None:
+    console = app_module.Console()
+    with patch.object(app_module.sys.stdout, "isatty", return_value=True):
+        rendered = console.paint("hello", app_module.Ansi.GREEN, print_it=False)
+    assert "\x1b[" in rendered
 
 
-def test_get_macos_only_formulas_returns_macos_only_formulas() -> None:
-    brew_json = json.dumps({
-        "formulae": [
-            {
-                "name": "macos-only-tool",
-                "full_name": "homebrew/core/macos-only-tool",
-                "requirements": [{"name": "macos"}],
-                "bottle": {
-                    "stable": {
-                        "files": {"arm64_monterey": {}, "x86_64_sonoma": {}},
-                    },
-                },
-            },
-        ],
-    })
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout=brew_json, returncode=0, stderr=""),
-        ),
-    ):
-        result = app_module._get_macos_only_formulas(["macos-only-tool"])
-    assert "macos-only-tool" in result
-    assert "homebrew/core/macos-only-tool" in result
-
-
-def test_get_macos_only_formulas_excludes_linux_capable() -> None:
-    brew_json = json.dumps({
-        "formulae": [
-            {
-                "name": "linux-tool",
-                "full_name": "homebrew/core/linux-tool",
-                "requirements": [],
-                "bottle": {
-                    "stable": {
-                        "files": {"x86_64_linux": {}, "arm64_linux": {}},
-                    },
-                },
-            },
-        ],
-    })
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout=brew_json, returncode=0, stderr=""),
-        ),
-    ):
-        result = app_module._get_macos_only_formulas(["linux-tool"])
-    assert result == set()
-
-
-def test_get_macos_only_formulas_empty_list() -> None:
-    result = app_module._get_macos_only_formulas([])
-    assert result == set()
-
-
-def test_get_macos_only_formulas_invalid_json_returns_empty() -> None:
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout="invalid json", returncode=1, stderr=""),
-        ),
-    ):
-        result = app_module._get_macos_only_formulas(["foo"])
-    assert result == set()
-
-
-def test_get_macos_only_formulas_batches_multiple_formulas() -> None:
-    brew_json = json.dumps({
-        "formulae": [
-            {
-                "name": "macos-tool",
-                "full_name": "homebrew/core/macos-tool",
-                "requirements": [{"name": "macos"}],
-                "bottle": {"stable": {"files": {"arm64_monterey": {}}}},
-            },
-            {
-                "name": "linux-tool",
-                "full_name": "homebrew/core/linux-tool",
-                "requirements": [],
-                "bottle": {"stable": {"files": {"x86_64_linux": {}}}},
-            },
-            {
-                "name": "another-macos-tool",
-                "full_name": "homebrew/core/another-macos-tool",
-                "requirements": [{"name": "macos"}],
-                "bottle": {"stable": {"files": {"x86_64_monterey": {}}}},
-            },
-        ],
-    })
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout=brew_json, returncode=0, stderr=""),
-        ),
-    ):
-        result = app_module._get_macos_only_formulas([
-            "macos-tool",
-            "linux-tool",
-            "another-macos-tool",
-        ])
-    assert "macos-tool" in result
-    assert "homebrew/core/macos-tool" in result
-    assert "another-macos-tool" in result
-    assert "homebrew/core/another-macos-tool" in result
-    assert "linux-tool" not in result
-    assert "homebrew/core/linux-tool" not in result
-
-
-def test_install_declared_apps_skips_macos_only_on_linux(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    doc = tomlkit.parse('[cli]\nmacos-tool = "formula"\nlinux-tool = "formula"\n')
-    args = SimpleNamespace(
-        install_cask=True,
-        install_formula=True,
-        install_uv=True,
-        install_mas=True,
-    )
-    state = app_module.InstalledState(casks=set(), formulas=set(), uv=set(), mas={})
-    brew_json = json.dumps({
-        "formulae": [
-            {
-                "name": "macos-tool",
-                "full_name": "homebrew/core/macos-tool",
-                "requirements": [{"name": "macos"}],
-                "bottle": {"stable": {"files": {"arm64_monterey": {}}}},
-            },
-            {
-                "name": "linux-tool",
-                "full_name": "homebrew/core/linux-tool",
-                "requirements": [],
-                "bottle": {"stable": {"files": {"x86_64_linux": {}}}},
-            },
-        ],
-    })
-    with (
-        patch.object(app_module, "platform") as platform_mock,
-        patch.object(platform_mock, "system", return_value="Linux"),
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout=brew_json, returncode=0, stderr=""),
-        ),
-        patch.object(app_module, "_install_from_source") as install_from,
-    ):
-        app_module._install_declared_apps(doc, args, state)
-    output = capsys.readouterr().out
-    assert "Skipping macos-tool (macOS only)" in output
-    assert "linux-tool" not in output or "Skipping" not in output
-    install_from.assert_called_once_with(app="linux-tool", source="formula", state=state)
-
-
-def test_install_app_skips_macos_only_on_linux(capsys: pytest.CaptureFixture[str]) -> None:
-    doc = tomlkit.parse("")
-    brew_json = json.dumps({
-        "formulae": [
-            {
-                "name": "macos-only-tool",
-                "full_name": "homebrew/core/macos-only-tool",
-                "requirements": [{"name": "macos"}],
-                "bottle": {"stable": {"files": {"arm64_monterey": {}}}},
-            },
-        ],
-    })
-    with (
-        patch.object(app_module, "platform") as platform_mock,
-        patch.object(platform_mock, "system", return_value="Linux"),
-        patch.object(
-            app_module,
-            "fetch_app_info",
-            return_value=app_module.AppInfo(
-                name="macos-only-tool",
-                source="formula",
-                description="A tool",
-                website=None,
-                version=None,
-                installed=False,
-            ),
-        ),
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout=brew_json, returncode=0, stderr=""),
-        ),
-    ):
-        app_module.install_app(doc, source="formula", app="macos-only-tool")
-    output = capsys.readouterr().out
-    assert "Skipping macos-only-tool (macOS only)" in output
-
-
-def test_confirm_uninstall_auto_yes() -> None:
-    assert app_module._confirm_uninstall(auto_yes=True)
-
-
-def test_confirm_uninstall_prompts_no() -> None:
-    with patch.object(builtins, "input", return_value="n"):
-        result = app_module._confirm_uninstall(auto_yes=False)
-    assert not result
-
-
-def test_confirm_uninstall_prompts_yes() -> None:
-    with patch.object(builtins, "input", return_value="y"):
-        result = app_module._confirm_uninstall(auto_yes=False)
-    assert result
-
-
-def test_sync_homebrew_no_missing() -> None:
-    apps_by_source = {
-        "cask": [("g1", "chrome")],
-        "formula": [("g1", "gh")],
-        "uv": [],
-        "mas": [],
-    }
-    args = SimpleNamespace(
-        install_cask=True,
-        install_formula=True,
-        install_uv=True,
-        install_mas=True,
-        yes=False,
-    )
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout="", returncode=0),
-        ),
-        patch.object(app_module, "_confirm_uninstall", return_value=True),
-    ):
-        app_module._sync_homebrew(apps_by_source, args)
-
-
-def test_sync_uv_no_missing() -> None:
-    apps_by_source = {"cask": [], "formula": [], "uv": [("cli", "httpie")], "mas": []}
-    args = SimpleNamespace(install_uv=True, yes=False)
-    with (
-        patch.object(app_module, "_list_installed_uv", return_value=["httpie"]),
-        patch.object(app_module, "_confirm_uninstall", return_value=True),
-    ):
-        app_module._sync_uv(apps_by_source, args)
-
-
-def test_sync_uv_disabled_returns_early() -> None:
-    args = SimpleNamespace(install_uv=False)
-    with patch.object(app_module, "_list_installed_uv") as list_uv:
-        app_module._sync_uv({"cask": [], "formula": [], "uv": [], "mas": []}, args)
-        list_uv.assert_not_called()
-
-
-def test_sync_mas_disabled_returns_early() -> None:
-    args = SimpleNamespace(install_mas=False)
-    with patch.object(app_module, "_list_installed_mas") as list_mas:
-        app_module._sync_mas({"cask": [], "formula": [], "uv": [], "mas": []}, args)
-        list_mas.assert_not_called()
-
-
-def test_sync_mas_no_missing() -> None:
-    apps_by_source = {
-        "cask": [],
-        "formula": [],
-        "uv": [],
-        "mas": [("apple", "409203825")],
-    }
-    args = SimpleNamespace(install_mas=True, yes=False)
-    with (
-        patch.object(
-            app_module,
-            "_list_installed_mas",
-            return_value={"409203825": "Numbers"},
-        ),
-        patch.object(app_module, "_confirm_uninstall", return_value=True),
-    ):
-        app_module._sync_mas(apps_by_source, args)
-
-
-def test_sync_homebrew_with_missing_uninstalls(capsys: pytest.CaptureFixture[str]) -> None:
-    apps_by_source = {
-        "cask": [],
-        "formula": [],
-        "uv": [],
-        "mas": [],
-    }
-    args = SimpleNamespace(
-        install_cask=True,
-        install_formula=True,
-        install_uv=True,
-        install_mas=True,
-        yes=True,
-    )
-    run_results = [
-        SimpleNamespace(stdout="orphan-formula", returncode=0),
-        SimpleNamespace(stdout="orphan-cask", returncode=0),
-        SimpleNamespace(stdout="", returncode=0),
-        SimpleNamespace(stdout="", returncode=0),
-    ]
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            side_effect=run_results,
-        ),
-    ):
-        app_module._sync_homebrew(apps_by_source, args)
-    output = capsys.readouterr().out
-    assert "Uninstalling" in output or "orphan" in output or "missing" in output.lower()
-
-
-def test_sync_confirm_decline(capsys: pytest.CaptureFixture[str]) -> None:
-    apps_by_source = {"cask": [], "formula": [], "uv": [], "mas": []}
-    args = SimpleNamespace(
-        install_cask=True,
-        install_formula=True,
-        install_uv=True,
-        install_mas=True,
-        yes=False,
-    )
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(stdout="orphan", returncode=0),
-        ),
-        patch.object(app_module, "_confirm_uninstall", return_value=False),
-    ):
-        app_module._sync_homebrew(apps_by_source, args)
-    assert "No apps were uninstalled" in capsys.readouterr().out
-
-
-def test_sync_uv_decline_skips_uninstall(capsys: pytest.CaptureFixture[str]) -> None:
-    apps_by_source = {"cask": [], "formula": [], "uv": [], "mas": []}
-    args = SimpleNamespace(install_uv=True, yes=False)
-    with (
-        patch.object(app_module, "_list_installed_uv", return_value=["orphan"]),
-        patch.object(app_module, "_confirm_uninstall", return_value=False),
-    ):
-        app_module._sync_uv(apps_by_source, args)
-    assert "No apps were uninstalled" in capsys.readouterr().out
-
-
-def test_sync_uv_with_missing_uninstalls() -> None:
-    apps_by_source = {"cask": [], "formula": [], "uv": [], "mas": []}
-    args = SimpleNamespace(install_uv=True, yes=True)
-    with (
-        patch.object(app_module, "_list_installed_uv", return_value=["orphan-tool"]),
-        patch.object(app_module, "_get_executable", return_value="uv"),
-        patch.object(app_module, "_run") as run,
-    ):
-        app_module._sync_uv(apps_by_source, args)
-        run.assert_called()
-
-
-def test_sync_mas_with_missing_uninstalls() -> None:
-    apps_by_source = {"cask": [], "formula": [], "uv": [], "mas": []}
-    args = SimpleNamespace(install_mas=True, yes=True)
-    with (
-        patch.object(
-            app_module,
-            "_list_installed_mas",
-            return_value={"999": "Orphan App"},
-        ),
-        patch.object(app_module, "_get_executable", return_value="mas"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(returncode=0),
-        ) as run,
-    ):
-        app_module._sync_mas(apps_by_source, args)
-        run.assert_called()
-
-
-def test_sync_mas_uninstall_failure(capsys: pytest.CaptureFixture[str]) -> None:
-    apps_by_source = {"cask": [], "formula": [], "uv": [], "mas": []}
-    args = SimpleNamespace(install_mas=True, yes=True)
-    with (
-        patch.object(
-            app_module,
-            "_list_installed_mas",
-            return_value={"999": "Orphan App"},
-        ),
-        patch.object(app_module, "_get_executable", return_value="mas"),
-        patch.object(
-            app_module,
-            "_run",
-            return_value=SimpleNamespace(returncode=1),
-        ),
-    ):
-        app_module._sync_mas(apps_by_source, args)
-    output = capsys.readouterr().out
-    assert "Failed" in output or "manual" in output.lower()
-
-
-def test_update_and_cleanup() -> None:
-    args = SimpleNamespace(
-        install_cask=True,
-        install_formula=True,
-        install_uv=True,
-        install_mas=True,
-    )
-    with (
-        patch.object(app_module, "_get_executable", return_value="brew"),
-        patch.object(app_module, "_run") as run,
-    ):
-        app_module._update_and_cleanup(args)
-        assert run.call_count >= 3
-
-
-def test_sync_apps_orchestrates_all_steps() -> None:
-    with (
-        patch.object(
-            app_module,
-            "_iter_apps_by_source",
-            return_value={"cask": [], "formula": [], "uv": [], "mas": []},
-        ),
-        patch.object(app_module, "_build_installed_state"),
-        patch.object(app_module, "_install_declared_apps") as install_declared,
-        patch.object(app_module, "_sync_homebrew") as sync_homebrew,
-        patch.object(app_module, "_sync_uv") as sync_uv,
-        patch.object(app_module, "_sync_mas") as sync_mas,
-        patch.object(app_module, "_update_and_cleanup") as cleanup,
-    ):
-        args = SimpleNamespace(
-            install_cask=True,
-            install_formula=True,
-            install_uv=True,
-            install_mas=True,
+def test_console_render_records_with_data(capsys: pytest.CaptureFixture[str]) -> None:
+    console = app_module.Console()
+    grouped = [
+        (
+            "cli",
+            [
+                app_module.AppRecord("cli", "httpie", "uv", "http client"),
+                app_module.AppRecord("cli", "gh", "formula", "github cli"),
+            ],
         )
-        app_module.sync_apps(tomlkit.document(), args)
-        install_declared.assert_called_once()
-        sync_homebrew.assert_called_once()
-        sync_uv.assert_called_once()
-        sync_mas.assert_called_once()
-        cleanup.assert_called_once()
+    ]
+    console.render_records(grouped)
+    output = capsys.readouterr().out
+    assert "httpie" in output
+    assert "Source" in output
+
+
+def test_console_emit_operation_branches(capsys: pytest.CaptureFixture[str]) -> None:
+    console = app_module.Console()
+    console.emit_operation(app_module.OperationResult.failed("bad"))
+    console.emit_operation(app_module.OperationResult.skipped_result("skip"))
+    output = capsys.readouterr().out
+    assert "bad" in output
+    assert "skip" in output
+
+
+def test_console_helper_methods() -> None:
+    assert app_module.Console._truncate("hello", 3) == "he…"
+    assert app_module.Console._truncate("x", 1) == "x"
+    assert not app_module.Console._truncate("x", 0)
+    assert app_module.Console._visible_len("\x1b[31mred\x1b[0m") == 3
+    console = app_module.Console()
+    padded = console._ljust_ansi("\x1b[1mab\x1b[0m", 5)
+    assert console._visible_len(padded) == 5
+
+
+def test_repository_remove_app_from_group_when_group_not_table(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    document = tomlkit.document()
+    document["dev"] = "not table"
+    assert not facade.repository.remove_app_from_group(document, group="dev", app_key="foo")
+
+
+def test_repository_remove_app_from_group_when_key_missing(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"\n')
+    document = facade.repository.load()
+    assert not facade.repository.remove_app_from_group(document, group="dev", app_key="bar")
+
+
+def test_repository_add_or_update_raises_for_non_table_group(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    document = tomlkit.document()
+    document["dev"] = "invalid"
+    with pytest.raises(app_module.AppManagerError, match="is not a table"):
+        facade.repository.add_or_update(
+            document,
+            app="foo",
+            source="uv",
+            group="dev",
+            description="d",
+        )
+
+
+def test_repository_remove_returns_not_removed_when_internal_remove_fails(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"\n')
+    document = facade.repository.load()
+    with patch.object(facade.repository, "remove_app_from_group", return_value=False):
+        outcome = facade.repository.remove(document, "foo")
+    assert not outcome.removed
+
+
+def test_repository_list_records_and_item_helpers(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "formula"  # x\n')
+    document = facade.repository.load()
+    records = facade.repository.list_records(document)
+    assert len(records) == 1
+    assert records[0].description == "x"
+
+    class DummyItem:
+        def __str__(self) -> str:
+            return '"foo"'
+
+    assert facade.repository.get_item_value(DummyItem()) == "foo"
+    assert not facade.repository.get_item_comment(DummyItem())
+
+
+def test_source_registry_duplicate_registration_raises() -> None:
+    def _fetch_info(_self: object, *_args: object, **_kwargs: object) -> None:
+        return None
+
+    def _list_installed(_self: object) -> dict[str, str]:
+        return {}
+
+    def _install(_self: object, _app: str) -> None:
+        return None
+
+    def _uninstall(_self: object, _app: str) -> app_module.OperationResult:
+        return app_module.OperationResult.ok("")
+
+    def _upgrade_all(_self: object) -> None:
+        return None
+
+    def _find_unmanaged(_self: object, _managed: set[str]) -> list[app_module.UnmanagedApp]:
+        return []
+
+    with pytest.raises(app_module.AppManagerError, match="Duplicate source registration"):
+        type(
+            "AnotherUv",
+            (app_module.BaseSourceService,),
+            {
+                "source_name": "uv",
+                "install_flag": "install_uv",
+                "sync_toggle_help": "x",
+                "fetch_info": _fetch_info,
+                "list_installed": _list_installed,
+                "install": _install,
+                "uninstall": _uninstall,
+                "upgrade_all": _upgrade_all,
+                "find_unmanaged": _find_unmanaged,
+            },
+        )
+
+
+def test_base_source_properties_and_helpers() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    uv = app_module.UvSourceService(runner=runner, console=app_module.Console())
+    assert uv.maintenance_key == "uv"
+
+    mas = app_module.MasSourceService(runner=runner, console=app_module.Console())
+    assert mas.managed_aliases("x") == {"x"}
+    assert mas.pre_install_check("x") is None
+
+
+def test_base_source_is_installed_uses_aliases() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    with patch.object(service, "list_installed", return_value={"httpie": "httpie"}):
+        assert service.is_installed("homebrew/core/httpie")
+
+
+def test_base_source_ensure_installed_preflight_skip() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    with (
+        patch.object(service, "is_installed", return_value=False),
+        patch.object(
+            service,
+            "pre_install_check",
+            return_value=app_module.OperationResult.skipped_result("Skipping foo (macOS only)"),
+        ),
+    ):
+        result = service.ensure_installed("foo")
+    assert result.skipped
+
+
+def test_base_source_ensure_uninstalled_returns_failure() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.MasSourceService(runner=runner, console=app_module.Console())
+    with (
+        patch.object(service, "is_installed", return_value=True),
+        patch.object(service, "uninstall", return_value=app_module.OperationResult.failed("no")),
+    ):
+        result = service.ensure_uninstalled("x")
+    assert not result.success
+
+
+def test_brew_source_methods_install_uninstall_upgrade_and_aliases() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    assert service.managed_aliases("homebrew/core/gh") == {"homebrew/core/gh", "gh"}
+    service.install("gh")
+    service.uninstall("gh")
+    service.upgrade_all()
+    assert runner.run.call_count >= 5
+
+
+def test_brew_extract_install_state_with_list() -> None:
+    installed, version = app_module.BrewSourceService._extract_install_state({
+        "installed": [{"version": "1.2.3"}]
+    })
+    assert installed
+    assert version == "1.2.3"
+
+
+def test_formula_prime_cache_darwin_noop() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    with (
+        patch.object(app_module.platform, "system", return_value="Darwin"),
+        patch.object(service, "get_macos_only_formulas") as get_macos_only,
+    ):
+        service.prime_linux_skip_cache(["gh"])
+        get_macos_only.assert_not_called()
+
+
+def test_formula_pre_install_check_without_cache_calls_lookup() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    with (
+        patch.object(app_module.platform, "system", return_value="Linux"),
+        patch.object(service, "get_macos_only_formulas", return_value=set()) as get_macos_only,
+    ):
+        result = service.pre_install_check("gh")
+    assert result is None
+    get_macos_only.assert_called_once_with(["gh"])
+
+
+def test_formula_get_macos_only_formulas_empty_returns_empty() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    assert service.get_macos_only_formulas([]) == set()
+
+
+def test_formula_get_macos_only_formulas_non_list_returns_empty() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(stdout=json.dumps({"formulae": {}}))
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    assert service.get_macos_only_formulas(["x"]) == set()
+
+
+def test_formula_entry_is_macos_only_edge_cases() -> None:
+    assert app_module.BrewFormulaSourceService._formula_entry_is_macos_only({}) == set()
+    assert (
+        app_module.BrewFormulaSourceService._formula_entry_is_macos_only({
+            "requirements": [{"name": "macos"}],
+            "bottle": {"stable": {"files": []}},
+        })
+        == set()
+    )
+    assert (
+        app_module.BrewFormulaSourceService._formula_entry_is_macos_only({
+            "requirements": [{"name": "macos"}],
+            "bottle": {"stable": {"files": {"x86_64_linux": {}}}},
+        })
+        == set()
+    )
+
+
+def test_uv_fetch_info_ignores_short_lines() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "uv"
+    runner.run.return_value = make_result(stdout="badline\n")
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+    info = service.fetch_info("httpie", repo=Mock(), document=tomlkit.document())
+    assert not info.installed
+
+
+def test_uv_install_uninstall_upgrade() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "uv"
+    runner.run.return_value = make_result()
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+    service.install("httpie")
+    service.uninstall("httpie")
+    service.upgrade_all()
+    assert runner.run.call_count == 3
+
+
+def test_mas_list_installed_skips_invalid_lines() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "mas"
+    runner.run.return_value = make_result(stdout="invalid\n409203825 Numbers (1.0)\n")
+    service = app_module.MasSourceService(runner=runner, console=app_module.Console())
+    installed = service.list_installed()
+    assert "409203825" in installed
+
+
+def test_mas_install_upgrade_and_successful_uninstall() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "mas"
+    runner.run.return_value = make_result(returncode=0)
+    service = app_module.MasSourceService(runner=runner, console=app_module.Console())
+    service.install("123")
+    result = service.uninstall("123")
+    service.upgrade_all()
+    assert result.success
+    assert runner.run.call_count == 3
+
+
+def test_mas_find_unmanaged() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "mas"
+    runner.run.return_value = make_result(stdout="1 One (1.0)\n2 Two (1.0)\n")
+    service = app_module.MasSourceService(runner=runner, console=app_module.Console())
+    missing = service.find_unmanaged({"1"})
+    assert [item.identifier for item in missing] == ["2"]
+
+
+def test_facade_get_service_caches_instances(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, runner=Mock(spec=app_module.CommandRunner))
+    with patch.object(app_module.SourceRegistry, "create") as create:
+        create.return_value = Mock()
+        first = facade.get_service("uv")
+        second = facade.get_service("uv")
+    assert first is second
+    create.assert_called_once()
+
+
+def test_facade_remove_app_no_install_returns_early(tmp_path: Path) -> None:
+    facade, apps_file, _ = build_facade(tmp_path, content='[cli]\nhttpie = "uv"\n')
+    with patch.object(facade, "get_service") as get_service:
+        facade.remove_app(app="httpie", no_install=True)
+        get_service.assert_not_called()
+    assert "httpie" not in apps_file.read_text()
+
+
+def test_facade_resolve_or_pick_group_without_group(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    with patch.object(facade, "pick_group_interactively", return_value="tools") as pick:
+        result = facade._resolve_or_pick_group(tomlkit.document(), None)
+    assert result == "tools"
+    pick.assert_called_once()
+
+
+def test_facade_pick_group_interactively_handles_empty_new_group_name(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    with (
+        patch.object(app_module.sys.stdin, "isatty", return_value=True),
+        patch.object(builtins, "input", side_effect=["", "first"]),
+    ):
+        result = facade.pick_group_interactively(tomlkit.document())
+    assert result == "first"
+
+
+def test_facade_pick_group_interactively_retries_invalid_number(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content="[dev]\n[tools]\n")
+    document = facade.repository.load()
+    with (
+        patch.object(app_module.sys.stdin, "isatty", return_value=True),
+        patch.object(builtins, "input", side_effect=["99", "1"]),
+    ):
+        result = facade.pick_group_interactively(document)
+    assert result == "dev"
+
+
+def test_facade_pick_group_interactively_keyboard_interrupt_raises(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content="[dev]\n")
+    document = facade.repository.load()
+    with (
+        patch.object(app_module.sys.stdin, "isatty", return_value=True),
+        patch.object(builtins, "input", side_effect=KeyboardInterrupt),
+        pytest.raises(app_module.AppManagerError, match="No group selected"),
+    ):
+        facade.pick_group_interactively(document)
+
+
+def test_facade_infer_description_raises_when_source_has_none(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    service = Mock()
+    service.fetch_info.return_value = app_module.AppInfo(
+        name="x",
+        source="formula",
+        description=None,
+        website=None,
+        version=None,
+        installed=False,
+    )
+    with (
+        patch.object(facade, "get_service", return_value=service),
+        pytest.raises(app_module.AppManagerError, match="Could not determine description"),
+    ):
+        facade._infer_description(
+            source="formula",
+            app="x",
+            description=None,
+            document=tomlkit.document(),
+        )
+
+
+def test_facade_prime_source_caches_returns_when_formula_disabled(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    with patch.object(facade, "get_service") as get_service:
+        facade._prime_source_caches([], app_module.SyncOptions(yes=False, enabled_sources={"uv"}))
+        get_service.assert_not_called()
+
+
+def test_facade_prime_source_caches_returns_when_service_not_formula_type(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    with patch.object(facade, "get_service", return_value=Mock()):
+        facade._prime_source_caches(
+            [], app_module.SyncOptions(yes=False, enabled_sources={"formula"})
+        )
+
+
+def test_facade_install_declared_skip_message_branch(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    service = Mock()
+    service.ensure_installed.return_value = app_module.OperationResult.skipped_result(
+        "Skipping macos-tool (macOS only)"
+    )
+    grouped = [("cli", [app_module.AppRecord("cli", "macos-tool", "formula", "")])]
+    with patch.object(facade, "get_service", return_value=service):
+        facade._install_declared(
+            grouped, app_module.SyncOptions(yes=False, enabled_sources={"formula"})
+        )
+    service.ensure_installed.assert_called_once()
+
+
+def test_facade_sync_unmanaged_ignores_records_from_other_sources(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    uv_service = Mock()
+    uv_service.maintenance_key = "uv"
+    uv_service.managed_aliases.return_value = {"httpie"}
+    uv_service.find_unmanaged.return_value = []
+    grouped = [
+        (
+            "mixed",
+            [
+                app_module.AppRecord("mixed", "httpie", "uv", ""),
+                app_module.AppRecord("mixed", "gh", "formula", ""),
+            ],
+        )
+    ]
+    with patch.object(facade, "get_service", return_value=uv_service):
+        facade._sync_unmanaged(grouped, app_module.SyncOptions(yes=False, enabled_sources={"uv"}))
+
+
+def test_parse_args_raises_when_no_sources_registered() -> None:
+    with (
+        patch.object(app_module.SourceRegistry, "source_names", return_value=[]),
+        pytest.raises(app_module.AppManagerError, match="No sources are registered"),
+    ):
+        app_module.parse_args()

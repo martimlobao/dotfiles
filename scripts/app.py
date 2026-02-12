@@ -24,6 +24,8 @@ By default, ``app add`` installs the app and ``app remove`` uninstalls it. Use
 ``--no-install`` to skip these actions and only update ``apps.toml``.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -32,32 +34,44 @@ import re
 import shutil
 import subprocess  # noqa: S404
 import sys
-from collections.abc import Iterable, Iterator
+from abc import ABC, abstractmethod
+from collections import OrderedDict
 from dataclasses import dataclass
+from operator import itemgetter
 from pathlib import Path
+from typing import TYPE_CHECKING, ClassVar
 
 import tomlkit
 from tomlkit.items import Item, Table
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+
 
 type JSON = dict[str, JSON] | list[JSON] | str | int | float | bool | None
 
 DOTPATH: Path = Path(os.environ.get("DOTPATH", Path(__file__).resolve().parent.parent))
 APPS_TOML: Path = DOTPATH / "apps.toml"
-APP_SOURCES: frozenset[str] = frozenset({"uv", "cask", "formula", "mas"})
-SOURCE_FLAG_ARGS: dict[str, str] = {
-    "cask": "install_cask",
-    "formula": "install_formula",
-    "uv": "install_uv",
-    "mas": "install_mas",
-}
 
 
 class AppManagerError(Exception):
-    """Custom exception for app management errors."""
+    """Raised for expected, user-facing app-management failures."""
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
+class AppRecord:
+    """Normalized app record from apps.toml."""
+
+    group: str
+    key: str
+    source: str
+    description: str
+
+
+@dataclass(slots=True, frozen=True)
 class AppInfo:
+    """Resolved app information from an upstream source."""
+
     name: str
     source: str
     description: str | None
@@ -66,46 +80,1548 @@ class AppInfo:
     installed: bool
 
 
-@dataclass
-class InstalledState:
-    casks: set[str]
-    formulas: set[str]
-    uv: set[str]
-    mas: dict[str, str]
+@dataclass(slots=True, frozen=True)
+class SourceConfig:
+    """CLI configuration for a source strategy."""
+
+    name: str
+    install_flag: str
+    sync_help: str
 
 
-def _get_executable(name: str) -> str:
-    path: str | None = shutil.which(name)
-    if not path:
-        raise AppManagerError(f"Required executable not found on PATH: {name}")
-    return path
+@dataclass(slots=True, frozen=True)
+class SyncOptions:
+    """Runtime options for sync execution."""
+
+    yes: bool
+    enabled_sources: set[str]
 
 
-def _run(
-    command: list[str],
-    *,
-    check: bool = True,
-    capture_output: bool = True,
-) -> subprocess.CompletedProcess[str]:
-    result: subprocess.CompletedProcess[str] = subprocess.run(  # noqa: S603
-        command,
-        check=False,
-        text=True,
-        capture_output=capture_output,
-    )
-    if check and result.returncode != 0:
-        stderr: str = (result.stderr or "").strip()
-        stdout: str = (result.stdout or "").strip()
-        details: str = stderr or stdout or f"Command failed with exit code {result.returncode}"
-        raise AppManagerError(f"Command failed: {' '.join(command)}\n{details}")
-    return result
+@dataclass(slots=True, frozen=True)
+class UnmanagedApp:
+    """Installed app that is not present in apps.toml."""
+
+    source: str
+    identifier: str
+    display: str
+
+
+@dataclass(slots=True, frozen=True)
+class OperationResult:
+    """Outcome for source install/uninstall operations."""
+
+    success: bool
+    message: str
+    skipped: bool = False
+
+    @classmethod
+    def ok(cls, message: str) -> OperationResult:
+        return cls(success=True, message=message, skipped=False)
+
+    @classmethod
+    def skipped_result(cls, message: str) -> OperationResult:
+        return cls(success=True, message=message, skipped=True)
+
+    @classmethod
+    def failed(cls, message: str) -> OperationResult:
+        return cls(success=False, message=message, skipped=False)
+
+
+@dataclass(slots=True, frozen=True)
+class AddAppOutcome:
+    """Result of adding/updating an app in apps.toml."""
+
+    app_key: str
+    group: str
+    description: str
+    existed: bool
+    moved_from: str | None
+    previous_source: str | None
+
+    @property
+    def source_changed(self) -> bool:
+        return bool(self.previous_source)
+
+
+@dataclass(slots=True, frozen=True)
+class RemoveAppOutcome:
+    """Result of removing an app from apps.toml."""
+
+    removed: bool
+    app_key: str | None
+    source: str | None
+    group: str | None
+
+
+class CommandRunner:
+    """Thin subprocess wrapper with consistent errors and executable lookup."""
+
+    @staticmethod
+    def get_executable(name: str) -> str:
+        path: str | None = shutil.which(name)
+        if not path:
+            raise AppManagerError(f"Required executable not found on PATH: {name}")
+        return path
+
+    @staticmethod
+    def run(
+        command: list[str],
+        *,
+        check: bool = True,
+        capture_output: bool = True,
+    ) -> subprocess.CompletedProcess[str]:
+        result: subprocess.CompletedProcess[str] = subprocess.run(  # noqa: S603
+            command,
+            check=False,
+            text=True,
+            capture_output=capture_output,
+        )
+        if check and result.returncode != 0:
+            stderr: str = (result.stderr or "").strip()
+            stdout: str = (result.stdout or "").strip()
+            details: str = stderr or stdout or f"Command failed with exit code {result.returncode}"
+            raise AppManagerError(f"Command failed: {' '.join(command)}\n{details}")
+        return result
+
+
+class Ansi:
+    """ANSI style constants."""
+
+    RESET = "\x1b[0m"
+    BOLD = "\x1b[1m"
+    DIM = "\x1b[2m"
+    RED = "\x1b[31m"
+    GREEN = "\x1b[32m"
+    YELLOW = "\x1b[33m"
+    BLUE = "\x1b[34m"
+    MAGENTA = "\x1b[35m"
+    CYAN = "\x1b[36m"
+
+
+ANSI_RE: re.Pattern[str] = re.compile(r"\x1b\[[0-9;]*m")
+
+
+class Console:
+    """Terminal output and prompt helper."""
+
+    @staticmethod
+    def paint(
+        text: str,
+        style: str | None = None,
+        *,
+        icon: str = "",
+        newline: bool = False,
+        bold: bool = True,
+        print_it: bool = True,
+    ) -> str:
+        supports_color: bool = sys.stdout.isatty()
+        has_styling: bool = bool(style) or bold
+        if not supports_color or not has_styling:
+            styled: str = text
+        else:
+            parts: list[str] = []
+            if bold:
+                parts.append(Ansi.BOLD)
+            if style:
+                parts.append(style)
+            styled = "".join(parts) + text + Ansi.RESET
+
+        full: str = ("\n" if newline else "") + (f"{icon} " if icon else "") + styled
+        if print_it:
+            print(full)
+        return full
+
+    def prompt_yes_no(self, prompt: str, *, auto_yes: bool) -> bool:
+        if auto_yes:
+            return True
+        rendered: str = self.paint(prompt, Ansi.RED, icon="❓", print_it=False)
+        choice: str = input(rendered).strip().lower()
+        return choice == "y"
+
+    def print_missing(self, header: str, items: list[str]) -> None:
+        self.paint(header, Ansi.RED, icon="❗️")
+        for item in items:
+            print(f"  {item}")
+
+    @staticmethod
+    def print_info(info: AppInfo) -> None:
+        fields: OrderedDict[str, str] = OrderedDict([
+            ("Name", info.name),
+            ("Source", info.source),
+            ("Description", info.description or "N/A"),
+            ("Website", info.website or "N/A"),
+            ("Version", info.version or "Unknown"),
+            ("Installed", "Yes" if info.installed else "No"),
+        ])
+        max_label: int = max(len(label) for label in fields)
+        for label, value in fields.items():
+            print(f"{label:<{max_label}} : {value}")
+
+    def render_records(self, grouped_records: list[tuple[str, list[AppRecord]]]) -> None:
+        if not grouped_records or all(not rows for _, rows in grouped_records):
+            print("No apps found.")
+            return
+
+        rows: list[tuple[str, str, str]] = [
+            (record.key, record.source, record.description)
+            for _, records in grouped_records
+            for record in records
+        ]
+        if not rows:
+            print("No apps found.")
+            return
+
+        col1_w: int = max(
+            (
+                *(len(name) for name, _, _ in rows),
+                *(len(group) for group, records in grouped_records if records),
+            ),
+            default=0,
+        )
+        source_w: int = max((len("Source"), *(len(source) for _, source, _ in rows)))
+
+        cols: int = shutil.get_terminal_size((120, 20)).columns
+        fixed: int = col1_w + source_w + len(" |  | ")
+        desc_w: int = max(10, cols - fixed)
+        sep: str = f"{'-' * col1_w}-+-{'-' * source_w}-+-{'-' * desc_w}"
+
+        for group, records in grouped_records:
+            if not records:
+                continue
+            header: str = f"{group:<{col1_w}} | {'Source':<{source_w}} | {'Description':<{desc_w}}"
+            self.paint(header, Ansi.CYAN)
+            self.paint(sep, Ansi.DIM)
+
+            for record in records:
+                source: str = self._color_source(record.source)
+                desc: str = self._truncate(record.description, desc_w)
+                print(
+                    f"{self._ljust_ansi(self.paint(record.key, print_it=False), col1_w)} | "
+                    f"{self._ljust_ansi(source, source_w)} | "
+                    f"{self.paint(desc, Ansi.DIM, bold=False, print_it=False) if desc else ''}"
+                )
+            print()
+
+    def emit_operation(self, result: OperationResult, *, success_style: str = Ansi.GREEN) -> None:
+        if not result.success:
+            self.paint(result.message, Ansi.RED, icon="❌")
+            return
+        if result.skipped:
+            self.paint(result.message, Ansi.GREEN, icon="✅")
+            return
+        self.paint(result.message, success_style, icon="✅")
+
+    def _color_source(self, source: str) -> str:
+        match source:
+            case "uv":
+                return self.paint(source, Ansi.GREEN, bold=False, print_it=False)
+            case "cask":
+                return self.paint(source, Ansi.MAGENTA, bold=False, print_it=False)
+            case "formula":
+                return self.paint(source, Ansi.YELLOW, bold=False, print_it=False)
+            case "mas":
+                return self.paint(source, Ansi.BLUE, bold=False, print_it=False)
+            case _:
+                return source
+
+    @staticmethod
+    def _truncate(text: str, width: int) -> str:
+        if width <= 0:
+            return ""
+        if len(text) <= width:
+            return text
+        if width <= 1:
+            return text[:width]
+        return text[: width - 1] + "…"
+
+    @staticmethod
+    def _visible_len(text: str) -> int:
+        return len(ANSI_RE.sub("", text))
+
+    def _ljust_ansi(self, text: str, width: int) -> str:
+        pad: int = width - self._visible_len(text)
+        if pad <= 0:
+            return text
+        return text + (" " * pad)
+
+
+class AppsRepository:
+    """All apps.toml read/write and record-manipulation concerns."""
+
+    def __init__(self, apps_file: Path, *, console: Console) -> None:
+        self.apps_file = apps_file
+        self.console = console
+
+    def load(self) -> tomlkit.TOMLDocument:
+        if not self.apps_file.exists():
+            self.console.paint(
+                f"apps.toml not found at {self.apps_file}, creating a new file.",
+                Ansi.YELLOW,
+                icon="⚠️",
+            )
+            document = tomlkit.document()
+            with self.apps_file.open("w", encoding="utf-8") as handle:
+                handle.write(tomlkit.dumps(document))
+            return document
+
+        with self.apps_file.open("r", encoding="utf-8") as handle:
+            document = tomlkit.parse(handle.read())
+
+        self.validate_no_duplicates(document)
+        return document
+
+    def save(self, document: tomlkit.TOMLDocument) -> None:
+        with self.apps_file.open("w", encoding="utf-8") as handle:
+            handle.write(tomlkit.dumps(document))
+
+    @staticmethod
+    def normalize_key(key: str) -> str:
+        return key.casefold()
+
+    @staticmethod
+    def iter_group_tables(
+        document: tomlkit.TOMLDocument,
+    ) -> Iterator[tuple[str, Table]]:
+        for group, table in document.items():
+            if isinstance(table, Table):
+                yield group, table
+
+    def resolve_group_name(self, document: tomlkit.TOMLDocument, group: str) -> str:
+        resolved: str = group.strip()
+        if not resolved:
+            raise AppManagerError("Group name cannot be empty.")
+
+        by_norm: dict[str, str] = {
+            self.normalize_key(existing): existing
+            for existing, _ in self.iter_group_tables(document)
+        }
+        return by_norm.get(self.normalize_key(resolved), resolved)
+
+    def validate_no_duplicates(self, document: tomlkit.TOMLDocument) -> None:
+        seen: dict[str, tuple[str, str]] = {}
+        keys_by_norm: dict[str, set[str]] = {}
+        groups_by_norm: dict[str, set[str]] = {}
+
+        for group, table in self.iter_group_tables(document):
+            for key in table:
+                norm: str = self.normalize_key(str(key))
+                keys_by_norm.setdefault(norm, set()).add(str(key))
+                if norm in seen:
+                    first_group = seen[norm][1]
+                    if first_group != group:
+                        groups_by_norm.setdefault(norm, set()).update({first_group, group})
+                else:
+                    seen[norm] = (str(key), group)
+
+        if not groups_by_norm:
+            return
+
+        lines: list[str] = [
+            f"Duplicate apps found in {self.apps_file}. Each app must be globally unique.",
+            "Please fix the file manually (move/remove the duplicates) and re-run.",
+            "",
+            "Duplicates:",
+        ]
+        for norm in sorted(groups_by_norm):
+            groups: str = ", ".join(f"[{g}]" for g in sorted(groups_by_norm[norm], key=str.lower))
+            keys: str = ", ".join(repr(key) for key in sorted(keys_by_norm[norm], key=str.lower))
+            lines.append(f"- {keys} appears in {groups}")
+
+        raise AppManagerError("\n".join(lines))
+
+    @staticmethod
+    def sanitize_toml_inline_comment(comment: str) -> str:
+        return " ".join(comment.splitlines())
+
+    @staticmethod
+    def sorted_table(items: Iterable[tuple[str, Item]]) -> Table:
+        table = tomlkit.table()
+        for item_key, item_value in sorted(items, key=lambda item: item[0].lower()):
+            table[item_key] = item_value
+        return table
+
+    def upsert_value(self, table: Table, key: str, value: Item) -> tuple[Table, bool]:
+        items: list[tuple[str, Item]] = list(table.items())
+        for index, (item_key, _) in enumerate(items):
+            if item_key == key:
+                items[index] = (key, value)
+                return self.sorted_table(items), True
+
+        items.append((key, value))
+        return self.sorted_table(items), False
+
+    def find_app(self, document: tomlkit.TOMLDocument, app: str) -> AppRecord | None:
+        for group, table in self.iter_group_tables(document):
+            for key, item in table.items():
+                if self.normalize_key(str(key)) == self.normalize_key(app):
+                    return AppRecord(
+                        group=group,
+                        key=str(key),
+                        source=self.get_item_value(item),
+                        description=self.get_item_comment(item),
+                    )
+        return None
+
+    def remove_app_from_group(
+        self,
+        document: tomlkit.TOMLDocument,
+        *,
+        group: str,
+        app_key: str,
+    ) -> bool:
+        table = document.get(group)
+        if not isinstance(table, Table):
+            return False
+        if app_key not in table:
+            return False
+
+        items: list[tuple[str, Item]] = [
+            (key, value) for key, value in table.items() if key != app_key
+        ]
+        if not items:
+            del document[group]
+            return True
+
+        document[group] = self.sorted_table(items)
+        return True
+
+    def add_or_update(
+        self,
+        document: tomlkit.TOMLDocument,
+        *,
+        app: str,
+        source: str,
+        group: str,
+        description: str,
+    ) -> AddAppOutcome:
+        existing: AppRecord | None = self.find_app(document, app)
+        moved_from: str | None = None
+        previous_source: str | None = None
+
+        canonical_key: str = app
+        target_group: str = self.resolve_group_name(document, group)
+
+        if existing is not None:
+            canonical_key = existing.key
+            previous_source = existing.source
+            if existing.group != target_group:
+                removed: bool = self.remove_app_from_group(
+                    document,
+                    group=existing.group,
+                    app_key=existing.key,
+                )
+                if not removed:
+                    raise AppManagerError(
+                        f"App {canonical_key!r} was detected in "
+                        f"[{existing.group}] but could not be removed."
+                    )
+                moved_from = existing.group
+
+        group_table = document.get(target_group)
+        if group_table is None:
+            group_table = tomlkit.table()
+            document[target_group] = group_table
+        if not isinstance(group_table, Table):
+            raise AppManagerError(f"Section [{target_group}] is not a table in apps.toml.")
+
+        value = tomlkit.string(source)
+        value.comment(self.sanitize_toml_inline_comment(description))
+        value.trivia.comment_ws = "  "
+
+        document[target_group], existed = self.upsert_value(group_table, canonical_key, value)
+
+        return AddAppOutcome(
+            app_key=canonical_key,
+            group=target_group,
+            description=description,
+            existed=existed,
+            moved_from=moved_from,
+            previous_source=previous_source,
+        )
+
+    def remove(self, document: tomlkit.TOMLDocument, app: str) -> RemoveAppOutcome:
+        existing: AppRecord | None = self.find_app(document, app)
+        if existing is None:
+            return RemoveAppOutcome(removed=False, app_key=None, source=None, group=None)
+
+        removed: bool = self.remove_app_from_group(
+            document,
+            group=existing.group,
+            app_key=existing.key,
+        )
+        if not removed:
+            return RemoveAppOutcome(removed=False, app_key=None, source=None, group=None)
+
+        return RemoveAppOutcome(
+            removed=True,
+            app_key=existing.key,
+            source=existing.source,
+            group=existing.group,
+        )
+
+    def list_grouped_records(
+        self,
+        document: tomlkit.TOMLDocument,
+    ) -> list[tuple[str, list[AppRecord]]]:
+        grouped: list[tuple[str, list[AppRecord]]] = []
+        for group, table in self.iter_group_tables(document):
+            records: list[AppRecord] = []
+            for key, item in table.items():
+                records.append(
+                    AppRecord(
+                        group=group,
+                        key=str(key),
+                        source=self.get_item_value(item),
+                        description=self.get_item_comment(item),
+                    )
+                )
+            grouped.append((group, records))
+        return grouped
+
+    def list_records(self, document: tomlkit.TOMLDocument) -> list[AppRecord]:
+        return [record for _, records in self.list_grouped_records(document) for record in records]
+
+    @staticmethod
+    def get_item_value(item: Item) -> str:
+        value = getattr(item, "value", None)
+        if value is None:
+            return str(item).strip('"')
+        return str(value)
+
+    @staticmethod
+    def get_item_comment(item: Item) -> str:
+        trivia = getattr(item, "trivia", None)
+        comment = getattr(trivia, "comment", None)
+        if not comment:
+            return ""
+        return str(comment).lstrip("#").strip()
+
+
+class SourceRegistry:
+    """Factory/registry for source strategies."""
+
+    _service_classes: ClassVar[dict[str, type[BaseSourceService]]] = {}
+
+    @classmethod
+    def register(cls, service_cls: type[BaseSourceService]) -> None:
+        name: str = service_cls.source_name
+        if not name:
+            return
+        if name in cls._service_classes:
+            raise AppManagerError(f"Duplicate source registration for {name!r}.")
+        cls._service_classes[name] = service_cls
+
+    @classmethod
+    def source_names(cls) -> list[str]:
+        return list(cls._service_classes)
+
+    @classmethod
+    def source_configs(cls) -> list[SourceConfig]:
+        return [
+            service_cls.config()
+            for _, service_cls in sorted(cls._service_classes.items(), key=itemgetter(0))
+        ]
+
+    @classmethod
+    def create(
+        cls,
+        source: str,
+        *,
+        runner: CommandRunner,
+        console: Console,
+    ) -> BaseSourceService:
+        service_cls = cls._service_classes.get(source)
+        if service_cls is None:
+            raise AppManagerError(f"Unknown source {source!r}.")
+        return service_cls(runner=runner, console=console)
+
+
+class BaseSourceService(ABC):
+    """Strategy base class.
+
+    Uses template methods for install and uninstall flows.
+    """
+
+    source_name: ClassVar[str] = ""
+    install_flag: ClassVar[str] = ""
+    sync_toggle_help: ClassVar[str] = ""
+    provider_name: ClassVar[str] = ""
+
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        super().__init_subclass__(**kwargs)
+        if cls.source_name:
+            SourceRegistry.register(cls)
+
+    def __init__(self, *, runner: CommandRunner, console: Console) -> None:
+        self.runner = runner
+        self.console = console
+
+    @classmethod
+    def config(cls) -> SourceConfig:
+        return SourceConfig(
+            name=cls.source_name,
+            install_flag=cls.install_flag,
+            sync_help=cls.sync_toggle_help,
+        )
+
+    @property
+    def maintenance_key(self) -> str:
+        return self.provider_name or self.source_name
+
+    @staticmethod
+    def managed_aliases(app: str) -> set[str]:
+        return {app}
+
+    @staticmethod
+    def pre_install_check(app: str) -> OperationResult | None:
+        del app
+        return None
+
+    def is_installed(self, app: str) -> bool:
+        aliases: set[str] = {alias.casefold() for alias in self.managed_aliases(app)}
+        installed_map: dict[str, str] = self.list_installed()
+        installed_tokens: set[str] = {
+            token.casefold() for token in {*installed_map.keys(), *installed_map.values()}
+        }
+        return bool(aliases & installed_tokens)
+
+    def ensure_installed(self, app: str) -> OperationResult:
+        if self.is_installed(app):
+            return OperationResult.skipped_result(
+                f"{app!r} is already installed via {self.source_name}."
+            )
+
+        preflight: OperationResult | None = self.pre_install_check(app)
+        if preflight is not None:
+            return preflight
+
+        self.console.paint(f"Installing {app!r} via {self.source_name}...", Ansi.BLUE, icon="⬇️")
+        self.install(app)
+        return OperationResult.ok(f"Installed {app!r}.")
+
+    def ensure_uninstalled(self, app: str) -> OperationResult:
+        if not self.is_installed(app):
+            return OperationResult.skipped_result(f"{app!r} is not installed; skipping uninstall.")
+
+        self.console.paint(
+            f"Uninstalling {app!r} via {self.source_name}...", Ansi.MAGENTA, icon="🗑️"
+        )
+        result: OperationResult = self.uninstall(app)
+        if result.success and not result.skipped:
+            return OperationResult.ok(f"Uninstalled {app!r}.")
+        return result
+
+    @abstractmethod
+    def fetch_info(
+        self, app: str, *, repo: AppsRepository, document: tomlkit.TOMLDocument
+    ) -> AppInfo:  # pragma: no cover
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_installed(self) -> dict[str, str]:  # pragma: no cover
+        raise NotImplementedError
+
+    @abstractmethod
+    def install(self, app: str) -> None:  # pragma: no cover
+        raise NotImplementedError
+
+    @abstractmethod
+    def uninstall(self, app: str) -> OperationResult:  # pragma: no cover
+        raise NotImplementedError
+
+    def uninstall_unmanaged(self, app: str) -> OperationResult:
+        return self.uninstall(app)
+
+    @abstractmethod
+    def upgrade_all(self) -> None:  # pragma: no cover
+        raise NotImplementedError
+
+    @abstractmethod
+    def find_unmanaged(self, managed: set[str]) -> list[UnmanagedApp]:  # pragma: no cover
+        raise NotImplementedError
+
+
+class BrewSourceService(BaseSourceService, ABC):
+    """Shared Homebrew behavior for cask and formula strategies."""
+
+    provider_name: ClassVar[str] = "brew"
+    info_entries_key: ClassVar[str] = ""
+    list_flag: ClassVar[str] = ""
+
+    def _brew(self) -> str:
+        return self.runner.get_executable("brew")
+
+    @staticmethod
+    def managed_aliases(app: str) -> set[str]:
+        return {app, app.rsplit("/", 1)[-1]}
+
+    def list_installed(self) -> dict[str, str]:
+        brew: str = self._brew()
+        result = self.runner.run([brew, "list", self.list_flag])
+        return {item: item for item in result.stdout.split()}
+
+    def install(self, app: str) -> None:
+        brew: str = self._brew()
+        self.runner.run([brew, "install", self.list_flag, app])
+
+    def uninstall(self, app: str) -> OperationResult:
+        brew: str = self._brew()
+        self.runner.run([brew, "uninstall", self.list_flag, app])
+        return OperationResult.ok("")
+
+    def upgrade_all(self) -> None:
+        brew: str = self._brew()
+        self.runner.run([brew, "update"], capture_output=False)
+        self.runner.run([brew, "upgrade"], capture_output=False)
+        self.runner.run([brew, "cleanup"], capture_output=False)
+
+    def fetch_info(
+        self, app: str, *, repo: AppsRepository, document: tomlkit.TOMLDocument
+    ) -> AppInfo:
+        del repo, document
+
+        brew: str = self._brew()
+        command: list[str] = [brew, "info", "--json=v2"]
+        if self.source_name == "cask":
+            command.append("--cask")
+        command.append(app)
+
+        result = self.runner.run(command)
+        data: dict[str, list[dict[str, JSON]]] = json.loads(result.stdout)
+        entries: list[dict[str, JSON]] = data.get(self.info_entries_key, [])
+        if not entries:
+            raise AppManagerError(f"No {self.info_entries_key} information returned for {app}.")
+
+        entry: dict[str, JSON] = entries[0]
+        description: JSON = entry.get("desc")
+        if description is not None and not isinstance(description, str):
+            description = str(description)
+
+        website: str | None = None
+        homepage: JSON = entry.get("homepage")
+        if isinstance(homepage, str) and homepage.strip():
+            website = homepage.strip()
+
+        installed, version = self._extract_install_state(entry)
+
+        return AppInfo(
+            name=app,
+            source=self.source_name,
+            description=str(description) if description else None,
+            website=website,
+            version=version,
+            installed=installed,
+        )
+
+    @staticmethod
+    def _extract_install_state(entry: dict[str, JSON]) -> tuple[bool, str | None]:
+        installed_field: JSON = entry.get("installed")
+        version: str | None = None
+        match installed_field:
+            case list() if installed_field:
+                first = installed_field[0]
+                if isinstance(first, dict):
+                    version = str(first.get("version")) if first.get("version") else None
+                return True, version
+            case str() as installed_version if installed_version:
+                return True, installed_version
+
+        versions: JSON = entry.get("versions")
+        if isinstance(versions, dict):
+            version_value: JSON = versions.get("stable") or versions.get("version")
+            if isinstance(version_value, str):
+                version = version_value
+
+        return False, version
+
+
+class BrewCaskSourceService(BrewSourceService):
+    source_name = "cask"
+    install_flag = "install_cask"
+    sync_toggle_help = "Disable cask install/sync/upgrade"
+    info_entries_key = "casks"
+    list_flag = "--cask"
+
+    def find_unmanaged(self, managed: set[str]) -> list[UnmanagedApp]:
+        managed_norm: set[str] = {item.casefold() for item in managed}
+        installed: dict[str, str] = self.list_installed()
+        missing: list[UnmanagedApp] = []
+
+        for app in sorted(installed):
+            if app.casefold() in managed_norm:
+                continue
+            missing.append(UnmanagedApp(source=self.source_name, identifier=app, display=app))
+
+        return missing
+
+    def uninstall_unmanaged(self, app: str) -> OperationResult:
+        brew: str = self._brew()
+        self.runner.run([brew, "uninstall", "--cask", "--zap", app], capture_output=False)
+        return OperationResult.ok("")
+
+
+class BrewFormulaSourceService(BrewSourceService):
+    source_name = "formula"
+    install_flag = "install_formula"
+    sync_toggle_help = "Disable formula install/sync/upgrade"
+    info_entries_key = "formulae"
+    list_flag = "--formula"
+
+    def __init__(self, *, runner: CommandRunner, console: Console) -> None:
+        super().__init__(runner=runner, console=console)
+        self._linux_macos_only_cache: set[str] = set()
+
+    def prime_linux_skip_cache(self, formulae: list[str]) -> None:
+        if platform.system() == "Darwin":
+            return
+        self._linux_macos_only_cache = self.get_macos_only_formulas(formulae)
+
+    def pre_install_check(self, app: str) -> OperationResult | None:
+        if platform.system() == "Darwin":
+            return None
+
+        macos_only: set[str] = self._linux_macos_only_cache or self.get_macos_only_formulas([app])
+
+        app_name: str = app.rsplit("/", 1)[-1]
+        if app in macos_only or app_name in macos_only:
+            return OperationResult.skipped_result(f"Skipping {app_name} (macOS only)")
+
+        return None
+
+    def find_unmanaged(self, managed: set[str]) -> list[UnmanagedApp]:
+        managed_norm: set[str] = {item.casefold() for item in managed}
+        brew: str = self._brew()
+        leaves = self.runner.run([brew, "leaves"]).stdout.split()
+
+        missing: list[UnmanagedApp] = []
+        for app in sorted(leaves):
+            if app.casefold() in managed_norm:
+                continue
+            missing.append(UnmanagedApp(source=self.source_name, identifier=app, display=app))
+
+        return missing
+
+    def get_macos_only_formulas(self, formula_list: list[str]) -> set[str]:
+        if not formula_list:
+            return set()
+
+        brew: str = self._brew()
+        command: list[str] = [brew, "info", "--json=v2", *formula_list]
+        result = self.runner.run(command, check=False)
+
+        try:
+            data: dict[str, JSON] = json.loads(result.stdout or "{}")
+        except json.JSONDecodeError:
+            return set()
+
+        formulae: JSON = data.get("formulae")
+        if not isinstance(formulae, list):
+            return set()
+
+        macos_only: set[str] = set()
+        for entry in formulae:
+            if isinstance(entry, dict):
+                macos_only |= self._formula_entry_is_macos_only(entry)
+        return macos_only
+
+    @staticmethod
+    def _formula_entry_is_macos_only(entry: dict[str, JSON]) -> set[str]:
+        raw_requirements: JSON = entry.get("requirements")
+        requirements: list[JSON] = raw_requirements if isinstance(raw_requirements, list) else []
+        has_macos_requirement: bool = any(
+            isinstance(requirement, dict) and requirement.get("name") == "macos"
+            for requirement in requirements
+        )
+        if not has_macos_requirement:
+            return set()
+
+        bottle: JSON = entry.get("bottle")
+        stable: JSON = bottle.get("stable") if isinstance(bottle, dict) else None
+        files: JSON = stable.get("files") if isinstance(stable, dict) else {}
+        if not isinstance(files, dict):
+            return set()
+        if any("linux" in str(key) for key in files):
+            return set()
+
+        names: set[str] = set()
+        full_name: JSON = entry.get("full_name")
+        name: JSON = entry.get("name")
+        if isinstance(full_name, str):
+            names.add(full_name)
+        if isinstance(name, str):
+            names.add(name)
+        return names
+
+
+class UvSourceService(BaseSourceService):
+    source_name = "uv"
+    install_flag = "install_uv"
+    sync_toggle_help = "Disable uv install/sync/upgrade"
+    _MIN_UV_LIST_COLUMNS: int = 2
+
+    def _uv(self) -> str:
+        return self.runner.get_executable("uv")
+
+    def fetch_info(
+        self, app: str, *, repo: AppsRepository, document: tomlkit.TOMLDocument
+    ) -> AppInfo:
+        description: str | None = None
+        record: AppRecord | None = repo.find_app(document, app)
+        if record is not None and record.description:
+            description = record.description
+
+        installed: bool = False
+        version: str | None = None
+        for line in self.runner.run([self._uv(), "tool", "list"]).stdout.splitlines():
+            stripped: str = line.strip()
+            if not stripped or stripped.startswith("-"):
+                continue
+            parts: list[str] = stripped.split()
+            if len(parts) < self._MIN_UV_LIST_COLUMNS:
+                continue
+            name, version_token = parts[0], parts[1]
+            if name.casefold() == app.casefold() and version_token.startswith("v"):
+                installed = True
+                version = version_token
+                break
+
+        return AppInfo(
+            name=app,
+            source=self.source_name,
+            description=description,
+            website=f"https://pypi.org/project/{app}/",
+            version=version,
+            installed=installed,
+        )
+
+    def list_installed(self) -> dict[str, str]:
+        result = self.runner.run([self._uv(), "tool", "list"])
+        installed: dict[str, str] = {}
+        for line in result.stdout.splitlines():
+            stripped: str = line.strip()
+            if not stripped or stripped.startswith("-"):
+                continue
+            name: str = stripped.split(maxsplit=1)[0]
+            installed[name] = name
+        return installed
+
+    def install(self, app: str) -> None:
+        self.runner.run([self._uv(), "tool", "install", app])
+
+    def uninstall(self, app: str) -> OperationResult:
+        self.runner.run([self._uv(), "tool", "uninstall", app])
+        return OperationResult.ok("")
+
+    def upgrade_all(self) -> None:
+        self.runner.run([self._uv(), "tool", "upgrade", "--all"], capture_output=False)
+
+    def find_unmanaged(self, managed: set[str]) -> list[UnmanagedApp]:
+        managed_norm: set[str] = {item.casefold() for item in managed}
+        installed: dict[str, str] = self.list_installed()
+        missing: list[UnmanagedApp] = []
+        for app in sorted(installed):
+            if app.casefold() in managed_norm:
+                continue
+            missing.append(UnmanagedApp(source=self.source_name, identifier=app, display=app))
+        return missing
+
+
+class MasSourceService(BaseSourceService):
+    source_name = "mas"
+    install_flag = "install_mas"
+    sync_toggle_help = "Disable mas install/sync/upgrade"
+
+    def _mas(self) -> str:
+        return self.runner.get_executable("mas")
+
+    def fetch_info(
+        self, app: str, *, repo: AppsRepository, document: tomlkit.TOMLDocument
+    ) -> AppInfo:
+        del repo, document
+
+        result = self.runner.run([self._mas(), "info", app])
+
+        description_line: str | None = None
+        website: str | None = None
+        for raw_line in result.stdout.splitlines():
+            stripped: str = raw_line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith("From:"):
+                website = stripped.split(":", 1)[1].strip() or None
+                continue
+            if description_line is None:
+                description_line = stripped
+
+        if not description_line:
+            raise AppManagerError("Could not parse mas info output.")
+
+        match: re.Match[str] | None = re.match(
+            r"^(?P<name>.+?)\s+(?P<version>\d[\w.\-]+)(?:\s+\[.*\])?$",
+            description_line,
+        )
+        description: str = description_line
+        version: str | None = None
+        if match:
+            description = match.group("name").strip()
+            version = match.group("version")
+
+        installed_ids: set[str] = set(self.list_installed())
+
+        return AppInfo(
+            name=app,
+            source=self.source_name,
+            description=description,
+            website=website,
+            version=version,
+            installed=app in installed_ids,
+        )
+
+    def list_installed(self) -> dict[str, str]:
+        result = self.runner.run([self._mas(), "list"])
+        apps: dict[str, str] = {}
+        for line in result.stdout.splitlines():
+            match = re.match(r"^(\d+)\s+(.+?)\s+\(.*\)$", line.strip())
+            if not match:
+                continue
+            apps[match.group(1)] = match.group(2)
+        return apps
+
+    def install(self, app: str) -> None:
+        self.runner.run([self._mas(), "install", app])
+
+    def uninstall(self, app: str) -> OperationResult:
+        result = self.runner.run(
+            [self._mas(), "uninstall", app], check=False, capture_output=False
+        )
+        if result.returncode != 0:
+            return OperationResult.failed(
+                f"Failed to uninstall {app}. Please uninstall it manually."
+            )
+        return OperationResult.ok("")
+
+    def upgrade_all(self) -> None:
+        self.runner.run([self._mas(), "upgrade"], capture_output=False)
+
+    def find_unmanaged(self, managed: set[str]) -> list[UnmanagedApp]:
+        managed_norm: set[str] = {item.casefold() for item in managed}
+        installed: dict[str, str] = self.list_installed()
+
+        missing: list[UnmanagedApp] = []
+        for app_id, app_name in sorted(installed.items()):
+            if app_id.casefold() in managed_norm:
+                continue
+            missing.append(
+                UnmanagedApp(
+                    source=self.source_name,
+                    identifier=app_id,
+                    display=f"{app_name} ({app_id})",
+                )
+            )
+
+        return missing
+
+
+class AppManagerFacade:
+    """Facade coordinating repository + strategies + command use cases."""
+
+    def __init__(
+        self,
+        *,
+        repository: AppsRepository,
+        runner: CommandRunner,
+        console: Console,
+    ) -> None:
+        self.repository = repository
+        self.runner = runner
+        self.console = console
+        self._service_cache: dict[str, BaseSourceService] = {}
+
+    def get_service(self, source: str) -> BaseSourceService:
+        if source not in self._service_cache:
+            self._service_cache[source] = SourceRegistry.create(
+                source,
+                runner=self.runner,
+                console=self.console,
+            )
+        return self._service_cache[source]
+
+    def add_app(
+        self,
+        *,
+        app: str,
+        source: str,
+        group: str | None,
+        description: str | None,
+        no_install: bool,
+    ) -> None:
+        document = self.repository.load()
+        selected_group: str = self._resolve_or_pick_group(document, group)
+        final_description: str = self._infer_description(
+            source=source,
+            app=app,
+            description=description,
+            document=document,
+        )
+
+        outcome: AddAppOutcome = self.repository.add_or_update(
+            document,
+            app=app,
+            source=source,
+            group=selected_group,
+            description=final_description,
+        )
+
+        if outcome.moved_from is not None:
+            move_message: str = (
+                f"Moved {outcome.app_key!r} from [{outcome.moved_from}] to "
+                f'[{outcome.group}] with source "{source}" '
+                f'and description "{outcome.description}".'
+            )
+            self.console.paint(move_message, Ansi.CYAN, icon="➡️")
+        elif outcome.existed:
+            self.console.paint(
+                f"Updated {outcome.app_key!r} in [{outcome.group}] with source '{source}' "
+                f'and description "{outcome.description}".',
+                Ansi.CYAN,
+                icon="🔄",
+            )
+        else:
+            self.console.paint(
+                f"Added {outcome.app_key!r} to [{outcome.group}] with source '{source}' "
+                f'and description "{outcome.description}".',
+                Ansi.GREEN,
+                icon="✅",
+            )
+
+        if no_install:
+            self.repository.save(document)
+            return
+
+        failure_message: str | None = None
+        try:
+            if outcome.previous_source and outcome.previous_source != source:
+                uninstall_result: OperationResult = self.get_service(
+                    outcome.previous_source
+                ).ensure_uninstalled(outcome.app_key)
+                self.console.emit_operation(uninstall_result, success_style=Ansi.MAGENTA)
+                if not uninstall_result.success:
+                    failure_message = uninstall_result.message
+
+            install_result: OperationResult = self.get_service(source).ensure_installed(
+                outcome.app_key
+            )
+            self.console.emit_operation(install_result)
+            if not install_result.success:
+                failure_message = install_result.message
+        except AppManagerError as error:
+            failure_message = str(error)
+
+        if failure_message:
+            self.console.paint(
+                f"Install failed; rolling back apps.toml changes for {outcome.app_key!r}.",
+                Ansi.YELLOW,
+                icon="↩️",
+            )
+            raise AppManagerError(failure_message)
+
+        self.repository.save(document)
+
+    def remove_app(self, *, app: str, no_install: bool) -> None:
+        document = self.repository.load()
+        outcome: RemoveAppOutcome = self.repository.remove(document, app)
+
+        if not outcome.removed:
+            self.console.paint(f"{app!r} not found in apps.toml.", Ansi.YELLOW, icon="⚠️")
+            return
+
+        if outcome.app_key is None or outcome.group is None:
+            raise AppManagerError("Removal failed due to inconsistent app state.")
+        self.console.paint(
+            f"Removed {outcome.app_key!r} from [{outcome.group}].",
+            Ansi.MAGENTA,
+            icon="🗑️",
+        )
+
+        self.repository.save(document)
+
+        if no_install:
+            return
+
+        if outcome.source is None:
+            raise AppManagerError("Removal failed because the source is unknown.")
+        uninstall_result: OperationResult = self.get_service(outcome.source).ensure_uninstalled(
+            outcome.app_key
+        )
+        self.console.emit_operation(uninstall_result, success_style=Ansi.MAGENTA)
+
+    def list_apps(self) -> None:
+        document = self.repository.load()
+        self.console.render_records(self.repository.list_grouped_records(document))
+
+    def print_info(self, *, app: str, source: str) -> None:
+        document = self.repository.load()
+        info: AppInfo = self.get_service(source).fetch_info(
+            app, repo=self.repository, document=document
+        )
+        self.console.print_info(info)
+
+    def sync_apps(self, options: SyncOptions) -> None:
+        document = self.repository.load()
+
+        self.console.paint("Installing apps and packages...", Ansi.BLUE, icon="📲")
+        enabled: list[str] = sorted(options.enabled_sources)
+        self.console.paint(
+            f"Sources: {' '.join(enabled) if enabled else 'none'}",
+            Ansi.BLUE,
+            icon="📋",
+        )
+
+        grouped_records: list[tuple[str, list[AppRecord]]] = self.repository.list_grouped_records(
+            document
+        )
+        self._prime_source_caches(grouped_records, options)
+        self._install_declared(grouped_records, options)
+
+        self.console.paint(
+            "Syncing installed apps to apps.toml...",
+            Ansi.MAGENTA,
+            icon="🔄",
+            newline=True,
+        )
+        self._sync_unmanaged(grouped_records, options)
+
+        self.console.paint(
+            "Updating existing apps and packages...", Ansi.MAGENTA, icon="🔼", newline=True
+        )
+        self._upgrade_sources(options)
+
+    def _resolve_or_pick_group(
+        self,
+        document: tomlkit.TOMLDocument,
+        group: str | None,
+    ) -> str:
+        if group:
+            return self.repository.resolve_group_name(document, group)
+        return self.pick_group_interactively(document)
+
+    def pick_group_interactively(self, document: tomlkit.TOMLDocument) -> str:
+        def prompt_non_empty(prompt: str) -> str:
+            while True:
+                try:
+                    value: str = input(prompt).strip()
+                except (EOFError, KeyboardInterrupt) as exc:
+                    print()
+                    raise AppManagerError("No group selected.") from exc
+                if value:
+                    return value
+                self.console.paint("Group name cannot be empty.", Ansi.YELLOW, icon="⚠️")
+
+        groups: list[str] = [group for group, _ in self.repository.iter_group_tables(document)]
+        if not sys.stdin.isatty():
+            raise AppManagerError(
+                "No --group/-g provided and stdin is not interactive. Provide --group explicitly."
+            )
+
+        if not groups:
+            return self.repository.resolve_group_name(
+                document, prompt_non_empty("New group name: ")
+            )
+
+        self.console.paint(
+            "No group provided. Select which group to add the app to:",
+            Ansi.CYAN,
+            newline=True,
+        )
+        self.console.paint(" 0. <create a new group>", bold=False)
+        self.console.paint(
+            "\n".join(f"{index:>2}. {name}" for index, name in enumerate(groups, start=1)),
+            bold=False,
+        )
+
+        by_norm: dict[str, str] = {self.repository.normalize_key(name): name for name in groups}
+
+        while True:
+            try:
+                choice: str = input("\nEnter number, existing name, or new group name: ").strip()
+            except (EOFError, KeyboardInterrupt) as exc:
+                print()
+                raise AppManagerError("No group selected.") from exc
+
+            if not choice:
+                continue
+
+            if choice.isdigit():
+                index = int(choice)
+                if index == 0:
+                    return self.repository.resolve_group_name(
+                        document,
+                        prompt_non_empty("New group name: "),
+                    )
+                if 1 <= index <= len(groups):
+                    return groups[index - 1]
+                self.console.paint("Invalid selection. Try again.", Ansi.YELLOW, icon="⚠️")
+                continue
+
+            existing: str | None = by_norm.get(self.repository.normalize_key(choice))
+            if existing is not None:
+                return existing
+
+            return self.repository.resolve_group_name(document, choice)
+
+    def _infer_description(
+        self,
+        *,
+        source: str,
+        app: str,
+        description: str | None,
+        document: tomlkit.TOMLDocument,
+    ) -> str:
+        normalized: str | None = description.strip() if description is not None else None
+
+        if source == "uv" and not normalized:
+            raise AppManagerError(
+                "Description is required for uv-installed apps. Use --description/-d."
+            )
+
+        if normalized:
+            return normalized
+
+        info: AppInfo = self.get_service(source).fetch_info(
+            app, repo=self.repository, document=document
+        )
+        if info.description:
+            return info.description
+
+        raise AppManagerError(
+            f"Could not determine description for {app}. Provide --description explicitly."
+        )
+
+    def _prime_source_caches(
+        self,
+        grouped_records: list[tuple[str, list[AppRecord]]],
+        options: SyncOptions,
+    ) -> None:
+        if "formula" not in options.enabled_sources:
+            return
+        formula_service = self.get_service("formula")
+        if not isinstance(formula_service, BrewFormulaSourceService):
+            return
+
+        formula_list: list[str] = [
+            record.key
+            for _, records in grouped_records
+            for record in records
+            if record.source == "formula"
+        ]
+        formula_service.prime_linux_skip_cache(formula_list)
+
+    def _install_declared(
+        self,
+        grouped_records: list[tuple[str, list[AppRecord]]],
+        options: SyncOptions,
+    ) -> None:
+        current_group: str | None = None
+        for group, records in grouped_records:
+            for record in records:
+                if record.source not in options.enabled_sources:
+                    continue
+
+                if group != current_group:
+                    suffix = "" if group.endswith("s") else " apps"
+                    self.console.paint(
+                        f"Installing {group}{suffix}...",
+                        Ansi.MAGENTA,
+                        icon="📦",
+                        newline=True,
+                    )
+                    current_group = group
+
+                result: OperationResult = self.get_service(record.source).ensure_installed(
+                    record.key
+                )
+                if result.skipped and "Skipping" in result.message:
+                    self.console.paint(result.message, Ansi.RED, icon="⏭️")
+                else:
+                    self.console.emit_operation(result)
+
+    def _sync_unmanaged(
+        self,
+        grouped_records: list[tuple[str, list[AppRecord]]],
+        options: SyncOptions,
+    ) -> None:
+        enabled: set[str] = options.enabled_sources
+        records: list[AppRecord] = [record for _, rows in grouped_records for record in rows]
+
+        provider_to_sources: dict[str, list[str]] = {}
+        for source in enabled:
+            provider_to_sources.setdefault(self.get_service(source).maintenance_key, []).append(
+                source
+            )
+
+        for provider, provider_sources in sorted(provider_to_sources.items()):
+            managed: set[str] = set()
+            for source in provider_sources:
+                service = self.get_service(source)
+                for record in records:
+                    if record.source != source:
+                        continue
+                    managed |= service.managed_aliases(record.key)
+
+            unmanaged: list[UnmanagedApp] = []
+            for source in provider_sources:
+                unmanaged.extend(self.get_service(source).find_unmanaged(managed))
+
+            header, ok_message = self._provider_sync_messages(provider)
+            if not unmanaged:
+                self.console.paint(ok_message, Ansi.GREEN, icon="✅")
+                continue
+
+            items: list[str] = [item.display for item in unmanaged]
+            self.console.print_missing(header, items)
+            if not self.console.prompt_yes_no(
+                "Do you want to uninstall these apps? (y/n) ",
+                auto_yes=options.yes,
+            ):
+                self.console.paint("No apps were uninstalled.", Ansi.MAGENTA, icon="🆗")
+                continue
+
+            for item in unmanaged:
+                self.console.paint(f"Uninstalling {item.display}...", Ansi.MAGENTA, icon="🗑️")
+                result: OperationResult = self.get_service(item.source).uninstall_unmanaged(
+                    item.identifier
+                )
+                if not result.success:
+                    self.console.paint(result.message, Ansi.RED, icon="❌")
+                    continue
+                self.console.paint(f"Uninstalled {item.display}.", Ansi.MAGENTA, icon="🚮")
+
+    @staticmethod
+    def _provider_sync_messages(provider: str) -> tuple[str, str]:
+        match provider:
+            case "brew":
+                return (
+                    (
+                        "The following Homebrew-installed formulae and casks are missing from "
+                        "apps.toml:"
+                    ),
+                    "All Homebrew-installed formulae and casks are present in apps.toml.",
+                )
+            case "uv":
+                return (
+                    "The following uv-installed apps are missing from apps.toml:",
+                    "All uv-installed apps are present in apps.toml.",
+                )
+            case "mas":
+                return (
+                    "The following Mac App Store apps are missing from apps.toml:",
+                    "All Mac App Store apps are present in apps.toml.",
+                )
+            case _:
+                return (
+                    f"The following {provider}-installed apps are missing from apps.toml:",
+                    f"All {provider}-installed apps are present in apps.toml.",
+                )
+
+    def _upgrade_sources(self, options: SyncOptions) -> None:
+        seen: set[str] = set()
+        for source in sorted(options.enabled_sources):
+            service = self.get_service(source)
+            key: str = service.maintenance_key
+            if key in seen:
+                continue
+            service.upgrade_all()
+            seen.add(key)
+
+
+class BaseCommand(ABC):
+    """Command pattern interface for each CLI subcommand."""
+
+    command_name: ClassVar[str]
+
+    def __init__(self, *, facade: AppManagerFacade) -> None:
+        self.facade = facade
+
+    @abstractmethod
+    def execute(self, args: argparse.Namespace) -> None:  # pragma: no cover
+        raise NotImplementedError
+
+
+class AddAppCommand(BaseCommand):
+    command_name = "add"
+
+    def execute(self, args: argparse.Namespace) -> None:
+        self.facade.add_app(
+            app=args.app,
+            source=args.source,
+            group=args.group,
+            description=args.description,
+            no_install=args.no_install,
+        )
+
+
+class RemoveAppCommand(BaseCommand):
+    command_name = "remove"
+
+    def execute(self, args: argparse.Namespace) -> None:
+        self.facade.remove_app(app=args.app, no_install=args.no_install)
+
+
+class ListAppsCommand(BaseCommand):
+    command_name = "list"
+
+    def execute(self, args: argparse.Namespace) -> None:
+        del args
+        self.facade.list_apps()
+
+
+class InfoAppCommand(BaseCommand):
+    command_name = "info"
+
+    def execute(self, args: argparse.Namespace) -> None:
+        self.facade.print_info(app=args.app, source=args.source)
+
+
+class SyncAppsCommand(BaseCommand):
+    command_name = "sync"
+
+    def execute(self, args: argparse.Namespace) -> None:
+        enabled: set[str] = {
+            config.name
+            for config in SourceRegistry.source_configs()
+            if bool(getattr(args, config.install_flag, False))
+        }
+        options = SyncOptions(yes=args.yes, enabled_sources=enabled)
+        self.facade.sync_apps(options)
+
+
+class CommandDispatcher:
+    """Maps parsed command names to command handlers."""
+
+    def __init__(self, *, facade: AppManagerFacade) -> None:
+        self._commands: dict[str, BaseCommand] = {
+            AddAppCommand.command_name: AddAppCommand(facade=facade),
+            RemoveAppCommand.command_name: RemoveAppCommand(facade=facade),
+            ListAppsCommand.command_name: ListAppsCommand(facade=facade),
+            InfoAppCommand.command_name: InfoAppCommand(facade=facade),
+            SyncAppsCommand.command_name: SyncAppsCommand(facade=facade),
+        }
+
+    def dispatch(self, args: argparse.Namespace) -> None:
+        command = self._commands.get(args.command)
+        if command is None:
+            raise AppManagerError(f"Unknown command: {args.command!r}")
+        command.execute(args)
 
 
 def parse_args() -> argparse.Namespace:
-    """Parses the command line arguments.
+    """Parse command-line arguments.
 
     Returns:
-        An argparse.Namespace object.
+        Parsed CLI arguments.
+
+    Raises:
+        AppManagerError: If no source strategies are registered.
     """
     parser = argparse.ArgumentParser(description="Manage and install applications using apps.toml")
     parser.add_argument(
@@ -115,14 +1631,18 @@ def parse_args() -> argparse.Namespace:
         help=f"Path to apps.toml (default: {APPS_TOML})",
     )
 
+    source_names: list[str] = SourceRegistry.source_names()
+    if not source_names:
+        raise AppManagerError("No sources are registered.")
+
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     add_parser = subparsers.add_parser("add", help="Add an app to apps.toml and install it")
     add_parser.add_argument("app", help="App name or identifier")
     add_parser.add_argument(
         "source",
-        choices=list(APP_SOURCES),
-        help=f"Source of the app (choices: {', '.join(APP_SOURCES)})",
+        choices=source_names,
+        help=f"Source of the app (choices: {', '.join(source_names)})",
     )
     add_parser.add_argument(
         "-g",
@@ -134,8 +1654,8 @@ def parse_args() -> argparse.Namespace:
         "-d",
         "--description",
         help=(
-            "Description for the app. Required for 'uv' sources; optional overrides for other"
-            " sources."
+            "Description for the app. Required for 'uv' sources; optional overrides for other "
+            "sources."
         ),
     )
     add_parser.add_argument(
@@ -145,7 +1665,8 @@ def parse_args() -> argparse.Namespace:
     )
 
     remove_parser = subparsers.add_parser(
-        "remove", help="Remove an app from apps.toml and uninstall it"
+        "remove",
+        help="Remove an app from apps.toml and uninstall it",
     )
     remove_parser.add_argument("app", help="App name or identifier to remove")
     remove_parser.add_argument(
@@ -164,1304 +1685,38 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     sync_parser.add_argument(
-        "-y",
-        "--yes",
-        action="store_true",
-        help="Auto-confirm uninstall prompts",
+        "-y", "--yes", action="store_true", help="Auto-confirm uninstall prompts"
     )
-    sync_parser.add_argument(
-        "--no-cask",
-        action="store_false",
-        dest="install_cask",
-        default=True,
-        help="Disable cask install/sync/upgrade",
-    )
-    sync_parser.add_argument(
-        "--no-formula",
-        action="store_false",
-        dest="install_formula",
-        default=True,
-        help="Disable formula install/sync/upgrade",
-    )
-    sync_parser.add_argument(
-        "--no-uv",
-        action="store_false",
-        dest="install_uv",
-        default=True,
-        help="Disable uv install/sync/upgrade",
-    )
-    sync_parser.add_argument(
-        "--no-mas",
-        action="store_false",
-        dest="install_mas",
-        default=True,
-        help="Disable mas install/sync/upgrade",
-    )
+
+    for config in SourceRegistry.source_configs():
+        sync_parser.add_argument(
+            f"--no-{config.name}",
+            action="store_false",
+            dest=config.install_flag,
+            default=True,
+            help=config.sync_help,
+        )
 
     info_parser = subparsers.add_parser("info", help="Show app details")
     info_parser.add_argument("app", help="App name or identifier")
     info_parser.add_argument(
         "source",
-        choices=list(APP_SOURCES),
-        help=f"Source of the app (choices: {', '.join(APP_SOURCES)})",
+        choices=source_names,
+        help=f"Source of the app (choices: {', '.join(source_names)})",
     )
 
     return parser.parse_args()
 
 
-def iter_group_tables(
-    document: tomlkit.TOMLDocument,
-) -> Iterator[tuple[str, Table]]:
-    """Yields (group_name, table) pairs for all table sections.
-
-    Args:
-        document: The TOML document object.
-
-    Yields:
-        A tuple containing the group name and table.
-    """
-    for group, table in document.items():
-        if isinstance(table, Table):
-            yield group, table
-
-
-def normalize_key(key: str) -> str:
-    """Normalizes keys for global uniqueness checks.
-
-    Args:
-        key: The key to normalize.
-
-    Returns:
-        A normalized key used for comparisons.
-    """
-    return key.casefold()
-
-
-def resolve_group_name(document: tomlkit.TOMLDocument, group: str) -> str:
-    """Resolves a group name to an existing canonical group name.
-
-    Matching is case-insensitive.
-
-    If the provided group matches an existing group (ignoring case), returns
-    the existing group's exact name from the file. Otherwise returns the
-    stripped input (treated as a new group name).
-
-    Args:
-        document: The TOML document object.
-        group: The group name to resolve.
-
-    Returns:
-        The resolved (canonical) group name to use.
-
-    Raises:
-        AppManagerError: If the provided group name is empty.
-    """
-    resolved: str = group.strip()
-    if not resolved:
-        raise AppManagerError("Group name cannot be empty.")
-
-    by_norm: dict[str, str] = {
-        normalize_key(existing): existing for existing, _ in iter_group_tables(document)
-    }
-    return by_norm.get(normalize_key(resolved), resolved)
-
-
-def validate_no_duplicate_apps(document: tomlkit.TOMLDocument, *, apps_file: Path) -> None:
-    """Ensures each app appears in only one section in the TOML.
-
-    Args:
-        document: The TOML document object.
-        apps_file: The path to the apps.toml file.
-
-    Raises:
-        AppManagerError: If duplicates are found
-    """
-    seen: dict[str, tuple[str, str]] = {}  # norm_app -> (original_key, group)
-    keys_by_norm: dict[str, set[str]] = {}
-    groups_by_norm: dict[str, set[str]] = {}
-
-    for group, table in iter_group_tables(document):
-        for key in table:
-            norm: str = normalize_key(str(key))
-            keys_by_norm.setdefault(norm, set()).add(str(key))
-            if norm in seen:
-                # Only a problem if it appears in another section.
-                first_group = seen[norm][1]
-                if first_group != group:
-                    groups_by_norm.setdefault(norm, set()).update({first_group, group})
-            else:
-                seen[norm] = (str(key), group)
-
-    if not groups_by_norm:
-        return
-
-    lines: list[str] = [
-        f"Duplicate apps found in {apps_file}. Each app must be globally unique.",
-        "Please fix the file manually (move/remove the duplicates) and re-run.",
-        "",
-        "Duplicates:",
-    ]
-    for norm in sorted(groups_by_norm):
-        groups = ", ".join(f"[{g}]" for g in sorted(groups_by_norm[norm], key=str.lower))
-        keys = ", ".join(repr(k) for k in sorted(keys_by_norm.get(norm, {norm}), key=str.lower))
-        lines.append(f"- {keys} appears in {groups}")
-
-    raise AppManagerError("\n".join(lines))
-
-
-def load_apps(apps_file: Path) -> tomlkit.TOMLDocument:
-    """Loads the apps.toml file.
-
-    Args:
-        apps_file: The path to the apps.toml file.
-
-    Returns:
-        A TOML document object.
-    """
-    if not apps_file.exists():
-        print(f"⚠️ apps.toml not found at {apps_file}, creating a new file.")
-        document = tomlkit.document()
-        with apps_file.open("w", encoding="utf-8") as f:
-            f.write(tomlkit.dumps(document))
-        return document
-    with apps_file.open("r", encoding="utf-8") as f:
-        document = tomlkit.parse(f.read())
-
-    validate_no_duplicate_apps(document, apps_file=apps_file)
-    return document
-
-
-def save_apps(apps_file: Path, document: tomlkit.TOMLDocument) -> None:
-    """Saves the apps.toml file.
-
-    Args:
-        apps_file: The path to the apps.toml file.
-        document: The TOML document object to save.
-    """
-    with apps_file.open("w", encoding="utf-8") as f:
-        f.write(tomlkit.dumps(document))
-
-
-def find_app_group(document: tomlkit.TOMLDocument, app: str) -> tuple[str, str, str] | None:
-    """Finds an app across all sections (case-insensitive).
-
-    Args:
-        document: The TOML document object.
-        app: The name of the app.
-
-    Returns:
-        (app_key, app_source, app_group) if found, else None.
-    """
-    for group, table in iter_group_tables(document):
-        for key in table:
-            if normalize_key(key) == normalize_key(app):
-                return key, str(table[key]), group
-    return None
-
-
-def remove_app_from_group(document: tomlkit.TOMLDocument, *, group: str, app_key: str) -> bool:
-    """Removes an app key from a specific group table.
-
-    Args:
-        document: The TOML document object.
-        group: The name of the group.
-        app_key: The key of the app.
-
-    Returns:
-        A boolean indicating if the app was removed.
-    """
-    table = document.get(group)
-    if not isinstance(table, Table):
-        return False
-    if app_key not in table:
-        return False
-
-    items = [(key, value) for key, value in table.items() if key != app_key]
-    if not items:
-        # Remove the whole section when it's empty.
-        del document[group]
-        return True
-
-    document[group] = sorted_table(items)
-    return True
-
-
-def infer_description(
-    source: str, app: str, description: str | None, document: tomlkit.TOMLDocument
-) -> str:
-    """Infers a description for an app.
-
-    Args:
-        source: The source of the app.
-        app: The name of the app.
-        description: The user-provided description of the app, if any.
-        document: The TOML document object.
-
-    Returns:
-        The final description of the app.
-
-    Raises:
-        AppManagerError: If the description is required for uv-installed apps
-            and not provided.
-    """
-    if description is not None:
-        description = description.strip()
-
-    if source == "uv" and not description:
-        raise AppManagerError(
-            "Description is required for uv-installed apps. Use --description/-d."
-        )
-
-    if description:
-        return description
-
-    info: AppInfo = fetch_app_info(source, app, document)
-    if info.description:
-        return info.description
-    raise AppManagerError(
-        f"Could not determine description for {app}. Provide --description explicitly."
-    )
-
-
-def sanitize_toml_inline_comment(comment: str) -> str:
-    """Make a string safe to use as a TOML inline comment.
-
-    TOML comments cannot span multiple lines, so we collapse all newlines into
-    single spaces.
-
-    Returns:
-        A single-line string safe to pass to ``tomlkit``'s
-        ``value.comment(...)``.
-    """
-    return " ".join(comment.splitlines())
-
-
-def fetch_mas_info(app_id: str) -> AppInfo:
-    """Fetches info for an app from the Mac App Store.
-
-    Args:
-        app_id: The ID of the app.
-
-    Returns:
-        An AppInfo object.
-
-    Raises:
-        AppManagerError: If mas is not installed or if the app is not found.
-    """
-    mas: str = _get_executable("mas")
-
-    result: subprocess.CompletedProcess[str] = _run([mas, "info", app_id])
-
-    description_line: str | None = None
-    website: str | None = None
-    for raw_line in result.stdout.splitlines():
-        stripped: str = raw_line.strip()
-        if not stripped:
-            continue
-        if stripped.startswith("From:"):
-            website = stripped.split(":", 1)[1].strip() or None
-            continue
-        if description_line is None:
-            description_line = stripped
-
-    if not description_line:
-        raise AppManagerError("Could not parse mas info output.")
-
-    match: re.Match[str] | None = re.match(
-        r"^(?P<name>.+?)\s+(?P<version>\d[\w.\-]+)(?:\s+\[.*\])?$",
-        description_line,
-    )
-    name: str = description_line
-    version: str | None = None
-    if match:
-        name = match.group("name").strip()
-        version = match.group("version")
-
-    list_result: subprocess.CompletedProcess[str] = _run([mas, "list"])
-
-    installed_ids: set[str] = {
-        line.split()[0]
-        for line in list_result.stdout.splitlines()
-        if line.strip() and line.split()[0].isdigit()
-    }
-
-    return AppInfo(
-        name=app_id,
-        source="mas",
-        description=name,
-        website=website,
-        version=version,
-        installed=app_id in installed_ids,
-    )
-
-
-def _extract_brew_install(entry: dict[str, JSON]) -> tuple[bool, str | None]:
-    installed_field: JSON = entry.get("installed")
-    version: str | None = None
-    match installed_field:
-        case list() if installed_field:
-            first = installed_field[0]
-            if isinstance(first, dict):
-                version = str(first.get("version")) if first.get("version") else None
-            return True, version
-        case str() as installed_version if installed_version:
-            version = installed_version
-            return True, version
-    versions: JSON = entry.get("versions")
-    if isinstance(versions, dict):
-        version_value: JSON = versions.get("stable") or versions.get("version")
-        if isinstance(version_value, str):
-            version = version_value
-    return False, version
-
-
-def fetch_brew_info(app: str, source: str) -> AppInfo:
-    """Fetches info for an app from Homebrew.
-
-    Args:
-        app: The name of the app.
-        source: The source of the app.
-
-    Returns:
-        An AppInfo object.
-
-    Raises:
-        AppManagerError: If Homebrew is not installed or if the app is not
-            found.
-    """
-    brew: str = _get_executable("brew")
-    command: list[str] = [brew, "info", "--json=v2"]
-    if source == "cask":
-        command.append("--cask")
-    command.append(app)
-
-    result: subprocess.CompletedProcess[str] = _run(command)
-
-    data: dict[str, list[dict[str, JSON]]] = json.loads(result.stdout)
-    entries_key: str = "casks" if source == "cask" else "formulae"
-    entries: list[dict[str, JSON]] = data.get(entries_key, [])
-    if not entries:
-        raise AppManagerError(f"No {entries_key} information returned for {app}.")
-
-    entry: dict[str, JSON] = entries[0]
-    description: JSON = entry.get("desc")
-    if description is not None and not isinstance(description, str):
-        description = str(description)
-    homepage: JSON = entry.get("homepage")
-    website: str | None = None
-    if isinstance(homepage, str) and homepage.strip():
-        website = homepage.strip()
-    installed, version = _extract_brew_install(entry)
-
-    return AppInfo(
-        name=app,
-        source=source,
-        description=str(description) if description else None,
-        website=website,
-        version=version,
-        installed=installed,
-    )
-
-
-def _formula_entry_is_macos_only(entry: dict[str, JSON]) -> set[str]:
-    """Return {full_name, name} if formula is macOS-only, else empty set."""
-    raw_req: JSON = entry.get("requirements")
-    requirements: list[JSON] = raw_req if isinstance(raw_req, list) else []
-    if not any(isinstance(r, dict) and r.get("name") == "macos" for r in requirements):
-        return set()
-
-    bottle: JSON = entry.get("bottle")
-    stable: JSON = bottle.get("stable") if isinstance(bottle, dict) else None
-    files: JSON = stable.get("files") if isinstance(stable, dict) else {}
-    if not isinstance(files, dict) or any("linux" in str(k) for k in files):
-        return set()
-
-    result: set[str] = set()
-    full_name: JSON = entry.get("full_name")
-    name: JSON = entry.get("name")
-    if isinstance(full_name, str):
-        result.add(full_name)
-    if isinstance(name, str):
-        result.add(name)
-    return result
-
-
-def _get_macos_only_formulas(formula_list: list[str]) -> set[str]:
-    """Return formulae that require macOS and have no Linux bottles.
-
-    Used on Linux to skip such formulae during install. Runs a single batched
-    brew info call for all formulae.
-    """
-    if not formula_list:
-        return set()
-
-    brew: str = _get_executable("brew")
-    command: list[str] = [brew, "info", "--json=v2", *formula_list]
-    result: subprocess.CompletedProcess[str] = _run(command, check=False)
-
-    try:
-        data: dict[str, JSON] = json.loads(result.stdout or "{}")
-    except json.JSONDecodeError:
-        return set()
-
-    formulae: list[dict[str, JSON]] = data.get("formulae") or []
-    if not isinstance(formulae, list):
-        return set()
-
-    macos_only: set[str] = set()
-    for entry in formulae:
-        if isinstance(entry, dict):
-            macos_only |= _formula_entry_is_macos_only(entry)
-    return macos_only
-
-
-def _should_skip_macos_only_formula(app: str, macos_only: set[str]) -> bool:
-    """Return True if the formula should be skipped because it is macOS-only.
-
-    Handles both fully-qualified and bare formula names and prints a consistent
-    skip message when a macOS-only formula is encountered.
-    """
-    app_name: str = app.rsplit("/", 1)[-1]
-    if app in macos_only or app_name in macos_only:
-        paint(f"Skipping {app_name} (macOS only)", Ansi.RED, icon="⏭️")
-        return True
-    return False
-
-
-def fetch_uv_info(document: tomlkit.TOMLDocument, app: str) -> AppInfo:
-    """Fetches info for an app from uv.
-
-    Args:
-        document: The TOML document object.
-        app: The name of the app.
-
-    Returns:
-        An AppInfo object.
-    """
-    description: str | None = None
-    entry = find_app_group(document, app)
-    if entry is not None:
-        key, _, group = entry
-        table = document[group]
-        if isinstance(table, Table):
-            description = _get_item_comment(table[key])
-
-    installed = False
-    version: str | None = None
-    uv: str = _get_executable("uv")
-    result: subprocess.CompletedProcess[str] = _run([uv, "tool", "list"])
-    for line in result.stdout.splitlines():
-        name, version_ = line.split()
-        if normalize_key(name) == normalize_key(app) and version_.startswith("v"):
-            installed = True
-            version = version_
-            break
-
-    return AppInfo(
-        name=app,
-        source="uv",
-        description=description,
-        website=f"https://pypi.org/project/{app}/",
-        version=version,
-        installed=installed,
-    )
-
-
-def fetch_app_info(source: str, app: str, document: tomlkit.TOMLDocument) -> AppInfo:
-    """Fetches info for an app from a given source.
-
-    Args:
-        source: The source of the app.
-        app: The name of the app.
-        document: The TOML document object.
-
-    Returns:
-        An AppInfo object.
-
-    Raises:
-        AppManagerError: If the source is unknown.
-    """
-    match source:
-        case "mas":
-            return fetch_mas_info(app)
-        case "cask" | "formula":
-            return fetch_brew_info(app, source)
-        case "uv":
-            return fetch_uv_info(document, app)
-    raise AppManagerError(f"Unknown source {source!r}.")
-
-
-def sorted_table(items: Iterable[tuple[str, Item]]) -> Table:
-    """Sorts a table of items by key.
-
-    Args:
-        items: The items to sort.
-
-    Returns:
-        A sorted TOMLKit Table object.
-    """
-    new_table = tomlkit.table()
-    for item_key, item_value in sorted(items, key=lambda item: item[0].lower()):
-        new_table[item_key] = item_value
-    return new_table
-
-
-def upsert_value(table: Table, key: str, value: Item) -> tuple[Table, bool]:
-    """Upserts a value into a table.
-
-    Args:
-        table: The table to upsert the value into.
-        key: The key of the value to upsert.
-        value: The value to upsert.
-
-    Returns:
-        A tuple of the sorted table and a boolean indicating if the value
-            already existed.
-    """
-    items: list[tuple[str, Item]] = list(table.items())
-    for index, (item_key, _) in enumerate(items):
-        if item_key == key:
-            items[index] = (key, value)
-            return sorted_table(items), True
-
-    items.append((key, value))
-    return sorted_table(items), False
-
-
-def pick_group_interactively(document: tomlkit.TOMLDocument) -> str:
-    """Picks a group interactively.
-
-    Args:
-        document: The TOML document object.
-
-    Returns:
-        The name of the group.
-
-    Raises:
-        AppManagerError: If the group is not found, the stdin is not
-            interactive, or the group name is empty.
-    """
-
-    def prompt_non_empty(prompt: str) -> str:
-        while True:
-            try:
-                value: str = input(prompt).strip()
-            except (EOFError, KeyboardInterrupt) as exc:
-                print()
-                raise AppManagerError("No group selected.") from exc
-            if value:
-                return value
-            print("Group name cannot be empty.")
-
-    groups: list[str] = [group for group, table in document.items() if isinstance(table, Table)]
-    if not sys.stdin.isatty():
-        raise AppManagerError(
-            "No --group/-g provided and stdin is not interactive. Provide --group explicitly."
-        )
-
-    if not groups:
-        # Empty apps.toml: allow user to create the first group.
-        # Normalize anyway for consistency
-        return resolve_group_name(document, prompt_non_empty("New group name: "))
-
-    print("No group provided. Select which group to add the app to:\n")
-    print(" 0. <create a new group>")
-    print("\n".join(f"{index:>2}. {group}" for index, group in enumerate(groups, start=1)))
-
-    by_norm: dict[str, str] = {normalize_key(group): group for group in groups}
-
-    while True:
-        try:
-            choice: str = input("\nEnter number, existing name, or new group name: ").strip()
-        except (EOFError, KeyboardInterrupt) as exc:
-            print()
-            raise AppManagerError("No group selected.") from exc
-
-        if not choice:
-            continue
-
-        if choice.isdigit():
-            index = int(choice)
-            if index == 0:
-                # If the user types a name that case-insensitively matches an
-                # existing group, normalize to the canonical existing group
-                # name to avoid duplicate sections.
-                return resolve_group_name(document, prompt_non_empty("New group name: "))
-            if 1 <= index <= len(groups):
-                return groups[index - 1]
-            print("Invalid selection. Try again.")
-            continue
-        existing: str | None = by_norm.get(normalize_key(choice))
-        if existing is not None:
-            return existing
-        # Not an existing group: treat as a new group name.
-        return resolve_group_name(document, choice)
-
-
-def add_app(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> tuple[bool, str | None]:
-    """Adds an app to the apps.toml file.
-
-    Args:
-        document: The TOML document object.
-        args: The argparse.Namespace object.
-
-    Returns:
-        A tuple of (source_changed, previous_source). `source_changed` is a
-            boolean indicating whether the source changed as a result of this
-            operation, and `previous_source` is that source if it existed,
-            otherwise None.
-
-    Raises:
-        AppManagerError: If unable to add the app to the apps.toml file.
-    """
-    if not args.group:
-        args.group = pick_group_interactively(document)
-    else:
-        # Normalize CLI-provided group names to existing sections, so
-        # `--group CLI-Tools` matches an existing `[cli-tools]`.
-        args.group = resolve_group_name(document, args.group)
-
-    existing = find_app_group(document, args.app)
-    moved_from: str | None = None
-    previous_source: str | None = None
-    if existing is not None:
-        existing_key, previous_source, existing_group = existing
-
-        # Keep the canonical key casing already in the file to avoid duplicates
-        # like "Foo" vs "foo".
-        args.app = existing_key
-        if existing_group != args.group:
-            removed = remove_app_from_group(document, group=existing_group, app_key=existing_key)
-            if not removed:
-                raise AppManagerError(
-                    f"App {args.app!r} was detected in [{existing_group}] but could not be "
-                    "removed."
-                )
-            moved_from = existing_group
-
-    description: str = infer_description(args.source, args.app, args.description, document)
-    group_table = document.get(args.group)
-    if group_table is None:
-        group_table = tomlkit.table()
-        document[args.group] = group_table
-    if not isinstance(group_table, Table):
-        raise AppManagerError(f"Section [{args.group}] is not a table in apps.toml.")
-
-    value = tomlkit.string(args.source)
-    value.comment(sanitize_toml_inline_comment(description))
-    value.trivia.comment_ws = "  "  # two spaces before comment
-
-    document[args.group], existed = upsert_value(group_table, args.app, value)
-    source_changed: bool = previous_source is not None and previous_source != args.source
-    if moved_from is not None:
-        print(
-            f"➡️ Moved {args.app!r} from [{moved_from}] to [{args.group}] with source"
-            f" '{args.source}' and description \"{description}\"."
-        )
-    elif existed:
-        print(
-            f"🔄 Updated {args.app!r} in [{args.group}] with source '{args.source}' and"
-            f' description "{description}".'
-        )
-    else:
-        print(
-            f"✅ Added {args.app!r} to [{args.group}] with source '{args.source}' and description"
-            f' "{description}".'
-        )
-    return source_changed, previous_source
-
-
-def _package_command(*, source: str, app: str, install: bool) -> list[str]:
-    action: str = "install" if install else "uninstall"
-    match source:
-        case "cask":
-            command: list[str] = ["brew", action, "--cask", app]
-        case "formula":
-            command: list[str] = ["brew", action, "--formula", app]
-        case "mas":
-            command: list[str] = ["mas", action, app]
-        case "uv":
-            command: list[str] = ["uv", "tool", action, app]
-        case _:
-            raise AppManagerError(f"Unknown source {source!r}.")
-    command[0] = _get_executable(command[0])
-    return command
-
-
-def _set_install_state(
-    document: tomlkit.TOMLDocument, *, source: str, app: str, install: bool
-) -> None:
-    is_installed = fetch_app_info(source, app, document).installed
-    if install and is_installed:
-        print(f"✅ {app!r} is already installed via {source}.")
-        return
-    if not install and not is_installed:
-        print(f"✅ {app!r} is not installed; skipping uninstall.")
-        return
-
-    if install and source == "formula" and platform.system() != "Darwin":
-        macos_only: set[str] = _get_macos_only_formulas([app])
-        if _should_skip_macos_only_formula(app, macos_only):
-            return
-
-    if install:
-        print(f"⬇️ Installing {app!r} via {source}...")
-    else:
-        print(f"🗑️ Uninstalling {app!r} via {source}...")
-
-    command: list[str] = _package_command(source=source, app=app, install=install)
-    _run(command)
-    print(f"{'✅ Installed' if install else '🚮 Uninstalled'} {app!r}.")
-
-
-def install_app(document: tomlkit.TOMLDocument, *, source: str, app: str) -> None:
-    _set_install_state(document, source=source, app=app, install=True)
-
-
-def uninstall_app(document: tomlkit.TOMLDocument, *, source: str, app: str) -> None:
-    _set_install_state(document, source=source, app=app, install=False)
-
-
-def remove_app(document: tomlkit.TOMLDocument, app: str) -> tuple[bool, str | None]:
-    """Removes an app from the apps.toml file.
-
-    Args:
-        document: The TOML document object.
-        app: The name of the app to remove.
-
-    Returns:
-        A tuple of a boolean indicating if the app was removed and its source.
-    """
-    existing: tuple[str, str, str] | None = find_app_group(document, app)
-    if existing is None:
-        print(f"⚠️ {app!r} not found in apps.toml.")
-        return False, None
-
-    existing_key, source, group = existing
-    removed: bool = remove_app_from_group(document, group=group, app_key=existing_key)
-    if not removed:
-        print(f"⚠️ {app!r} not found in apps.toml.")
-        return False, None
-
-    print(f"🗑️ Removed {existing_key!r} from [{group}].")
-    return True, source
-
-
-class Ansi:
-    RESET = "\x1b[0m"
-    BOLD = "\x1b[1m"
-    DIM = "\x1b[2m"
-    RED = "\x1b[31m"
-    GREEN = "\x1b[32m"
-    YELLOW = "\x1b[33m"
-    BLUE = "\x1b[34m"
-    MAGENTA = "\x1b[35m"
-    CYAN = "\x1b[36m"
-
-
-ANSI_RE: re.Pattern[str] = re.compile(r"\x1b\[[0-9;]*m")
-
-
-def paint(
-    text: str,
-    style: str | None = None,
-    *,
-    icon: str = "",
-    newline: bool = False,
-    bold: bool = True,
-    print_it: bool = True,
-) -> str:
-    """Format text with optional ANSI styling; optionally print it.
-
-    Args:
-        text: The text to format.
-        style: Ansi color (e.g. Ansi.RED), Ansi.DIM, or None.
-        icon: Optional icon prefix.
-        newline: Prepend a newline.
-        bold: Apply bold when style is a color. Default True.
-        print_it: If True, print the result; if False, return only.
-
-    Returns:
-        The formatted string.
-    """
-    supports_color: bool = sys.stdout.isatty()
-    has_styling: bool = bool(style) or bold
-    if not supports_color or not has_styling:
-        styled: str = text
-    else:
-        parts: list[str] = []
-        if bold:
-            parts.append(Ansi.BOLD)
-        if style:
-            parts.append(style)
-        styled = "".join(parts) + text + Ansi.RESET
-    full = ("\n" if newline else "") + (f"{icon} " if icon else "") + styled
-    if print_it:
-        print(full)
-    return full
-
-
-def _truncate(text: str, width: int) -> str:
-    if width <= 0:
-        return ""
-    if len(text) <= width:
-        return text
-    if width <= 1:
-        return text[:width]
-    return text[: width - 1] + "…"
-
-
-def _visible_len(text: str) -> int:
-    return len(ANSI_RE.sub("", text))
-
-
-def _ljust_ansi(text: str, width: int) -> str:
-    pad = width - _visible_len(text)
-    if pad <= 0:
-        return text
-    return text + (" " * pad)
-
-
-def _get_item_value(item: Item) -> str:
-    value = getattr(item, "value", None)
-    if value is None:
-        return str(item).strip('"')
-    return str(value)
-
-
-def _get_item_comment(item: Item) -> str:
-    trivia = getattr(item, "trivia", None)
-    comment = getattr(trivia, "comment", None)
-    if not comment:
-        return ""
-    return str(comment).lstrip("#").strip()
-
-
-def list_apps(document: tomlkit.TOMLDocument) -> None:
-    """Lists apps in apps.toml in an aligned table.
-
-    Args:
-        document: The TOML document object.
-    """
-    groups = list(iter_group_tables(document))
-    if not groups:
-        print("No apps found.")
-        return
-
-    rows_by_group: list[tuple[str, list[tuple[str, str, str]]]] = []
-    any_rows = False
-    for group, table in groups:
-        group_rows: list[tuple[str, str, str]] = []
-        for app_key, item in table.items():
-            app = str(app_key)
-            source = _get_item_value(item)
-            desc = _get_item_comment(item)
-            group_rows.append((app, source, desc))
-            any_rows = True
-        rows_by_group.append((group, group_rows))
-
-    if not any_rows:
-        print("No apps found.")
-        return
-
-    # Compute widths once, across all groups, so every table aligns the same.
-    all_rows = [row for _, rows in rows_by_group for row in rows]
-    col1_w = max(
-        (
-            *(len(r[0]) for r in all_rows),
-            *(len(group) for group, rows in rows_by_group if rows),
-        ),
-        default=0,
-    )
-    source_w: int = max((len("Source"), *(len(r[1]) for r in all_rows)))
-
-    cols: int = shutil.get_terminal_size((120, 20)).columns
-    fixed: int = col1_w + source_w + len(" |  | ")  # separators/spaces
-    desc_w: int = max(10, cols - fixed)
-
-    sep = f"{'-' * col1_w}-+-{'-' * source_w}-+-{'-' * desc_w}"
-
-    def color_source(s: str) -> str:
-        match s:
-            case "uv":
-                return paint(s, Ansi.GREEN, bold=False, print_it=False)
-            case "cask":
-                return paint(s, Ansi.MAGENTA, bold=False, print_it=False)
-            case "formula":
-                return paint(s, Ansi.YELLOW, bold=False, print_it=False)
-            case "mas":
-                return paint(s, Ansi.BLUE, bold=False, print_it=False)
-            case _:
-                return s
-
-    for group, group_rows in rows_by_group:
-        if not group_rows:
-            continue
-
-        group_header = f"{group:<{col1_w}} | {'Source':<{source_w}} | {'Description':<{desc_w}}"
-        paint(group_header, Ansi.CYAN)
-        paint(sep, Ansi.DIM)
-
-        for app, source, description in group_rows:
-            desc = _truncate(description, desc_w)
-            print(
-                f"{_ljust_ansi(paint(app, print_it=False), col1_w)} | "
-                f"{_ljust_ansi(color_source(source), source_w)} | "
-                f"{paint(desc, Ansi.DIM, bold=False, print_it=False) if desc else ''}"
-            )
-        print()
-
-
-def print_app_info(info: AppInfo) -> None:
-    """Prints app info in a formatted table.
-
-    Args:
-        info: The AppInfo object.
-    """
-    fields: dict[str, str] = {
-        "Name": info.name,
-        "Source": info.source,
-        "Description": info.description or "N/A",
-        "Website": info.website or "N/A",
-        "Version": info.version or "Unknown",
-        "Installed": "Yes" if info.installed else "No",
-    }
-
-    max_label: int = max(len(label) for label in fields)
-    for label, value in fields.items():
-        print(f"{label:<{max_label}} : {value}")
-
-
-def _list_installed_uv() -> list[str]:
-    uv: str = _get_executable("uv")
-    result = _run([uv, "tool", "list"])
-    items: list[str] = []
-    for line in result.stdout.splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("-"):
-            continue
-        items.append(stripped.split()[0])
-    return items
-
-
-def _list_installed_mas() -> dict[str, str]:
-    mas: str = _get_executable("mas")
-    result = _run([mas, "list"])
-    apps: dict[str, str] = {}
-    for line in result.stdout.splitlines():
-        match = re.match(r"^(\d+)\s+(.+?)\s+\(.*\)$", line.strip())
-        if not match:
-            continue
-        apps[match.group(1)] = match.group(2)
-    return apps
-
-
-def _confirm_uninstall(*, auto_yes: bool) -> bool:
-    if auto_yes:
-        return True
-    prompt: str = paint(
-        "Do you want to uninstall these apps? (y/n) ",
-        Ansi.RED,
-        icon="❓",
-        print_it=False,
-    )
-    choice: str = input(prompt)
-    return choice == "y"
-
-
-def _iter_apps_by_source(document: tomlkit.TOMLDocument) -> dict[str, list[tuple[str, str]]]:
-    by_source: dict[str, list[tuple[str, str]]] = {source: [] for source in APP_SOURCES}
-    for group, table in iter_group_tables(document):
-        for app, source in table.items():
-            source_name = str(source)
-            if source_name in by_source:
-                by_source[source_name].append((group, str(app)))
-    return by_source
-
-
-def _source_enabled(source: str, args: argparse.Namespace) -> bool:
-    field = SOURCE_FLAG_ARGS.get(source)
-    return bool(field and getattr(args, field, False))
-
-
-def _enabled_sources(args: argparse.Namespace) -> list[str]:
-    return [source for source in SOURCE_FLAG_ARGS if _source_enabled(source, args)]
-
-
-def _install_from_source(*, app: str, source: str, state: InstalledState) -> None:
-    app_name: str = app.rsplit("/", maxsplit=1)[-1]
-    is_installed: bool
-    installed_name: str
-
-    match source:
-        case "cask":
-            is_installed = app_name in state.casks
-            installed_name = app_name
-        case "formula":
-            is_installed = app_name in state.formulas
-            installed_name = app_name
-        case "uv":
-            is_installed = app in state.uv
-            installed_name = app
-        case "mas":
-            is_installed = app in state.mas
-            installed_name = state.mas.get(app, app)
-        case _:
-            raise AppManagerError(f"Unknown installation source: {source}.")
-
-    if is_installed:
-        paint(f"{installed_name} is already installed.", Ansi.GREEN, icon="✅")
-        return
-
-    paint(f"Installing {app}...", Ansi.BLUE, icon="⬇️")
-    command = _package_command(source=source, app=app, install=True)
-    _run(command, capture_output=False)
-
-
-def _build_installed_state(args: argparse.Namespace) -> InstalledState:
-    state = InstalledState(casks=set(), formulas=set(), uv=set(), mas={})
-    if args.install_cask or args.install_formula:
-        brew = _get_executable("brew")
-        state.casks = set(_run([brew, "list", "--cask"]).stdout.split())
-        state.formulas = set(_run([brew, "list", "--formula"]).stdout.split())
-    if args.install_uv:
-        state.uv = set(_list_installed_uv())
-    if args.install_mas:
-        state.mas = _list_installed_mas()
-    return state
-
-
-def _install_declared_apps(
-    document: tomlkit.TOMLDocument, args: argparse.Namespace, state: InstalledState
-) -> None:
-    macos_only_formulas: set[str] = set()
-    if platform.system() != "Darwin" and args.install_formula:
-        formula_list: list[str] = [
-            str(app_key)
-            for _, table in iter_group_tables(document)
-            for app_key, item in table.items()
-            if _get_item_value(item) == "formula"
-        ]
-        macos_only_formulas = _get_macos_only_formulas(formula_list)
-
-    current_group: str | None = None
-    for group, table in iter_group_tables(document):
-        for app, source in table.items():
-            source_name = str(source)
-            if not _source_enabled(source_name, args):
-                continue
-
-            if group != current_group:
-                suffix = "" if group.endswith("s") else " apps"
-                paint(
-                    f"Installing {group}{suffix}...",
-                    Ansi.MAGENTA,
-                    icon="📦",
-                    newline=True,
-                )
-                current_group = group
-
-            if source_name == "formula" and platform.system() != "Darwin":
-                app_str = str(app)
-                if _should_skip_macos_only_formula(app_str, macos_only_formulas):
-                    continue
-
-            _install_from_source(app=str(app), source=source_name, state=state)
-
-
-def _print_missing_apps(header: str, items: list[str]) -> None:
-    paint(header, Ansi.RED, icon="❗️")
-    for item in items:
-        print(f"  {item}")
-
-
-def _sync_homebrew(
-    apps_by_source: dict[str, list[tuple[str, str]]], args: argparse.Namespace
-) -> None:
-    if not (args.install_cask or args.install_formula):
-        return
-
-    brew = _get_executable("brew")
-    managed = {name for _, name in apps_by_source["cask"] + apps_by_source["formula"]}
-    managed |= {name.rsplit("/", maxsplit=1)[-1] for name in managed}
-
-    missing_formulae = (
-        sorted(set(_run([brew, "leaves"]).stdout.split()) - managed)
-        if args.install_formula
-        else []
-    )
-    missing_casks = (
-        sorted(set(_run([brew, "list", "--cask"]).stdout.split()) - managed)
-        if args.install_cask
-        else []
-    )
-    missing = missing_formulae + missing_casks
-
-    if not missing:
-        paint(
-            "All Homebrew-installed formulae and casks are present in apps.toml.",
-            Ansi.GREEN,
-            icon="✅",
-        )
-        return
-
-    _print_missing_apps(
-        "The following Homebrew-installed formulae and casks are missing from apps.toml:",
-        missing,
-    )
-    if not _confirm_uninstall(auto_yes=args.yes):
-        paint("No apps were uninstalled.", Ansi.MAGENTA, icon="🆗")
-        return
-
-    for app in missing_formulae:
-        paint(f"Uninstalling {app}...", Ansi.MAGENTA, icon="🗑️")
-        _run([brew, "uninstall", "--formula", app], capture_output=False)
-        paint(f"Uninstalled {app}.", Ansi.MAGENTA, icon="🚮")
-    for app in missing_casks:
-        paint(f"Uninstalling {app}...", Ansi.MAGENTA, icon="🗑️")
-        _run([brew, "uninstall", "--cask", "--zap", app], capture_output=False)
-        paint(f"Uninstalled {app}.", Ansi.MAGENTA, icon="🚮")
-
-
-def _sync_missing(header: str, ok_message: str, missing: list[str], *, auto_yes: bool) -> bool:
-    if not missing:
-        paint(ok_message, Ansi.GREEN, icon="✅")
-        return False
-
-    _print_missing_apps(header, missing)
-    if not _confirm_uninstall(auto_yes=auto_yes):
-        paint("No apps were uninstalled.", Ansi.MAGENTA, icon="🆗")
-        return False
-    return True
-
-
-def _sync_uv(apps_by_source: dict[str, list[tuple[str, str]]], args: argparse.Namespace) -> None:
-    if not args.install_uv:
-        return
-
-    managed_uv = {name for _, name in apps_by_source["uv"]}
-    missing_uv = sorted(set(_list_installed_uv()) - managed_uv)
-    if not _sync_missing(
-        "The following uv-installed apps are missing from apps.toml:",
-        "All uv-installed apps are present in apps.toml.",
-        missing_uv,
-        auto_yes=args.yes,
-    ):
-        return
-
-    uv = _get_executable("uv")
-    for app in missing_uv:
-        _run([uv, "tool", "uninstall", app], capture_output=False)
-        paint(f"Uninstalled {app}.", Ansi.MAGENTA, icon="🚮")
-
-
-def _sync_mas(apps_by_source: dict[str, list[tuple[str, str]]], args: argparse.Namespace) -> None:
-    if not args.install_mas:
-        return
-
-    installed_mas_now = _list_installed_mas()
-    managed_mas = {name for _, name in apps_by_source["mas"]}
-    missing_mas = {
-        app_id: name for app_id, name in installed_mas_now.items() if app_id not in managed_mas
-    }
-    missing_items = [f"{name} ({app_id})" for app_id, name in sorted(missing_mas.items())]
-    if not _sync_missing(
-        "The following Mac App Store apps are missing from apps.toml:",
-        "All Mac App Store apps are present in apps.toml.",
-        missing_items,
-        auto_yes=args.yes,
-    ):
-        return
-
-    mas = _get_executable("mas")
-    for app_id, name in sorted(missing_mas.items()):
-        result = _run([mas, "uninstall", app_id], check=False, capture_output=False)
-        if result.returncode != 0:
-            paint(
-                f"Failed to uninstall {name} ({app_id}). Please uninstall it manually.",
-                Ansi.RED,
-                icon="❌",
-            )
-            continue
-        paint(f"Uninstalled {name} ({app_id}).", Ansi.MAGENTA, icon="🚮")
-
-
-def _update_and_cleanup(args: argparse.Namespace) -> None:
-    paint(
-        "Updating existing apps and packages...",
-        Ansi.MAGENTA,
-        icon="🔼",
-        newline=True,
-    )
-    if args.install_cask or args.install_formula:
-        brew = _get_executable("brew")
-        _run([brew, "update"], capture_output=False)
-        _run([brew, "upgrade"], capture_output=False)
-        _run([brew, "cleanup"], capture_output=False)
-    if args.install_uv:
-        uv = _get_executable("uv")
-        _run([uv, "tool", "upgrade", "--all"], capture_output=False)
-    if args.install_mas:
-        mas = _get_executable("mas")
-        _run([mas, "upgrade"], capture_output=False)
-
-
-def sync_apps(document: tomlkit.TOMLDocument, args: argparse.Namespace) -> None:
-    paint("Installing apps and packages...", Ansi.BLUE, icon="📲")
-    sources = _enabled_sources(args)
-    paint(
-        f"Sources: {' '.join(sources) if sources else 'none'}",
-        Ansi.BLUE,
-        icon="📋",
-    )
-
-    apps_by_source = _iter_apps_by_source(document)
-    _install_declared_apps(document, args, _build_installed_state(args))
-
-    paint(
-        "Syncing installed apps to apps.toml...",
-        Ansi.MAGENTA,
-        icon="🔄",
-        newline=True,
-    )
-    _sync_homebrew(apps_by_source, args)
-    _sync_uv(apps_by_source, args)
-    _sync_mas(apps_by_source, args)
-    _update_and_cleanup(args)
-
-
 def main() -> None:
-    """Main function.
-
-    Raises:
-        AppManagerError: If an unknown command is encountered.
-    """
+    """CLI entrypoint."""
     args: argparse.Namespace = parse_args()
-    document: tomlkit.TOMLDocument = load_apps(args.apps_file)
-
-    if args.command == "add":
-        source_changed, previous_source = add_app(document, args)
-        save_apps(args.apps_file, document)
-        if not args.no_install:
-            if source_changed and previous_source in APP_SOURCES:
-                uninstall_app(document, source=previous_source, app=args.app)
-            install_app(document, source=args.source, app=args.app)
-    elif args.command == "remove":
-        removed, source = remove_app(document, args.app)
-        if removed:
-            # if nothing was removed there's no need to modify the file
-            save_apps(args.apps_file, document)
-            if source is not None and not args.no_install:
-                uninstall_app(document, source=source, app=args.app)
-    elif args.command == "list":
-        list_apps(document)
-    elif args.command == "info":
-        info: AppInfo = fetch_app_info(args.source, args.app, document)
-        print_app_info(info)
-    elif args.command == "sync":
-        sync_apps(document, args)
-    else:
-        raise AppManagerError(f"Unknown command: {args.command!r}")
+    console = Console()
+    runner = CommandRunner()
+    repository = AppsRepository(args.apps_file, console=console)
+    facade = AppManagerFacade(repository=repository, runner=runner, console=console)
+    dispatcher = CommandDispatcher(facade=facade)
+    dispatcher.dispatch(args)
 
 
 if __name__ == "__main__":
