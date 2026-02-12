@@ -12,8 +12,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
-      - name: Run actionlint
-        uses: raven-actions/actionlint@e01d1ea33dd6a5ed517d95b4c0c357560ac6f518 # v2.1.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
+      - name: Run checkov
+        run: make lint-actionlint
   checkov:
     name: Run checkov
     runs-on: ubuntu-latest
@@ -23,7 +25,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
       - name: Run checkov
-        run: uvx checkov -d .
+        run: make lint-checkov
   jsort:
     name: Run jsort
     runs-on: ubuntu-latest
@@ -68,11 +70,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
-
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
       - name: Run ruff
-        uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
-        with:
-          version: latest
+        run: make lint-ruff
   rumdl:
     name: Run rumdl
     runs-on: ubuntu-latest
@@ -82,19 +83,17 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
       - name: Run rumdl
-        run: uvx rumdl --config linkme/.config/rumdl/rumdl.toml check .
+        run: make lint-rumdl
   shellcheck:
     name: Run shellcheck
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
       - name: Run shellcheck
-        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # v2.0.0
-        env:
-          SHELLCHECK_OPTS: -x
-        with:
-          ignore_names: .zshrc .zprofile *.zsh
+        run: make lint-shellcheck
   shfmt:
     name: Run shfmt
     runs-on: ubuntu-latest
@@ -117,9 +116,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
       - name: Run tombi
-        run: |
-          uvx tombi lint .
-          uvx tombi format --check .
+        run: make lint-tombi
   trufflehog:
     name: Run trufflehog
     runs-on: ubuntu-latest
@@ -141,9 +138,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
       - name: Run ty
-        run: |
-          uvx --with-requirements scripts/aerials.py ty check scripts/aerials.py
-          uvx --with-requirements scripts/app.py ty check scripts/app.py
+        run: make lint-ty
   tests:
     name: Run app tests
     runs-on: ubuntu-latest
@@ -160,7 +155,7 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
-      - name: Display yamllint version
-        run: yamllint --version
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
       - name: Run yamllint
-        run: yamllint -c linkme/.config/yamllint/config .
+        run: make lint-yamllint

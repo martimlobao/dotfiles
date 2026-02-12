@@ -9,7 +9,6 @@ uv = "formula"  # Extremely fast Python package installer and resolver, written 
 
 [developer]
 charles = "cask"  # Web debugging Proxy application
-checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
 claude-code = "cask"  # Terminal-based AI coding assistant
 codex = "cask"  # OpenAI's coding agent that runs in your terminal
 codex-app = "cask"  # OpenAI's Codex desktop app for managing coding agents
@@ -24,12 +23,6 @@ icon-composer = "cask"  # Apple tool to create multi-platform icons
 jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
 "postgresql@15" = "formula"  # Object-relational database system
 redis = "formula"  # Persistent key-value database, with built-in net interface
-rumdl = "uv"  # Markdown Linter and Formatter written in Rust
-shellcheck = "formula"  # Static analysis and lint tool, for (ba)sh scripts
-shfmt = "formula"  # Autoformat shell script source code
-sqlfluff = "uv"  # SQL linter and auto-formatter for Humans
-tombi = "uv"  # TOML formatter, linter and language server
-yamllint = "uv"  # Linter for YAML files
 
 [work]
 aws-sso-cli = "formula"  # Securely manage AWS API credentials using AWS SSO
@@ -106,8 +99,9 @@ yubico-authenticator = "cask"  # Application for generating TOTP and HOTP codes
 
 [cli-tools]
 ack = "formula"  # Search tool like grep, but optimized for programmers
-actionlint = "formula"  # Static checker for GitHub Actions workflow files
+actionlint-py = "uv"  # Static checker for GitHub Actions workflow files
 bat = "formula"  # Clone of cat(1) with syntax highlighting and Git integration
+checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
 domain-check = "formula"  # CLI tool for checking domain availability using RDAP and WHOIS protocols
 exiftool = "formula"  # Perl lib for reading and writing EXIF metadata
 eza = "formula"  # Modern, maintained replacement for ls
@@ -126,13 +120,19 @@ pastel = "formula"  # Command-line tool to generate, analyze, convert and manipu
 pngcrush = "formula"  # Optimizer for PNG files
 prek = "uv"  # Pre-commit re-implemented in Rust
 pv = "formula"  # Monitor data's progress through a pipe
+rumdl = "uv"  # Markdown Linter and Formatter written in Rust
+shellcheck-py = "uv"  # Static analysis and lint tool, for (ba)sh scripts
+shfmt-py = "uv"  # Autoformat shell script source code
+sqlfluff = "uv"  # SQL linter and auto-formatter for Humans
 superseedr = "formula"  # BitTorrent Client in your Terminal
 telnet = "formula"  # User interface to the TELNET protocol
 testdisk = "formula"  # Powerful free data recovery utility
+tombi = "uv"  # TOML formatter, linter and language server
 tree = "formula"  # Display directories as trees (with optional color/HTML output)
 trufflehog = "formula"  # Find and verify credentials
 wget = "formula"  # Internet file retriever
 xleak = "formula"  # Terminal Excel viewer with an interactive TUI
+yamllint = "uv"  # Linter for YAML files
 yq = "formula"  # Process YAML, JSON, XML, CSV and properties documents from the CLI
 yt-dlp = "uv"  # Feature-rich command-line audio/video downloader
 
