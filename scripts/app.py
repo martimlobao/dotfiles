@@ -567,9 +567,7 @@ def _formula_entry_is_macos_only(entry: dict[str, JSON]) -> set[str]:
     """Return {full_name, name} if formula is macOS-only, else empty set."""
     raw_req: JSON = entry.get("requirements")
     requirements: list[JSON] = raw_req if isinstance(raw_req, list) else []
-    if not isinstance(requirements, list) or not any(
-        isinstance(r, dict) and r.get("name") == "macos" for r in requirements
-    ):
+    if not any(isinstance(r, dict) and r.get("name") == "macos" for r in requirements):
         return set()
 
     bottle: JSON = entry.get("bottle")
@@ -615,6 +613,19 @@ def _get_macos_only_formulas(formula_list: list[str]) -> set[str]:
         if isinstance(entry, dict):
             macos_only |= _formula_entry_is_macos_only(entry)
     return macos_only
+
+
+def _should_skip_macos_only_formula(app: str, macos_only: set[str]) -> bool:
+    """Return True if the formula should be skipped because it is macOS-only.
+
+    Handles both fully-qualified and bare formula names and prints a consistent
+    skip message when a macOS-only formula is encountered.
+    """
+    app_name: str = app.rsplit("/", 1)[-1]
+    if app in macos_only or app_name in macos_only:
+        paint(f"Skipping {app_name} (macOS only)", Ansi.RED, icon="⏭️")
+        return True
+    return False
 
 
 def fetch_uv_info(document: tomlkit.TOMLDocument, app: str) -> AppInfo:
@@ -890,9 +901,7 @@ def _set_install_state(
 
     if install and source == "formula" and platform.system() != "Darwin":
         macos_only: set[str] = _get_macos_only_formulas([app])
-        app_name: str = app.rsplit("/", 1)[-1]
-        if app in macos_only or app_name in macos_only:
-            paint(f"Skipping {app_name} (macOS only)", Ansi.RED, icon="⏭️")
+        if _should_skip_macos_only_formula(app, macos_only):
             return
 
     if install:
@@ -1254,13 +1263,7 @@ def _install_declared_apps(
 
             if source_name == "formula" and platform.system() != "Darwin":
                 app_str = str(app)
-                app_name = app_str.rsplit("/", 1)[-1]
-                if app_str in macos_only_formulas or app_name in macos_only_formulas:
-                    paint(
-                        f"Skipping {app_name} (macOS only)",
-                        Ansi.RED,
-                        icon="⏭️",
-                    )
+                if _should_skip_macos_only_formula(app_str, macos_only_formulas):
                     continue
 
             _install_from_source(app=str(app), source=source_name, state=state)

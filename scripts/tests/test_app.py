@@ -1202,6 +1202,50 @@ def test_get_macos_only_formulas_invalid_json_returns_empty() -> None:
     assert result == set()
 
 
+def test_get_macos_only_formulas_batches_multiple_formulas() -> None:
+    brew_json = json.dumps({
+        "formulae": [
+            {
+                "name": "macos-tool",
+                "full_name": "homebrew/core/macos-tool",
+                "requirements": [{"name": "macos"}],
+                "bottle": {"stable": {"files": {"arm64_monterey": {}}}},
+            },
+            {
+                "name": "linux-tool",
+                "full_name": "homebrew/core/linux-tool",
+                "requirements": [],
+                "bottle": {"stable": {"files": {"x86_64_linux": {}}}},
+            },
+            {
+                "name": "another-macos-tool",
+                "full_name": "homebrew/core/another-macos-tool",
+                "requirements": [{"name": "macos"}],
+                "bottle": {"stable": {"files": {"x86_64_monterey": {}}}},
+            },
+        ],
+    })
+    with (
+        patch.object(app_module, "_get_executable", return_value="brew"),
+        patch.object(
+            app_module,
+            "_run",
+            return_value=SimpleNamespace(stdout=brew_json, returncode=0, stderr=""),
+        ),
+    ):
+        result = app_module._get_macos_only_formulas([
+            "macos-tool",
+            "linux-tool",
+            "another-macos-tool",
+        ])
+    assert "macos-tool" in result
+    assert "homebrew/core/macos-tool" in result
+    assert "another-macos-tool" in result
+    assert "homebrew/core/another-macos-tool" in result
+    assert "linux-tool" not in result
+    assert "homebrew/core/linux-tool" not in result
+
+
 def test_install_declared_apps_skips_macos_only_on_linux(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
