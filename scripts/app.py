@@ -168,34 +168,32 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Auto-confirm uninstall prompts",
     )
-    sync_parser.add_argument("--cask", action="store_true", default=True, help=argparse.SUPPRESS)
     sync_parser.add_argument(
         "--no-cask",
         action="store_false",
         dest="install_cask",
+        default=True,
         help="Disable cask install/sync/upgrade",
-    )
-    sync_parser.add_argument(
-        "--formula", action="store_true", default=True, help=argparse.SUPPRESS
     )
     sync_parser.add_argument(
         "--no-formula",
         action="store_false",
         dest="install_formula",
+        default=True,
         help="Disable formula install/sync/upgrade",
     )
-    sync_parser.add_argument("--uv", action="store_true", default=True, help=argparse.SUPPRESS)
     sync_parser.add_argument(
         "--no-uv",
         action="store_false",
         dest="install_uv",
+        default=True,
         help="Disable uv install/sync/upgrade",
     )
-    sync_parser.add_argument("--mas", action="store_true", default=True, help=argparse.SUPPRESS)
     sync_parser.add_argument(
         "--no-mas",
         action="store_false",
         dest="install_mas",
+        default=True,
         help="Disable mas install/sync/upgrade",
     )
 
