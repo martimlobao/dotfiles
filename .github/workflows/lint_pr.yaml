@@ -155,7 +155,7 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
-      - name: Display yamllint version
-        run: yamllint --version
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
       - name: Run yamllint
         run: make lint-yamllint
