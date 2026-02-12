@@ -56,4 +56,5 @@ lint-yamllint:
 	uvx yamllint -c linkme/.config/yamllint/config .
 
 test-app:
-	uv run --with tomlkit --with pytest pytest tests/test_app.py
+	uvx --with-requirements tests/test_app.py pytest tests/test_app.py \
+		--cov=app_module --cov-report=term-missing --cov-fail-under=95
