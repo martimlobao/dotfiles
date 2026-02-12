@@ -1,10 +1,12 @@
 # /// script
-# requires-python = ">=3.13"
+# requires-python = ">=3.13,<3.14"
 # dependencies = [
 #     "pytest>=9.0.2",
 #     "pytest-cov>=7.0.0",
 #     "tomlkit>=0.14.0",
 # ]
+# [tool.uv]
+# exclude-newer = "2026-02-12T00:00:00Z"
 # ///
 from __future__ import annotations
 
