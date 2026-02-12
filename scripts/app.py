@@ -27,6 +27,7 @@ By default, ``app add`` installs the app and ``app remove`` uninstalls it. Use
 import argparse
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess  # noqa: S404
@@ -562,6 +563,71 @@ def fetch_brew_info(app: str, source: str) -> AppInfo:
     )
 
 
+def _formula_entry_is_macos_only(entry: dict[str, JSON]) -> set[str]:
+    """Return {full_name, name} if formula is macOS-only, else empty set."""
+    raw_req: JSON = entry.get("requirements")
+    requirements: list[JSON] = raw_req if isinstance(raw_req, list) else []
+    if not any(isinstance(r, dict) and r.get("name") == "macos" for r in requirements):
+        return set()
+
+    bottle: JSON = entry.get("bottle")
+    stable: JSON = bottle.get("stable") if isinstance(bottle, dict) else None
+    files: JSON = stable.get("files") if isinstance(stable, dict) else {}
+    if not isinstance(files, dict) or any("linux" in str(k) for k in files):
+        return set()
+
+    result: set[str] = set()
+    full_name: JSON = entry.get("full_name")
+    name: JSON = entry.get("name")
+    if isinstance(full_name, str):
+        result.add(full_name)
+    if isinstance(name, str):
+        result.add(name)
+    return result
+
+
+def _get_macos_only_formulas(formula_list: list[str]) -> set[str]:
+    """Return formulae that require macOS and have no Linux bottles.
+
+    Used on Linux to skip such formulae during install. Runs a single batched
+    brew info call for all formulae.
+    """
+    if not formula_list:
+        return set()
+
+    brew: str = _get_executable("brew")
+    command: list[str] = [brew, "info", "--json=v2", *formula_list]
+    result: subprocess.CompletedProcess[str] = _run(command, check=False)
+
+    try:
+        data: dict[str, JSON] = json.loads(result.stdout or "{}")
+    except json.JSONDecodeError:
+        return set()
+
+    formulae: list[dict[str, JSON]] = data.get("formulae") or []
+    if not isinstance(formulae, list):
+        return set()
+
+    macos_only: set[str] = set()
+    for entry in formulae:
+        if isinstance(entry, dict):
+            macos_only |= _formula_entry_is_macos_only(entry)
+    return macos_only
+
+
+def _should_skip_macos_only_formula(app: str, macos_only: set[str]) -> bool:
+    """Return True if the formula should be skipped because it is macOS-only.
+
+    Handles both fully-qualified and bare formula names and prints a consistent
+    skip message when a macOS-only formula is encountered.
+    """
+    app_name: str = app.rsplit("/", 1)[-1]
+    if app in macos_only or app_name in macos_only:
+        paint(f"Skipping {app_name} (macOS only)", Ansi.RED, icon="⏭️")
+        return True
+    return False
+
+
 def fetch_uv_info(document: tomlkit.TOMLDocument, app: str) -> AppInfo:
     """Fetches info for an app from uv.
 
@@ -832,6 +898,11 @@ def _set_install_state(
     if not install and not is_installed:
         print(f"✅ {app!r} is not installed; skipping uninstall.")
         return
+
+    if install and source == "formula" and platform.system() != "Darwin":
+        macos_only: set[str] = _get_macos_only_formulas([app])
+        if _should_skip_macos_only_formula(app, macos_only):
+            return
 
     if install:
         print(f"⬇️ Installing {app!r} via {source}...")
@@ -1163,6 +1234,16 @@ def _build_installed_state(args: argparse.Namespace) -> InstalledState:
 def _install_declared_apps(
     document: tomlkit.TOMLDocument, args: argparse.Namespace, state: InstalledState
 ) -> None:
+    macos_only_formulas: set[str] = set()
+    if platform.system() != "Darwin" and args.install_formula:
+        formula_list: list[str] = [
+            str(app_key)
+            for _, table in iter_group_tables(document)
+            for app_key, item in table.items()
+            if _get_item_value(item) == "formula"
+        ]
+        macos_only_formulas = _get_macos_only_formulas(formula_list)
+
     current_group: str | None = None
     for group, table in iter_group_tables(document):
         for app, source in table.items():
@@ -1179,6 +1260,11 @@ def _install_declared_apps(
                     newline=True,
                 )
                 current_group = group
+
+            if source_name == "formula" and platform.system() != "Darwin":
+                app_str = str(app)
+                if _should_skip_macos_only_formula(app_str, macos_only_formulas):
+                    continue
 
             _install_from_source(app=str(app), source=source_name, state=state)
 
