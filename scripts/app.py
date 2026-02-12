@@ -156,14 +156,15 @@ class RemoveAppOutcome:
 class CommandRunner:
     """Thin subprocess wrapper with consistent errors and executable lookup."""
 
-    def get_executable(self, name: str) -> str:  # noqa: PLR6301
+    @staticmethod
+    def get_executable(name: str) -> str:
         path: str | None = shutil.which(name)
         if not path:
             raise AppManagerError(f"Required executable not found on PATH: {name}")
         return path
 
-    def run(  # noqa: PLR6301
-        self,
+    @staticmethod
+    def run(
         command: list[str],
         *,
         check: bool = True,
@@ -204,8 +205,8 @@ MIN_UV_LIST_COLUMNS: int = 2
 class Console:
     """Terminal output and prompt helper."""
 
-    def paint(  # noqa: PLR6301
-        self,
+    @staticmethod
+    def paint(
         text: str,
         style: str | None = None,
         *,
@@ -243,7 +244,8 @@ class Console:
         for item in items:
             print(f"  {item}")
 
-    def print_info(self, info: AppInfo) -> None:  # noqa: PLR6301
+    @staticmethod
+    def print_info(info: AppInfo) -> None:
         fields: OrderedDict[str, str] = OrderedDict([
             ("Name", info.name),
             ("Source", info.source),
@@ -377,8 +379,8 @@ class AppsRepository:
     def normalize_key(key: str) -> str:
         return key.casefold()
 
-    def iter_group_tables(  # noqa: PLR6301
-        self,
+    @staticmethod
+    def iter_group_tables(
         document: tomlkit.TOMLDocument,
     ) -> Iterator[tuple[str, Table]]:
         for group, table in document.items():
@@ -667,10 +669,12 @@ class BaseSourceService(ABC):
     def maintenance_key(self) -> str:
         return self.provider_name or self.source_name
 
-    def managed_aliases(self, app: str) -> set[str]:  # noqa: PLR6301
+    @staticmethod
+    def managed_aliases(app: str) -> set[str]:
         return {app}
 
-    def pre_install_check(self, app: str) -> OperationResult | None:  # noqa: PLR6301
+    @staticmethod
+    def pre_install_check(app: str) -> OperationResult | None:
         del app
         return None
 
@@ -748,7 +752,8 @@ class BrewSourceService(BaseSourceService, ABC):
     def _brew(self) -> str:
         return self.runner.get_executable("brew")
 
-    def managed_aliases(self, app: str) -> set[str]:  # noqa: PLR6301
+    @staticmethod
+    def managed_aliases(app: str) -> set[str]:
         return {app, app.rsplit("/", 1)[-1]}
 
     def list_installed(self) -> dict[str, str]:
