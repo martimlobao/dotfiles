@@ -199,7 +199,6 @@ class Ansi:
 
 
 ANSI_RE: re.Pattern[str] = re.compile(r"\x1b\[[0-9;]*m")
-MIN_UV_LIST_COLUMNS: int = 2
 
 
 class Console:
@@ -958,6 +957,7 @@ class UvSourceService(BaseSourceService):
     source_name = "uv"
     install_flag = "install_uv"
     sync_toggle_help = "Disable uv install/sync/upgrade"
+    _MIN_UV_LIST_COLUMNS: int = 2
 
     def _uv(self) -> str:
         return self.runner.get_executable("uv")
@@ -977,7 +977,7 @@ class UvSourceService(BaseSourceService):
             if not stripped or stripped.startswith("-"):
                 continue
             parts: list[str] = stripped.split()
-            if len(parts) < MIN_UV_LIST_COLUMNS:
+            if len(parts) < self._MIN_UV_LIST_COLUMNS:
                 continue
             name, version_token = parts[0], parts[1]
             if name.casefold() == app.casefold() and version_token.startswith("v"):
