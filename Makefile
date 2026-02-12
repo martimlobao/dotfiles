@@ -20,8 +20,9 @@ lint-checkov:
 	uvx checkov --quiet -d .
 
 lint-jsort:
-	. linkme/.functions; \
-	jsort --sort-arrays check
+	mkdir -p temp/.bin
+	GOBIN="$(PWD)/temp/.bin" go install github.com/mikefarah/yq/v4@latest
+	PATH="$(PWD)/temp/.bin:$$PATH" bash -lc '. linkme/.functions; jsort --sort-arrays check'
 
 # lint-oxipng:
 # 	oxipng -o 4 --strip safe ./**/*.png

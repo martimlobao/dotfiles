@@ -202,7 +202,8 @@ poetry.toml
 # ruff
 .ruff_cache/
 
-# LSP config files
+
+*.private
 pyrightconfig.json
 
 ### VisualStudioCode ###

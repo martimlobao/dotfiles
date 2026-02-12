@@ -143,6 +143,11 @@ function jsort() {
 		return 1
 	fi
 
+	if ! command -v yq &>/dev/null; then
+		echo "jsort: yq is required but was not found in PATH" >&2
+		return 127
+	fi
+
 	# Build expression based on flags
 	local expr
 	if [[ ${sort_arrays} -eq 1 ]]; then
@@ -179,23 +184,23 @@ function jsort() {
 		local file="$1" mode="$2" result_file="$3" expr_file="$4" tmp_file expr
 
 		expr=$(cat "${expr_file}")
-		tmp_file=$(mktemp) || { echo "error" >>"${result_file}"; return 1; }
+		tmp_file=$(mktemp) || { echo "error:${file}" >>"${result_file}"; return 1; }
 		if ! yq -P -o=json "${expr}" "${file}" >"${tmp_file}" 2>/dev/null; then
 			rm -f "${tmp_file}"
-			echo "error" >>"${result_file}"
+			echo "error:${file}" >>"${result_file}"
 			return 1
 		fi
 
 		if cmp -s "${tmp_file}" "${file}" 2>/dev/null; then
 			rm -f "${tmp_file}"
-			echo "unchanged" >>"${result_file}"
+			echo "unchanged:${file}" >>"${result_file}"
 		else
 			if [[ ${mode} == "fmt" ]]; then
-				mv "${tmp_file}" "${file}" || { rm -f "${tmp_file}"; echo "error" >>"${result_file}"; return 1; }
+				mv "${tmp_file}" "${file}" || { rm -f "${tmp_file}"; echo "error:${file}" >>"${result_file}"; return 1; }
 			else
 				rm -f "${tmp_file}"
 			fi
-			echo "formatted" >>"${result_file}"
+			echo "formatted:${file}" >>"${result_file}"
 		fi
 	}
 
@@ -214,22 +219,22 @@ function jsort() {
 				fi
 			fi
 			expr=$(cat "${expr_file}")
-			tmp_file=$(mktemp) || { echo "error" >>"${result_file}"; exit 1; }
+			tmp_file=$(mktemp) || { echo "error:${file}" >>"${result_file}"; exit 1; }
 			if ! yq -P -o=json "${expr}" "${file}" >"${tmp_file}" 2>/dev/null; then
 				rm -f "${tmp_file}"
-				echo "error" >>"${result_file}"
+				echo "error:${file}" >>"${result_file}"
 				exit 1
 			fi
 			if cmp -s "${tmp_file}" "${file}" 2>/dev/null; then
 				rm -f "${tmp_file}"
-				echo "unchanged" >>"${result_file}"
+				echo "unchanged:${file}" >>"${result_file}"
 			else
 				if [[ ${mode} == "fmt" ]]; then
-					mv "${tmp_file}" "${file}" || { rm -f "${tmp_file}"; echo "error" >>"${result_file}"; exit 1; }
+					mv "${tmp_file}" "${file}" || { rm -f "${tmp_file}"; echo "error:${file}" >>"${result_file}"; exit 1; }
 				else
 					rm -f "${tmp_file}"
 				fi
-				echo "formatted" >>"${result_file}"
+				echo "formatted:${file}" >>"${result_file}"
 			fi
 		' _ {} "${mode}" "${result_file}" "${expr_file}" "${no_ignore}"
 	else
@@ -245,11 +250,11 @@ function jsort() {
 
 	# Count results
 	local formatted_count unchanged_count error_count total_count
-	formatted_count=$(grep -c "^formatted$" "${result_file}" 2>/dev/null)
+	formatted_count=$(grep -c "^formatted:" "${result_file}" 2>/dev/null)
 	formatted_count=${formatted_count:-0}
-	unchanged_count=$(grep -c "^unchanged$" "${result_file}" 2>/dev/null)
+	unchanged_count=$(grep -c "^unchanged:" "${result_file}" 2>/dev/null)
 	unchanged_count=${unchanged_count:-0}
-	error_count=$(grep -c "^error$" "${result_file}" 2>/dev/null)
+	error_count=$(grep -c "^error:" "${result_file}" 2>/dev/null)
 	error_count=${error_count:-0}
 	total_count=$((formatted_count + unchanged_count + error_count))
 
@@ -263,10 +268,16 @@ function jsort() {
 	fi
 
 	if [[ ${error_count} -gt 0 ]]; then
+		echo "Files that had errors:" >&2
+		grep "^error:" "${result_file}" 2>/dev/null | sed 's/^error://' >&2
+		echo >&2
 		echo "jsort: ${error_count} file(s) had errors" >&2
 	fi
 
 	if [[ ${mode} == "check" && ${formatted_count} -gt 0 ]]; then
+		echo "Files that would be formatted:" >&2
+		grep "^formatted:" "${result_file}" 2>/dev/null | sed 's/^formatted://' >&2
+		echo >&2
 		local word=$([[ ${formatted_count} -eq 1 ]] && echo "file" || echo "files")
 		echo "${formatted_count} ${word} would be formatted" >&2
 		return 1
