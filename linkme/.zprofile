@@ -20,3 +20,6 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # Add cargo to PATH
 export PATH="$HOME/.cargo/bin:$PATH"
+
+# Add scripts to PATH
+export PATH="$DOTPATH/scripts:$PATH"
