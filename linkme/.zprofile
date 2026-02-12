@@ -22,4 +22,4 @@ export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
 
 # Add scripts to PATH
-export PATH="$DOTPATH/scripts:$PATH"
+export PATH="$HOME/.dotfiles/scripts:$PATH"
