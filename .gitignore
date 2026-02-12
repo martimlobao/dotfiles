@@ -8,8 +8,7 @@
 .LSOverride
 
 # Icon must end with two \r
-Icon
-
+Icon
 
 # Thumbnails
 ._*
@@ -202,8 +201,8 @@ poetry.toml
 
 # ruff
 .ruff_cache/
+
 # LSP config files
-*.private
 pyrightconfig.json
 
 ### VisualStudioCode ###
@@ -226,6 +225,7 @@ pyrightconfig.json
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,visualstudiocode,python
+
 # repo specific
+temp/
 *.private
-.gitconfig.private
