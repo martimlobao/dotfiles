@@ -20,8 +20,11 @@ lint-checkov:
 	uvx checkov --quiet -d .
 
 lint-jsort:
-	mkdir -p temp/.bin
-	GOBIN="$(PWD)/temp/.bin" go install github.com/mikefarah/yq/v4@latest
+	@if [ ! -x "$(PWD)/temp/.bin/yq" ] && ! (command -v yq >/dev/null 2>&1 && yq --help 2>&1 | grep -q -- "-P"); then \
+		echo "Installing yq to temp/.bin..."; \
+		mkdir -p temp/.bin; \
+		GOBIN="$(PWD)/temp/.bin" go install github.com/mikefarah/yq/v4@latest; \
+	fi
 	PATH="$(PWD)/temp/.bin:$$PATH" bash -lc '. linkme/.functions; jsort --sort-arrays check'
 
 # lint-oxipng:
