@@ -1229,7 +1229,7 @@ def _sync_homebrew(
 
     for app in missing_formulae:
         paint(f"Uninstalling {app}...", Ansi.MAGENTA, icon="🗑️")
-        _run([brew, "uninstall", "--zap", app], capture_output=False)
+        _run([brew, "uninstall", app], capture_output=False)
         paint(f"Uninstalled {app}.", Ansi.MAGENTA, icon="🚮")
     for app in missing_casks:
         paint(f"Uninstalling {app}...", Ansi.MAGENTA, icon="🗑️")
