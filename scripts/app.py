@@ -655,6 +655,7 @@ class BaseSourceService(ABC):
     def __init__(self, *, runner: CommandRunner, console: Console) -> None:
         self.runner = runner
         self.console = console
+        self._installed_state_cache: dict[str, str] | None = None
 
     @classmethod
     def config(cls) -> SourceConfig:
@@ -677,9 +678,33 @@ class BaseSourceService(ABC):
         del app
         return None
 
+    def _installed_state(self) -> dict[str, str]:
+        if self._installed_state_cache is None:
+            self._installed_state_cache = self.list_installed()
+        return self._installed_state_cache
+
+    def _mark_installed(self, app: str) -> None:
+        if self._installed_state_cache is None:
+            return
+        for alias in self.managed_aliases(app):
+            self._installed_state_cache[alias] = alias
+
+    def _mark_uninstalled(self, app: str) -> None:
+        if self._installed_state_cache is None:
+            return
+
+        aliases: set[str] = {alias.casefold() for alias in self.managed_aliases(app)}
+        keys_to_remove: list[str] = [
+            key
+            for key, value in self._installed_state_cache.items()
+            if key.casefold() in aliases or value.casefold() in aliases
+        ]
+        for key in keys_to_remove:
+            del self._installed_state_cache[key]
+
     def is_installed(self, app: str) -> bool:
         aliases: set[str] = {alias.casefold() for alias in self.managed_aliases(app)}
-        installed_map: dict[str, str] = self.list_installed()
+        installed_map: dict[str, str] = self._installed_state()
         installed_tokens: set[str] = {
             token.casefold() for token in {*installed_map.keys(), *installed_map.values()}
         }
@@ -697,6 +722,7 @@ class BaseSourceService(ABC):
 
         self.console.paint(f"Installing {app!r} via {self.source_name}...", Ansi.BLUE, icon="⬇️")
         self.install(app)
+        self._mark_installed(app)
         return OperationResult.ok(f"Installed {app!r}.")
 
     def ensure_uninstalled(self, app: str) -> OperationResult:
@@ -708,6 +734,7 @@ class BaseSourceService(ABC):
         )
         result: OperationResult = self.uninstall(app)
         if result.success and not result.skipped:
+            self._mark_uninstalled(app)
             return OperationResult.ok(f"Uninstalled {app!r}.")
         return result
 
@@ -730,7 +757,10 @@ class BaseSourceService(ABC):
         raise NotImplementedError
 
     def uninstall_unmanaged(self, app: str) -> OperationResult:
-        return self.uninstall(app)
+        result: OperationResult = self.uninstall(app)
+        if result.success and not result.skipped:
+            self._mark_uninstalled(app)
+        return result
 
     @abstractmethod
     def upgrade_all(self) -> None:  # pragma: no cover
@@ -857,6 +887,7 @@ class BrewCaskSourceService(BrewSourceService):
     def uninstall_unmanaged(self, app: str) -> OperationResult:
         brew: str = self._brew()
         self.runner.run([brew, "uninstall", "--cask", "--zap", app], capture_output=False)
+        self._mark_uninstalled(app)
         return OperationResult.ok("")
 
 

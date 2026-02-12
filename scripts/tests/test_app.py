@@ -1113,6 +1113,44 @@ def test_base_source_is_installed_uses_aliases() -> None:
         assert service.is_installed("homebrew/core/httpie")
 
 
+def test_base_source_is_installed_caches_listed_state() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    with patch.object(service, "list_installed", return_value={"httpie": "httpie"}) as listed:
+        assert service.is_installed("httpie")
+        assert not service.is_installed("gh")
+    listed.assert_called_once()
+
+
+def test_base_source_cache_updates_after_install_and_uninstall() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+
+    with (
+        patch.object(service, "list_installed", return_value={}) as listed,
+        patch.object(service, "install") as install,
+        patch.object(
+            service,
+            "uninstall",
+            return_value=app_module.OperationResult.ok(""),
+        ) as uninstall,
+    ):
+        first = service.ensure_installed("httpie")
+        second = service.ensure_installed("httpie")
+        third = service.ensure_uninstalled("httpie")
+        fourth = service.ensure_uninstalled("httpie")
+
+    assert first.success
+    assert not first.skipped
+    assert second.skipped
+    assert third.success
+    assert not third.skipped
+    assert fourth.skipped
+    listed.assert_called_once()
+    install.assert_called_once_with("httpie")
+    uninstall.assert_called_once_with("httpie")
+
+
 def test_base_source_ensure_installed_preflight_skip() -> None:
     runner = Mock(spec=app_module.CommandRunner)
     service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
