@@ -38,8 +38,6 @@ ignore = [
   "Q003",  # avoidable-escaped-quote
   "COM812",  # missing-trailing-comma
   "COM819",  # prohibited-trailing-comma
-  "ISC001",  # single-line-implicit-string-concatenation
-  "ISC002",  # multi-line-implicit-string-concatenation
 ]
 
 [lint.per-file-ignores]
@@ -53,9 +51,11 @@ ignore = [
   "D105",  # undocumented-magic-method
   "D106",  # undocumented-public-nested-class
   "D107",  # undocumented-public-init
+  "PLR2004",  # magic-value-comparison
   # invalid for tests
   "INP001",  # implicit-namespace-package
   "S101",  # assert
+  "SLF001",  # private-member-access
 ]
 
 [lint.mccabe]
