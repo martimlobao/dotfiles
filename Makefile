@@ -26,8 +26,8 @@ lint-jsort:
 	. linkme/.functions; \
 	jsort --sort-arrays check
 
-# lint-oxipng:
-# 	oxipng -o 4 --strip safe ./**/*.png
+lint-oxipng:
+	uvx --from pyoxipng oxipng -o 4 --strip safe ./**/*.png
 
 lint-ruff:
 	uvx ruff check
