@@ -51,6 +51,30 @@ else
 fi
 
 ###############################################################################
+# Install uv                                                                  #
+###############################################################################
+echo
+echo -e "🥚 \033[1;33mInstalling uv...\033[0m"
+sleep 1
+if ! command -v uv &>/dev/null; then
+	# Ensure brew is in PATH for this session (required when freshly installed)
+	if [[ "$(uname)" == "Darwin" ]]; then
+		if [[ -f /opt/homebrew/bin/brew ]]; then
+			eval "$(/opt/homebrew/bin/brew shellenv)"
+		else
+			# for old versions of macOS
+			eval "$(/usr/local/bin/brew shellenv)"
+		fi
+	else
+		eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+	fi
+	brew install uv
+	echo -e "🐍 \033[1;32muv installed.\033[0m"
+else
+	echo -e "🐍 \033[1;32muv is already installed.\033[0m"
+fi
+
+###############################################################################
 # Install dotfiles                                                            #
 ###############################################################################
 echo
