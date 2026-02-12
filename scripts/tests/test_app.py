@@ -187,7 +187,9 @@ def test_install_app_runs_command() -> None:
         patch.object(app_module, "fetch_app_info") as fetch_info,
         patch.object(app_module, "_get_executable", return_value="brew"),
         patch.object(app_module, "_run") as run,
+        patch.object(app_module, "platform") as platform_mock,
     ):
+        platform_mock.system.return_value = "Darwin"
         fetch_info.return_value = app_module.AppInfo(
             name="foo",
             source="formula",
