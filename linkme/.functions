@@ -5,11 +5,6 @@ function app() {
 	uv run "${DOTPATH}/scripts/app.py" "$@"
 }
 
-# Sync apps from apps.toml
-function syncapps() {
-	app sync "$@"
-}
-
 # Run aerials.py
 function aerials() {
 	if [[ $# -eq 0 ]]; then
