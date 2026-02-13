@@ -13,7 +13,7 @@ source "${root}/bash_traceback.sh"
 echo -e "🔑 \033[1;34mSetting local settings and variables...\033[0m"
 
 # ensure signed in to 1Password
-echo -e "🔐 \033[1;35mSigning in to 1Password...\033[0m"
+echo -e "\n🔐 \033[1;35mSigning in to 1Password...\033[0m"
 if [[ -z "$(op account get 2>/dev/null)" ]]; then
 	echo -e "ℹ️  \033[1;33mSigning in to 1Password for the first time, please follow the instructions and enable the SSH Agent in the 1Password app.\033[0m"
 	op signin --help
@@ -29,7 +29,7 @@ else
 	INJECTME="y"
 fi
 if [[ ${INJECTME} =~ ^[Yy]$ ]]; then
-	echo -e "💉 \033[1;35mInjecting secrets into files using 1Password...\033[0m"
+	echo -e "\n💉 \033[1;35mInjecting secrets into files using 1Password...\033[0m"
 	find "${root}/injectme" -type f -name "*.tpl" | while read -r template; do
 		# Get the output path by:
 		# 1. Removing 'injectme/' prefix
@@ -54,7 +54,7 @@ else
 	COPYME="y"
 fi
 if [[ ${COPYME} =~ ^[Yy]$ ]]; then
-	echo -e "📝 \033[1;35mCopying files from copyme/ to ${HOME}...\033[0m"
+	echo -e "\n📝 \033[1;35mCopying files from copyme/ to ${HOME}...\033[0m"
 	rsync -av --exclude='.DS_Store' copyme/ "${HOME}" |
 		grep -v "building file list ... done" |
 		grep -v "Transfer starting:" |
@@ -68,7 +68,7 @@ fi
 
 # iStat Menus
 if [[ -z "$(defaults read com.bjango.istatmenus license6 2>/dev/null || echo '')" ]]; then
-	echo -e "📝 \033[1;35mRegistering iStat Menus...\033[0m"
+	echo -e "\n📝 \033[1;35mRegistering iStat Menus...\033[0m"
 	ISTAT_EMAIL=$(op read "op://Private/iStat Menus 6/registered email")
 	ISTAT_KEY=$(op read "op://Private/iStat Menus 6/license key")
 
@@ -85,7 +85,7 @@ fi
 
 # Charles
 if [[ -z $(xmllint --xpath "string(//configuration/registrationConfiguration/key)" ~/Library/Preferences/com.xk72.charles.config) ]]; then
-	echo -e "📝 \033[1;35mRegistering Charles...\033[0m"
+	echo -e "\n📝 \033[1;35mRegistering Charles...\033[0m"
 
 	CHARLES_NAME=$(op read "op://Private/Charles/registered name")
 	CHARLES_KEY=$(op read "op://Private/Charles/license key")
@@ -99,7 +99,7 @@ else
 fi
 
 # GitHub CLI
-echo -e "📝 \033[1;35mSetting up GitHub CLI...\033[0m"
+echo -e "\n📝 \033[1;35mSetting up GitHub CLI...\033[0m"
 if [[ -z $(gh auth status 2>/dev/null || echo '') ]]; then
 	gh auth login --git-protocol ssh --hostname github.com --skip-ssh-key --web
 	echo -e "✅ \033[1;32mGitHub CLI is authenticated.\033[0m"
@@ -128,7 +128,7 @@ set_computer_name() {
 	serial=$(system_profiler SPHardwareDataType | awk '/Serial Number/ {print $4}')
 	model=$(sysctl hw.model | sed 's/hw.model: //')
 
-	echo -e "🔍 \033[1;35mLooking up computer name on 1Password for ${uuid}...\033[0m"
+	echo -e "\n🔍 \033[1;35mLooking up computer name on 1Password for ${uuid}...\033[0m"
 	local name
 	name=$(op read "op://Private/Computers/${uuid}/name" 2>/dev/null || echo '')
 	if [[ -z ${name} ]]; then
