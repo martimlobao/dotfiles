@@ -17,6 +17,7 @@ import json
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -45,7 +46,7 @@ def build_facade(
     *,
     content: str = "",
     runner: object | None = None,
-) -> tuple[object, Path, object]:
+) -> tuple[Any, Path, Any]:
     apps_file = tmp_path / "apps.toml"
     if content:
         apps_file.write_text(content)
@@ -1111,6 +1112,98 @@ def test_base_source_is_installed_uses_aliases() -> None:
     service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
     with patch.object(service, "list_installed", return_value={"httpie": "httpie"}):
         assert service.is_installed("homebrew/core/httpie")
+
+
+def test_base_source_is_installed_caches_listed_state() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    with patch.object(service, "list_installed", return_value={"httpie": "httpie"}) as listed:
+        assert service.is_installed("httpie")
+        assert not service.is_installed("gh")
+    listed.assert_called_once()
+
+
+def test_base_source_is_installed_cache_uses_aliases() -> None:
+    """Cache works for alias lookups; any alias hit avoids list_installed."""
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    # "homebrew/core/httpie" aliases: {"homebrew/core/httpie", "httpie"}
+    with patch.object(service, "list_installed", return_value={"httpie": "httpie"}) as listed:
+        # Seed cache via is_installed with full tap form
+        assert service.is_installed("homebrew/core/httpie")
+        # Subsequent calls with any alias must hit cache, not list_installed
+        assert service.is_installed("httpie")
+        assert service.is_installed("homebrew/core/httpie")
+    listed.assert_called_once()
+
+
+def test_base_source_cache_updates_after_install_and_uninstall() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+
+    with (
+        patch.object(service, "list_installed", return_value={}) as listed,
+        patch.object(service, "install") as install,
+        patch.object(
+            service,
+            "uninstall",
+            return_value=app_module.OperationResult.ok(""),
+        ) as uninstall,
+    ):
+        service.ensure_installed("httpie")
+        listed.assert_called_once()
+        install.assert_called_once()
+
+        listed.reset_mock()
+        install.reset_mock()
+        service.ensure_installed("httpie")
+        listed.assert_not_called()
+        install.assert_not_called()
+
+        service.ensure_uninstalled("httpie")
+        uninstall.assert_called_once()
+
+        uninstall.reset_mock()
+        service.ensure_uninstalled("httpie")
+        uninstall.assert_not_called()
+
+
+@pytest.mark.parametrize("invoked_name", ["httpie", "httpie-cli", "http"])
+def test_base_source_cache_updates_for_aliases(invoked_name: str) -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.UvSourceService(runner=runner, console=app_module.Console())
+    aliases = {"httpie", "httpie-cli", "http"}
+
+    with (
+        patch.object(service, "managed_aliases", return_value=aliases),
+        patch.object(service, "list_installed", return_value={}) as listed,
+        patch.object(service, "install") as install,
+        patch.object(
+            service,
+            "uninstall",
+            return_value=app_module.OperationResult.ok(""),
+        ) as uninstall,
+    ):
+        service.ensure_installed(invoked_name)
+        listed.assert_called_once()
+        assert install.call_count == 1
+
+        listed.reset_mock()
+        install.reset_mock()
+        for alias in aliases:
+            service.ensure_installed(alias)
+
+        listed.assert_not_called()
+        install.assert_not_called()
+
+        service.ensure_uninstalled("httpie")
+        assert uninstall.call_count == 1
+
+        uninstall.reset_mock()
+        for alias in aliases:
+            service.ensure_uninstalled(alias)
+
+        uninstall.assert_not_called()
 
 
 def test_base_source_ensure_installed_preflight_skip() -> None:

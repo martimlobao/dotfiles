@@ -56,10 +56,11 @@ lint-trufflehog:
 lint-ty:
 	uvx --with-requirements scripts/aerials.py ty check scripts/aerials.py
 	uvx --with-requirements scripts/app.py ty check scripts/app.py
+	uvx --with-requirements scripts/tests/test_app.py ty check scripts/tests/test_app.py
 
 lint-yamllint:
 	uvx yamllint -c linkme/.config/yamllint/config .
 
 test-app:
 	uvx --with-requirements scripts/tests/test_app.py pytest scripts/tests/test_app.py \
-		--cov=app_module --cov-report=term-missing --cov-fail-under=95
+		--cov=app_module --cov-report=term-missing --cov-fail-under=96
