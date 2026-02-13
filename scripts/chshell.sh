@@ -12,9 +12,11 @@ source "${root}/bash_traceback.sh"
 
 zsh_path=$(command -v zsh)
 if [[ -z ${zsh_path} ]]; then
-	echo -e "\033[1;31mError: zsh is not installed.\033[0m" >&2
+	echo -e "❌ \033[1;31mError: zsh is not installed.\033[0m" >&2
 	exit 1
 fi
+
+echo -e "🐚 \033[1;34mEnsuring default login shell is zsh...\033[0m"
 
 # Get current default login shell (no sudo required)
 current_shell=""
@@ -42,7 +44,7 @@ fi
 sudo -v
 
 if ! grep -Fxq "${zsh_path}" /etc/shells 2>/dev/null; then
-	echo -e "\033[1;33mAdding ${zsh_path} to /etc/shells...\033[0m"
+	echo -e "📝 \033[1;35mAdding ${zsh_path} to /etc/shells...\033[0m"
 	if ! printf '%s\n' "${zsh_path}" | sudo tee -a /etc/shells >/dev/null; then
 		echo -e "❌ \033[1;31mError: Failed to add zsh to /etc/shells.\033[0m" >&2
 		exit 1
@@ -56,7 +58,7 @@ if [[ $(uname) == "Darwin" ]]; then
 	else
 		sudo dscl . -create "/Users/${USER}" UserShell "${zsh_path}"
 	fi
-	echo -e "\033[1;32mDefault shell changed to ${zsh_path}.\033[0m"
+	echo -e "✅ \033[1;32mDefault shell changed to ${zsh_path}.\033[0m"
 else
 	if chsh -s "${zsh_path}"; then
 		echo -e "🐣 \033[1;32mDefault shell changed to ${zsh_path}.\033[0m"

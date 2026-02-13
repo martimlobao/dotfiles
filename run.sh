@@ -117,7 +117,7 @@ fi
 # Change shell to zsh                                                         #
 ###############################################################################
 echo
-echo -e "🚀 \033[1;33mChanging shell to zsh...\033[0m"
+echo -e "🚀 \033[1;33mRunning chshell.sh...\033[0m"
 sleep 1
 ./scripts/chshell.sh "${1-}"
 
@@ -126,7 +126,7 @@ sleep 1
 ###############################################################################
 if [[ ${os} == "Linux" ]]; then
 	echo
-	echo -e "⛔️ \033[1;33mWarning: Linux is not supported after this point.\033[0m"
+	echo -e "✅ \033[1;32mLinux setup complete (skipping macOS-only steps).\033[0m"
 	exit 0
 fi
 
