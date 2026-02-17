@@ -91,6 +91,7 @@ istat-menus = "cask"  # System monitoring app
 localsend = "cask"  # Open-source cross-platform alternative to AirDrop
 nordvpn = "cask"  # VPN client for secure internet access and private browsing
 rocket = "cask"  # Emoji picker optimised for blind people
+tailscale-app = "cask"  # Mesh VPN based on WireGuard
 the-unarchiver = "cask"  # Unpacks archive files
 thebrowsercompany-dia = "cask"  # Web browser
 transmission = "cask"  # Open-source BitTorrent client
