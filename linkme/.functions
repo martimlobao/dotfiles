@@ -45,7 +45,7 @@ function compresspdf() {
 	fi
 }
 
-# Export environment variables from .env file, preserving quoted values.
+# Export environment variables from .env file, preserving quoted values (TIL this is not the same as `source .env`)
 function exportenv() {
 	local env_file="${1:-".env"}"
 	if [[ ! -f "${env_file}" ]]; then
