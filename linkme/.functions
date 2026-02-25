@@ -40,29 +40,9 @@ function compresspdf() {
 	fi
 }
 
-# Export environment variables from .env file, preserving quoted values (TIL this is not the same as `source .env`)
+# Export environment variables from .env file (TIL this is not the same as `source .env`)
 function exportenv() {
-	local env_file="${1:-".env"}"
-	if [[ ! -f "${env_file}" ]]; then
-		echo "exportenv: no such file: ${env_file}" >&2
-		return 1
-	fi
-
-	local allexport_was_on=0
-	if shopt -qo allexport; then
-		allexport_was_on=1
-	fi
-
-	set -a
-	# shellcheck disable=SC1090
-	source "${env_file}"
-	local status=$?
-
-	if [[ ${allexport_was_on} -eq 0 ]]; then
-		set +a
-	fi
-
-	return ${status}
+	export $(grep -v '^#' "${1:-".env"}" | xargs)
 }
 
 # Start screensaver.
