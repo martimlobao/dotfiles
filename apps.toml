@@ -8,6 +8,7 @@ uv = "formula"  # Extremely fast Python package installer and resolver, written 
 409203825 = "mas"  # Numbers: Create impressive spreadsheets
 
 [developer]
+497799835 = "mas"  # Xcode
 charles = "cask"  # Web debugging Proxy application
 claude-code = "cask"  # Terminal-based AI coding assistant
 codex = "cask"  # OpenAI's coding agent that runs in your terminal
@@ -36,6 +37,7 @@ obsidian = "cask"  # Knowledge base that works on top of a local folder of plain
 slack = "cask"  # Team communication and collaboration software
 superwhisper = "cask"  # Dictation tool including LLM reformatting
 todoist-app = "cask"  # To-do list
+wispr-flow = "cask"  # Voice-to-text dictation with AI-powered auto-editing
 zoom = "cask"  # Video communication and virtual meeting platform
 
 [leisure]
@@ -126,6 +128,7 @@ shellcheck-py = "uv"  # Static analysis and lint tool, for (ba)sh scripts
 shfmt-py = "uv"  # Autoformat shell script source code
 sqlfluff = "uv"  # SQL linter and auto-formatter for Humans
 superseedr = "formula"  # BitTorrent Client in your Terminal
+swiftlint = "formula"  # Tool to enforce Swift style and conventions
 telnet = "formula"  # User interface to the TELNET protocol
 testdisk = "formula"  # Powerful free data recovery utility
 tombi = "uv"  # TOML formatter, linter and language server
