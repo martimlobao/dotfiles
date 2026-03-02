@@ -66,6 +66,10 @@ VIDEO_PATH: Path = AERIALS_PATH / "videos"
 # Constants
 CHUNK_SIZE: int = 32 * 1024  # 32KB chunks for downloading
 REQUEST_TIMEOUT: int = 10  # seconds
+MAX_DOWNLOAD_RETRIES: int = 3
+RETRY_BACKOFF_SECONDS: int = 2
+HTTP_STATUS_OK: int = 200
+HTTP_STATUS_RANGE_NOT_SATISFIABLE: int = 416
 DEFAULT_NAME_LENGTH: int = 30  # default length for formatted names
 CACHE_EXPIRY_DAYS: int = 90  # Cache expiry in days
 CACHE_FILE: Path = AERIALS_PATH / "cache.json"
@@ -456,11 +460,15 @@ def download_files(items: list[AssetItem], total_bytes: int) -> None:
     Args:
         items: A list of items to download.
         total_bytes: The total bytes of the items.
+
+    Raises:
+        RuntimeError: If one or more files fail to download.
     """
     start_time: float = time.time()
     print(f"\n📥 Downloading {len(items)} files in parallel...")
     print("=" * 50)
     results: list[str] = []
+    errors: list[str] = []
     with (
         tqdm.tqdm(total=len(items), desc="Overall Progress", unit="file") as overall_pbar,
         ThreadPool() as pool,
@@ -469,9 +477,18 @@ def download_files(items: list[AssetItem], total_bytes: int) -> None:
             pool.apply_async(download_file_with_progress, (item,)) for item in items
         ]
         for future in futures:
-            result: str = future.get()
-            results.append(result)
-            overall_pbar.update(1)
+            try:
+                result: str = future.get()
+                results.append(result)
+            except RuntimeError as e:
+                errors.append(str(e))
+            finally:
+                overall_pbar.update(1)
+
+    if errors:
+        error_count: int = len(errors)
+        error_details: str = "\n".join(f"  - {error}" for error in errors)
+        raise RuntimeError(f"Failed to download {error_count} file(s):\n{error_details}")
 
     elapsed_time: float = time.time() - start_time
     print_summary(items, "download", elapsed_time, total_bytes)
@@ -627,6 +644,56 @@ def get_content_length(url: str) -> int:
     return content_length
 
 
+def set_progress(pbar: tqdm.std.tqdm, value: int) -> None:
+    """Move a progress bar position when needed.
+
+    Args:
+        pbar: Progress bar to update.
+        value: New progress value.
+    """
+    if pbar.n != value:
+        pbar.n = value
+        pbar.refresh()
+
+
+def start_download_request(parsed_url: str, headers: dict[str, str]) -> requests.Response:
+    """Starts a streaming download request.
+
+    Args:
+        parsed_url: URL to download.
+        headers: Request headers.
+
+    Returns:
+        Streaming HTTP response.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
+        # SSL verification must be disabled for host 'sylvan.apple.com'.
+        return requests.get(
+            parsed_url,
+            stream=True,
+            headers=headers,
+            verify=False,  # noqa: S501
+            timeout=(REQUEST_TIMEOUT, REQUEST_TIMEOUT * 6),
+        )
+
+
+def write_response_chunks(
+    req: requests.Response,
+    file_path_obj: Path,
+    downloaded: int,
+    pbar: tqdm.std.tqdm,
+) -> None:
+    """Writes streamed response chunks to disk and updates progress."""
+    file_mode: str = "ab" if downloaded > 0 else "wb"
+    with file_path_obj.open(file_mode) as f:
+        for chunk in req.iter_content(chunk_size=CHUNK_SIZE):
+            if not chunk:
+                continue
+            f.write(chunk)
+            pbar.update(len(chunk))
+
+
 def download_file_with_progress(download: AssetItem) -> str:
     """Download a file with progress bar.
 
@@ -636,43 +703,72 @@ def download_file_with_progress(download: AssetItem) -> str:
 
     Returns:
         The label of the downloaded file.
+
+    Raises:
+        RuntimeError: If download retries are exhausted.
     """
     label, url, file_path, content_length = download
     parsed_url: str = urllib.parse.urlparse(url).geturl()
-    headers: dict[str, str] = {"Range": "bytes=0-"}
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
-        # SSL verification must be disabled for host 'sylvan.apple.com'
-        req: requests.Response = requests.get(
-            parsed_url,
-            stream=True,
-            headers=headers,
-            verify=False,  # noqa: S501
-            timeout=REQUEST_TIMEOUT,
-        )
-    try:
-        req.raise_for_status()
-    except requests.exceptions.HTTPError:
-        print(f"❌ Error downloading {label}: HTTP {req.status_code}")
-        return label
+    file_path_obj: Path = pathlib.Path(file_path)
+    total: int | None = content_length if content_length > 0 else None
 
-    with pathlib.Path(file_path).open("wb") as f:
-        # If content_length is not available, use None for unknown total
-        total: int | None = content_length if content_length > 0 else None
-        with tqdm.tqdm(
-            total=total,
-            desc=format_name(label),
-            unit="B",
-            unit_scale=True,
-            unit_divisor=1024,
-            leave=False,
-            initial=0,
-        ) as pbar:
-            for chunk in req.iter_content(chunk_size=32 * 1024):
-                f.write(chunk)
-                pbar.update(len(chunk))
+    with tqdm.tqdm(
+        total=total,
+        desc=format_name(label),
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+        leave=False,
+        initial=0,
+    ) as pbar:
+        for attempt in range(1, MAX_DOWNLOAD_RETRIES + 1):
+            downloaded: int = file_path_obj.stat().st_size if file_path_obj.is_file() else 0
 
-    return label
+            if total is not None and downloaded >= total:
+                set_progress(pbar, total)
+                return label
+
+            set_progress(pbar, downloaded)
+
+            headers: dict[str, str] = {}
+            if downloaded > 0:
+                headers["Range"] = f"bytes={downloaded}-"
+
+            req: requests.Response | None = None
+            try:
+                req = start_download_request(parsed_url, headers)
+
+                if (
+                    req.status_code == HTTP_STATUS_RANGE_NOT_SATISFIABLE
+                    and total is not None
+                    and downloaded >= total
+                ):
+                    set_progress(pbar, total)
+                    return label
+
+                req.raise_for_status()
+
+                if downloaded > 0 and req.status_code == HTTP_STATUS_OK:
+                    # Server ignored Range header.
+                    # Restart to avoid duplicated bytes.
+                    downloaded = 0
+                    file_path_obj.unlink(missing_ok=True)
+                    pbar.reset(total=total)
+
+                write_response_chunks(req, file_path_obj, downloaded, pbar)
+
+                current_size: int = file_path_obj.stat().st_size
+                if total is None or current_size >= total:
+                    return label
+            except (OSError, requests.exceptions.RequestException) as e:
+                if attempt == MAX_DOWNLOAD_RETRIES:
+                    raise RuntimeError(f"{label}: download failed after retries ({e})") from e
+                time.sleep(RETRY_BACKOFF_SECONDS * attempt)
+            finally:
+                if req is not None:
+                    req.close()
+
+    raise RuntimeError(f"{label}: download failed due to incomplete output")
 
 
 def clear_cache() -> None:
