@@ -29,6 +29,7 @@ redis = "formula"  # Persistent key-value database, with built-in net interface
 aws-sso-cli = "formula"  # Securely manage AWS API credentials using AWS SSO
 awscli = "formula"  # Official Amazon AWS command-line interface
 citrix-workspace = "cask"  # Managed desktop virtualization solution
+microsoft-word = "cask"  # Word processor
 
 [productivity]
 linear-linear = "cask"  # App to manage software development and track bugs
