@@ -29,7 +29,9 @@
 # More examples can be found here:
 #  https://developer.1password.com/docs/ssh/agent/config
 [[ssh-keys]]
+item = "GitHub SSH Authentication Key"
 vault = "Private"
 
 [[ssh-keys]]
-vault = "csk4uyusb2f4cl3klddlw7sx4e"
+item = "GitHub SSH Commit Signing Key"
+vault = "Private"
