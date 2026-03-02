@@ -65,6 +65,7 @@ bash <(curl -sL https://dot.lobao.io) -y
 - `op://Private/GitHub/email` and `op://Private/GitHub/username` to configure git and push to
   GitHub
 - `op://Private/GitHub SSH Commit Signing Key/public key` to configure SSH commit signing
+- `op://Private/GitHub SSH Authentication Key/public key` to configure SSH authentication
 - `op://Private/iStat Menus 6/registered email` and `op://Private/iStat Menus 6/license key` to
   register iStat Menus 6
 - `op://Private/Charles/registered name` and `op://Private/Charles/license key` to register Charles
