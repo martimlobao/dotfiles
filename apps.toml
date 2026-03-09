@@ -63,6 +63,7 @@ font-doto = "cask"  # Doto
 font-eb-garamond = "cask"  # EB Garamond
 font-fira-code = "cask"  # Fira Code
 font-humor-sans = "cask"  # Humor Sans
+font-instrument-serif = "cask"  # Instrument Serif
 font-new-york = "cask"  # New York, NY
 font-pixel-code = "cask"  # Pixel Code
 font-sauce-code-pro-nerd-font = "cask"  # SauceCodePro Nerd Font (Source Code Pro)
