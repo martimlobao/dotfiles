@@ -145,6 +145,31 @@
   "go.toolsManagement.autoUpdate": true,
   "hediet.vscode-drawio.resizeImages": null,
   "json.schemas": [],
+  "latex-workshop.formatting.latex": "latexindent",
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.outDir": "%WORKSPACE_FOLDER%/build/index/",
+  "latex-workshop.latex.recipe.default": "tectonic",
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "tectonic",
+      "tools": [
+        "tectonic"
+      ]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "args": [
+        "--keep-intermediates",
+        "--keep-logs",
+        "-X",
+        "build"
+      ],
+      "command": "tectonic",
+      "name": "tectonic"
+    }
+  ],
+  "latex-workshop.view.pdf.viewer": "tab",
   "makefile.configureOnOpen": false,
   "markdownlint.config": {
     "MD024": {

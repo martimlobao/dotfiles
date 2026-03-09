@@ -30,7 +30,6 @@ jeff-hykin.better-shellscript-syntax
 jock.svg
 magicstack.magicpython
 marimo-team.vscode-marimo
-mathematic.vscode-latex
 mechatroner.rainbow-csv
 meta.pyrefly
 mohsen1.prettify-json

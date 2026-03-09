@@ -24,6 +24,7 @@ icon-composer = "cask"  # Apple tool to create multi-platform icons
 jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
 "postgresql@15" = "formula"  # Object-relational database system
 redis = "formula"  # Persistent key-value database, with built-in net interface
+tectonic = "formula"  # Modernized, complete, self-contained TeX/LaTeX engine
 
 [work]
 aws-sso-cli = "formula"  # Securely manage AWS API credentials using AWS SSO
@@ -114,6 +115,7 @@ ghostscript = "formula"  # Interpreter for PostScript and PDF
 httpie = "uv"  # User-friendly cURL replacement (command-line HTTP client)
 imagemagick = "formula"  # Tools and libraries to manipulate images in many formats
 jq = "formula"  # Lightweight and flexible command-line JSON processor
+latexindent = "formula"  # Add indentation to LaTeX files
 mcat = "formula"  # Terminal image, video, directory, and Markdown viewer
 mq = "formula"  # Jq-like command-line tool for markdown processing
 nano = "formula"  # Free (GNU) replacement for the Pico text editor
