@@ -156,5 +156,10 @@
     "command": "-editor.action.selectHighlights",
     "key": "shift+cmd+l",
     "when": "editorFocus"
+  },
+  {
+    "command": "workbench.action.toggleUnifiedSidebarFromKeyboard",
+    "key": "alt+cmd+s",
+    "when": "cursor.agentIdeUnification.enabled == true && !isAuxiliaryWindowFocusedContext"
   }
 ]
