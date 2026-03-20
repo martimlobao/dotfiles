@@ -12,6 +12,7 @@ donjayamanne.githistory
 donjayamanne.python-extension-pack
 dorzey.vscode-sqlfluff
 dotjoshjohnson.xml
+eamodio.gitlens
 eliverlara.andromeda
 esbenp.prettier-vscode
 formulahendry.code-runner
