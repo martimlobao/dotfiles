@@ -165,8 +165,8 @@ ty = "uv"  # Extremely fast Python type checker, written in Rust
 6753110395 = "mas"  # Folder Quick Look: Instant Folder & Archive Peek
 chromedriver = "cask"  # Automated testing of webapps for Google Chrome
 qlmarkdown = "cask"  # Quick Look generator for Markdown files
-qlvideo = "cask"  # Thumbnails, static previews, cover art and metadata for video files
 quicklook-json = "cask"  # Quick Look plugin for JSON files
+quicklook-video = "cask"  # Thumbnails, static previews, cover art and metadata for video files
 syntax-highlight = "cask"  # Quicklook extension for source files
 
 [system-binaries]
