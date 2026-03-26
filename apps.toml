@@ -39,7 +39,6 @@ obsidian = "cask"  # Knowledge base that works on top of a local folder of plain
 slack = "cask"  # Team communication and collaboration software
 superwhisper = "cask"  # Dictation tool including LLM reformatting
 todoist-app = "cask"  # To-do list
-wispr-flow = "cask"  # Voice-to-text dictation with AI-powered auto-editing
 zoom = "cask"  # Video communication and virtual meeting platform
 
 [leisure]

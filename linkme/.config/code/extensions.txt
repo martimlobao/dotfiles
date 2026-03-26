@@ -1,3 +1,4 @@
+anthropic.claude-code
 anysphere.cursorpyright
 astral-sh.ty
 batisteo.vscode-django
