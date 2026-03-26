@@ -124,8 +124,8 @@ set_computer_name() {
 	local uuid
 	local serial
 	local model
-	uuid=$(system_profiler SPHardwareDataType | awk '/Hardware UUID/ {print $3}')
-	serial=$(system_profiler SPHardwareDataType | awk '/Serial Number/ {print $4}')
+	uuid=$(system_profiler SPHardwareDataType 2>/dev/null | awk '/Hardware UUID/ {print $3}')
+	serial=$(system_profiler SPHardwareDataType 2>/dev/null | awk '/Serial Number/ {print $4}')
 	model=$(sysctl hw.model | sed 's/hw.model: //')
 
 	echo -e "\n🔍 \033[1;35mLooking up computer name on 1Password for ${uuid}...\033[0m"

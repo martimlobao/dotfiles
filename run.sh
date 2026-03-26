@@ -21,8 +21,8 @@ echo -e "💻 \033[1;33mArch detected:\033[0m ${archname}"
 
 # Get hardware identifier
 if [[ ${os} == "Darwin" ]]; then
-	uuid=$(system_profiler SPHardwareDataType | awk '/Hardware UUID/ {print $3}')
-	serial=$(system_profiler SPHardwareDataType | awk '/Serial Number/ {print $4}')
+	uuid=$(system_profiler SPHardwareDataType 2>/dev/null | awk '/Hardware UUID/ {print $3}')
+	serial=$(system_profiler SPHardwareDataType 2>/dev/null | awk '/Serial Number/ {print $4}')
 	model=$(sysctl hw.model | sed 's/hw.model: //')
 else
 	uuid=$(cat /sys/class/dmi/id/product_uuid 2>/dev/null ||
