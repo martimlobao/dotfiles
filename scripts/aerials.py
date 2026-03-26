@@ -47,6 +47,7 @@ import time
 import urllib.parse
 import warnings
 import webbrowser
+from collections.abc import Mapping
 from multiprocessing.pool import ApplyResult, ThreadPool
 from pathlib import Path
 from typing import Any, Literal, TypedDict, cast
@@ -260,13 +261,8 @@ def load_asset_data() -> tuple[Strings, AssetEntry]:
 
 def resolve_strings_path(aerials_path: Path = AERIALS_PATH) -> Path:
     """Returns the active strings catalog path for the current macOS layout."""
-    legacy_path: Path = (
-        aerials_path / "manifest/TVIdleScreenStrings.bundle/en.lproj/Localizable.nocache.strings"
-    )
-    modern_path: Path = (
-        aerials_path
-        / "manifest/TVIdleScreenStrings.bundle/Contents/Resources/Localizable.nocache.loctable"
-    )
+    legacy_path = aerials_path / LEGACY_STRINGS_PATH.relative_to(AERIALS_PATH)
+    modern_path = aerials_path / MODERN_STRINGS_PATH.relative_to(AERIALS_PATH)
     for path in (legacy_path, modern_path):
         if path.is_file():
             return path
@@ -286,12 +282,12 @@ def load_strings(strings_path: Path) -> Strings:
         raw_strings: Any = plistlib.load(fp)
 
     if strings_path.suffix != ".loctable":
-        return raw_strings
+        return cast("Strings", raw_strings)
 
     return select_localized_strings(raw_strings)
 
 
-def select_localized_strings(localizations: object) -> Strings:
+def select_localized_strings(localizations: Mapping[str, object]) -> Strings:
     """Select the best localization from a modern `.loctable` plist.
 
     Args:
@@ -301,9 +297,8 @@ def select_localized_strings(localizations: object) -> Strings:
         The best matching language mapping,
         or an empty mapping when unavailable.
     """
-    if not isinstance(localizations, dict):
+    if not isinstance(localizations, Mapping):
         return {}
-    localized_map = cast("dict[str, object]", localizations)
 
     preferred_languages: list[str] = []
     default_language, _ = locale.getlocale()
@@ -316,11 +311,11 @@ def select_localized_strings(localizations: object) -> Strings:
     preferred_languages.append("en")
 
     for language in preferred_languages:
-        localized_strings = localized_map.get(language)
+        localized_strings = localizations.get(language)
         if isinstance(localized_strings, dict):
             return cast("Strings", localized_strings)
 
-    for localized_strings in localized_map.values():
+    for localized_strings in localizations.values():
         if isinstance(localized_strings, dict):
             return cast("Strings", localized_strings)
 
