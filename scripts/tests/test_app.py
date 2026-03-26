@@ -3,7 +3,7 @@
 # dependencies = [
 #     "pytest>=9.0.2",
 #     "pytest-cov>=7.0.0",
-#     "tomlkit>=0.14.0",
+#     "tomlkit>=0.14.0,<0.15",
 # ]
 # [tool.uv]
 # exclude-newer = "2026-02-12T00:00:00Z"

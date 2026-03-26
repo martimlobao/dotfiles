@@ -38,11 +38,14 @@ make lint-checkov       # Infrastructure security
 ### Testing
 
 ```bash
+make test               # Run all Python test suites
 make test-app           # Run scripts/app.py unit tests
+make test-aerials       # Run scripts/aerials.py unit tests
 ```
 
 Always run `make check` before committing to ensure CI will pass.
-`make check` includes `make test-app`, which runs the `scripts/app.py` unit tests.
+`make check` includes `make test`, which runs the `scripts/app.py` and `scripts/aerials.py`
+unit tests.
 
 ### App Management
 

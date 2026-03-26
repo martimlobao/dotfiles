@@ -3,10 +3,10 @@
 # /// script
 # requires-python = ">=3.13,<3.14"
 # dependencies = [
-#     "tomlkit>=0.13.2,<0.14",
+#     "tomlkit>=0.14.0,<0.15",
 # ]
 # [tool.uv]
-# exclude-newer = "2025-12-16T00:00:00Z"
+# exclude-newer = "2026-02-12T00:00:00Z"
 # ///
 
 """Manage and install applications listed in apps.toml.
