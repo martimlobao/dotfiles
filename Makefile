@@ -4,14 +4,14 @@ SHELL=/bin/bash
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 MAKEFLAGS += -j$(JOBS) --output-sync=target
 
-.PHONY: check test-app \
+.PHONY: check test test-app test-aerials \
         lint-checkov lint-jsort lint-oxipng lint-ruff lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
 
 # All tracked shell scripts (recursive, includes repo root).
 SH_FILES := $(shell git ls-files '*.sh')
 
 # High-level aggregate
-check: lint-checkov lint-jsort lint-oxipng lint-ruff lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint test-app
+check: lint-checkov lint-jsort lint-oxipng lint-ruff lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint test
 
 #################
 # Lint (parallel)
@@ -57,10 +57,24 @@ lint-ty:
 	uvx --with-requirements scripts/aerials.py ty check scripts/aerials.py
 	uvx --with-requirements scripts/app.py ty check scripts/app.py
 	uvx --with-requirements scripts/tests/test_app.py ty check scripts/tests/test_app.py
+	uvx --with-requirements scripts/aerials.py --with-requirements scripts/tests/test_aerials.py ty check scripts/tests/test_aerials.py
 
 lint-yamllint:
 	uvx yamllint -c linkme/.config/yamllint/config .
 
 test-app:
-	uvx --with-requirements scripts/tests/test_app.py pytest scripts/tests/test_app.py \
-		--cov=app_module --cov-report=term-missing --cov-fail-under=96
+	uvx --with-requirements scripts/app.py --with-requirements scripts/tests/test_app.py \
+		pytest scripts/tests/test_app.py
+
+test-aerials:
+	uvx --with-requirements scripts/aerials.py --with-requirements scripts/tests/test_aerials.py \
+		pytest scripts/tests/test_aerials.py
+
+test:
+	mkdir -p temp
+	COVERAGE_FILE=temp/.coverage.total \
+	uvx --with-requirements scripts/app.py --with-requirements scripts/aerials.py \
+		--with-requirements scripts/tests/test_app.py \
+		--with-requirements scripts/tests/test_aerials.py \
+		pytest scripts/tests/test_app.py scripts/tests/test_aerials.py \
+		--cov=app_module --cov=aerials_module --cov-report=term-missing --cov-fail-under=78

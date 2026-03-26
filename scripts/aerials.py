@@ -8,7 +8,7 @@
 #     "urllib3>=2.2.3,<2.3.0",
 # ]
 # [tool.uv]
-# exclude-newer = "2025-08-27T00:00:00Z"
+# exclude-newer = "2026-02-12T00:00:00Z"
 # ///
 # Forked and adapted from https://github.com/mikeswanson/WallGet and
 # https://github.com/lejacobroy/aerials-downloader
@@ -38,6 +38,7 @@ Usage:
 
 import argparse
 import json
+import locale
 import pathlib
 import plistlib
 import sys
@@ -48,7 +49,7 @@ import warnings
 import webbrowser
 from multiprocessing.pool import ApplyResult, ThreadPool
 from pathlib import Path
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict, cast
 
 import requests
 import tqdm
@@ -57,8 +58,12 @@ import urllib3
 AERIALS_PATH: Path = (
     pathlib.Path.home() / "Library/Application Support/com.apple.wallpaper/aerials"
 )
-STRINGS_PATH: Path = (
+LEGACY_STRINGS_PATH: Path = (
     AERIALS_PATH / "manifest/TVIdleScreenStrings.bundle/en.lproj/Localizable.nocache.strings"
+)
+MODERN_STRINGS_PATH: Path = (
+    AERIALS_PATH
+    / "manifest/TVIdleScreenStrings.bundle/Contents/Resources/Localizable.nocache.loctable"
 )
 ENTRIES_PATH: Path = AERIALS_PATH / "manifest/entries.json"
 VIDEO_PATH: Path = AERIALS_PATH / "videos"
@@ -228,7 +233,7 @@ def validate_environment() -> None:
     if not pathlib.Path(AERIALS_PATH).is_dir():
         print("❌ Unable to find aerials path.")
         sys.exit(1)
-    if not pathlib.Path(STRINGS_PATH).is_file():
+    if not resolve_strings_path().is_file():
         print("❌ Unable to find localizable strings file.")
         sys.exit(1)
     if not pathlib.Path(ENTRIES_PATH).is_file():
@@ -245,13 +250,81 @@ def load_asset_data() -> tuple[Strings, AssetEntry]:
     Returns:
         A tuple containing the localizable strings and asset entries.
     """
-    with pathlib.Path(STRINGS_PATH).open("rb") as fp:
-        strings: Strings = plistlib.load(fp)
+    strings: Strings = load_strings(resolve_strings_path())
 
     with pathlib.Path(ENTRIES_PATH).open(encoding="utf-8") as fp:
         asset_entries: AssetEntry = json.load(fp)
 
     return strings, asset_entries
+
+
+def resolve_strings_path(aerials_path: Path = AERIALS_PATH) -> Path:
+    """Returns the active strings catalog path for the current macOS layout."""
+    legacy_path: Path = (
+        aerials_path / "manifest/TVIdleScreenStrings.bundle/en.lproj/Localizable.nocache.strings"
+    )
+    modern_path: Path = (
+        aerials_path
+        / "manifest/TVIdleScreenStrings.bundle/Contents/Resources/Localizable.nocache.loctable"
+    )
+    for path in (legacy_path, modern_path):
+        if path.is_file():
+            return path
+    return legacy_path
+
+
+def load_strings(strings_path: Path) -> Strings:
+    """Load strings from a legacy or modern catalog.
+
+    Args:
+        strings_path: Path to the strings catalog to load.
+
+    Returns:
+        The selected localized strings for the current catalog.
+    """
+    with strings_path.open("rb") as fp:
+        raw_strings: Any = plistlib.load(fp)
+
+    if strings_path.suffix != ".loctable":
+        return raw_strings
+
+    return select_localized_strings(raw_strings)
+
+
+def select_localized_strings(localizations: object) -> Strings:
+    """Select the best localization from a modern `.loctable` plist.
+
+    Args:
+        localizations: Raw localization data loaded from the plist.
+
+    Returns:
+        The best matching language mapping,
+        or an empty mapping when unavailable.
+    """
+    if not isinstance(localizations, dict):
+        return {}
+    localized_map = cast("dict[str, object]", localizations)
+
+    preferred_languages: list[str] = []
+    default_language, _ = locale.getlocale()
+    if default_language:
+        preferred_languages.extend([
+            default_language,
+            default_language.replace("_", "-"),
+            default_language.split("_")[0],
+        ])
+    preferred_languages.append("en")
+
+    for language in preferred_languages:
+        localized_strings = localized_map.get(language)
+        if isinstance(localized_strings, dict):
+            return cast("Strings", localized_strings)
+
+    for localized_strings in localized_map.values():
+        if isinstance(localized_strings, dict):
+            return cast("Strings", localized_strings)
+
+    return {}
 
 
 def display_categories(categories: list[Category], strings: Strings) -> int:
