@@ -1,0 +1,6 @@
+# Mole Whitelist - Protected paths won't be deleted
+# Default protections: Playwright browsers, HuggingFace models, Maven repo, Ollama models, Surge Mac, R renv, Finder metadata
+# Add one pattern per line to keep items safe.
+
+~/.Trash
+~/Library/Application\ Support/com.apple.wallpaper/aerials/videos*

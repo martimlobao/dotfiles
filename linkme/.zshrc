@@ -105,6 +105,9 @@ eval "$(ruff generate-shell-completion zsh)"
 # Shell completion for rumdl
 eval "$(rumdl completions zsh)"
 
+# Mole shell completion
+if output="$(mole completion zsh 2>/dev/null)"; then eval "$output"; fi
+
 # Load the shell dotfiles, and then some:
 # * ~/.extra can be used for other settings you don't want to commit.
 for file in ~/.{aliases,exports,functions,extra}; do

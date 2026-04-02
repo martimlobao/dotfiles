@@ -118,6 +118,7 @@ imagemagick = "formula"  # Tools and libraries to manipulate images in many form
 jq = "formula"  # Lightweight and flexible command-line JSON processor
 latexindent = "formula"  # Add indentation to LaTeX files
 mcat = "formula"  # Terminal image, video, directory, and Markdown viewer
+mole = "formula"  # Deep clean and optimize your Mac
 mq = "formula"  # Jq-like command-line tool for markdown processing
 nano = "formula"  # Free (GNU) replacement for the Pico text editor
 nnn = "formula"  # Tiny, lightning fast, feature-packed file manager
