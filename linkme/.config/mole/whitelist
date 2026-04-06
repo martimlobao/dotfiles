@@ -16,6 +16,7 @@
 ~/Library/Caches/com.apple.Spotlight*
 ~/Library/Caches/com.jetbrains.toolbox*
 ~/Library/Caches/com.nssurge.surge-mac/*
+~/Library/Caches/intray/*
 ~/Library/Caches/JetBrains*
 ~/Library/Caches/ms-playwright*
 ~/Library/Caches/tealdeer/tldr-pages
