@@ -1,5 +1,6 @@
 anthropic.claude-code
 anysphere.cursorpyright
+anysphere.remote-ssh
 astral-sh.ty
 batisteo.vscode-django
 bierner.emojisense
