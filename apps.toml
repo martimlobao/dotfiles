@@ -5,7 +5,7 @@ mas = "formula"  # Mac App Store command-line interface
 uv = "formula"  # Extremely fast Python package installer and resolver, written in Rust
 
 [apple]
-409203825 = "mas"  # Numbers: Create impressive spreadsheets
+361304891 = "mas"  # Numbers: Make Spreadsheets
 
 [developer]
 497799835 = "mas"  # Xcode
