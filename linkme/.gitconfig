@@ -71,6 +71,26 @@
 	# Delete all squashed branches.
 	# https://github.com/not-an-aardvark/git-delete-squashed#sh
 	cleanup = "!f() { local targetBranch=${1:-main}; git checkout -q \"$targetBranch\" || return; git branch --merged \"$targetBranch\" | sed -E 's/^[* ] +//' | while IFS= read -r b; do [[ -z \"$b\" || \"$b\" == \"$targetBranch\" ]] && continue; git branch -d \"$b\"; done; git for-each-ref refs/heads/ --format='%(refname:short)' | while IFS= read -r branch; do [[ -z \"$branch\" || \"$branch\" == \"$targetBranch\" ]] && continue; mergeBase=$(git merge-base \"$targetBranch\" \"$branch\") || continue; if [[ $(git cherry \"$targetBranch\" $(git commit-tree $(git rev-parse \"$branch^{tree}\") -p \"$mergeBase\" -m _)) == \"-\"* ]]; then git branch -D \"$branch\"; fi; done; }; f"
+	# Show the files with the highest change volume so you can spot churn hotspots before
+	# reading any code. Defaults to the last year; pass a custom window like
+	# `git churn "6 months ago"` to override it.
+	churn = "!f() { since=\"${1:-1 year ago}\"; git log --format=format: --name-only --since=\"$since\" | sed '/^$/d' | sort | uniq -c | sort -nr | head -20; }; f"
+	# Rank contributors by commit count so you can estimate ownership concentration and
+	# bus factor. Defaults to all history; pass a window like `git authors "6 months ago"`
+	# to focus on recent activity only.
+	authors = "!f() { if [ -n \"$1\" ]; then git shortlog -sn --no-merges --since=\"$1\" HEAD; else git shortlog -sn --no-merges HEAD; fi; }; f"
+	# Show the files most often touched by commits that look like bug fixes so you can
+	# find bug hotspots. Defaults to the last year to make comparison with `git churn`
+	# easier; pass a custom window like `git bugspots "2 years ago"` to override it.
+	bugspots = "!f() { since=\"${1:-1 year ago}\"; git log -i -E --grep='fix|bug|broken' --since=\"$since\" --name-only --format='' | sed '/^$/d' | sort | uniq -c | sort -nr | head -20; }; f"
+	# Print monthly commit counts so it is easy to see acceleration, slowdowns, and quiet
+	# periods in the project. Defaults to the full history; pass a window like
+	# `git activity "2 years ago"` to focus on recent history.
+	activity = "!f() { if [ -n \"$1\" ]; then git log --since=\"$1\" --format='%ad' --date=format:'%Y-%m'; else git log --format='%ad' --date=format:'%Y-%m'; fi | sort | uniq -c; }; f"
+	# List commits whose messages suggest firefighting, such as reverts, hotfixes,
+	# emergencies, or rollbacks. Defaults to the last year; pass a custom window like
+	# `git firefights "90 days ago"` to override it.
+	firefights = "!f() { since=\"${1:-1 year ago}\"; git log --oneline --since=\"$since\" | grep -iE 'revert|hotfix|emergency|rollback' || true; }; f"
 
 [pager]
 	stash = false
