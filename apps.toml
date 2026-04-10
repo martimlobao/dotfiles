@@ -21,7 +21,6 @@ gh = "formula"  # GitHub command-line tool
 ghostty = "cask"  # Terminal emulator that uses platform-native UI and GPU acceleration
 git-who = "formula"  # Git blame for file trees
 icon-composer = "cask"  # Apple tool to create multi-platform icons
-jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
 "postgresql@15" = "formula"  # Object-relational database system
 redis = "formula"  # Persistent key-value database, with built-in net interface
 tectonic = "formula"  # Modernized, complete, self-contained TeX/LaTeX engine
@@ -106,6 +105,7 @@ yubico-authenticator = "cask"  # Application for generating TOTP and HOTP codes
 [cli-tools]
 ack = "formula"  # Search tool like grep, but optimized for programmers
 actionlint-py = "uv"  # Static checker for GitHub Actions workflow files
+basictex = "cask"  # Compact TeX distribution as alternative to the full TeX Live / MacTeX
 bat = "formula"  # Clone of cat(1) with syntax highlighting and Git integration
 checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
 domain-check = "formula"  # CLI tool for checking domain availability using RDAP and WHOIS protocols
@@ -166,6 +166,7 @@ ty = "uv"  # Extremely fast Python type checker, written in Rust
 [utilities]
 6753110395 = "mas"  # Folder Quick Look: Instant Folder & Archive Peek
 chromedriver = "cask"  # Automated testing of webapps for Google Chrome
+jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
 qlmarkdown = "cask"  # Quick Look generator for Markdown files
 quicklook-json = "cask"  # Quick Look plugin for JSON files
 quicklook-video = "cask"  # Thumbnails, static previews, cover art and metadata for video files
