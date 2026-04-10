@@ -4,9 +4,6 @@
 mas = "formula"  # Mac App Store command-line interface
 uv = "formula"  # Extremely fast Python package installer and resolver, written in Rust
 
-[apple]
-361304891 = "mas"  # Numbers: Make Spreadsheets
-
 [developer]
 497799835 = "mas"  # Xcode
 charles = "cask"  # Web debugging Proxy application
@@ -30,6 +27,7 @@ xcodegen = "formula"  # Generate your Xcode project from a spec file and your fo
 aws-sso-cli = "formula"  # Securely manage AWS API credentials using AWS SSO
 awscli = "formula"  # Official Amazon AWS command-line interface
 citrix-workspace = "cask"  # Managed desktop virtualization solution
+microsoft-excel = "cask"  # Spreadsheet software
 microsoft-word = "cask"  # Word processor
 
 [productivity]
