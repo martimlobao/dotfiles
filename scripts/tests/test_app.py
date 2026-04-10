@@ -628,6 +628,17 @@ def test_facade_remove_app_with_uninstall(tmp_path: Path) -> None:
     service.ensure_uninstalled.assert_called_once_with("httpie")
 
 
+def test_facade_remove_app_with_single_numeric_mas_entry(tmp_path: Path) -> None:
+    facade, apps_file, _ = build_facade(tmp_path, content='[apple]\n361304891 = "mas"\n')
+    service = Mock()
+    service.ensure_uninstalled.return_value = app_module.OperationResult.ok("ok")
+    with patch.object(facade, "get_service", return_value=service):
+        facade.remove_app(app="361304891", no_install=False)
+    assert "361304891" not in apps_file.read_text()
+    assert "[apple]" not in apps_file.read_text()
+    service.ensure_uninstalled.assert_called_once_with("361304891")
+
+
 def test_facade_list_apps_calls_console(tmp_path: Path) -> None:
     facade, _, _ = build_facade(tmp_path, content='[x]\nfoo = "uv"\n')
     with patch.object(facade.console, "render_records") as render:
