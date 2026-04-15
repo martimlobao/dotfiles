@@ -59,7 +59,6 @@ font-chomsky = "cask"  # Chomsky (a font in the style of the New York Times mast
 font-doto = "cask"  # Doto
 font-eb-garamond = "cask"  # EB Garamond
 font-fira-code = "cask"  # Fira Code
-font-humor-sans = "cask"  # Humor Sans
 font-instrument-serif = "cask"  # Instrument Serif
 font-new-york = "cask"  # New York, NY
 font-pixel-code = "cask"  # Pixel Code
@@ -166,7 +165,6 @@ ty = "uv"  # Extremely fast Python type checker, written in Rust
 chromedriver = "cask"  # Automated testing of webapps for Google Chrome
 jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
 qlmarkdown = "cask"  # Quick Look generator for Markdown files
-quicklook-json = "cask"  # Quick Look plugin for JSON files
 quicklook-video = "cask"  # Thumbnails, static previews, cover art and metadata for video files
 syntax-highlight = "cask"  # Quicklook extension for source files
 
