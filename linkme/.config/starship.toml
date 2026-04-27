@@ -1,6 +1,6 @@
-# Get editor completions based on the config schema
-"$schema" = "https://starship.rs/config-schema.json"
-# Inserts a blank line between shell prompts
+#:schema https://raw.githubusercontent.com/martimlobao/starship/refs/heads/chore/python-binary-schema-context/.github/config-schema.json
+# Change back to `https://starship.rs/config-schema.json` after merging https://github.com/starship/starship/pull/7415
+
 add_newline = true
 
 [battery]
@@ -18,6 +18,12 @@ symbol = "🌱 "
 
 [nodejs]
 symbol = "☕️"
+
+[python]
+python_binary = [
+  ["uv", "run", "--no-python-downloads", "--no-project", "python"],
+  "python",
+]
 
 [username]
 style_user = "bold dimmed blue"
