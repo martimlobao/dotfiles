@@ -21,7 +21,8 @@ symbol = "☕️"
 
 [python]
 python_binary = [
-  ["uv", "run", "--no-python-downloads", "--no-project", "python"]
+  ["uv", "run", "--no-python-downloads", "--no-project", "python"],
+  "python",
 ]
 
 [username]
