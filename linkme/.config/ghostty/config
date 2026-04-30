@@ -1,6 +1,6 @@
 confirm-close-surface = false
 quit-after-last-window-closed = true
-shell-integration = none
+shell-integration = detect
 shell-integration-features = no-cursor
 scrollback-limit = 10000000
 clipboard-read = allow

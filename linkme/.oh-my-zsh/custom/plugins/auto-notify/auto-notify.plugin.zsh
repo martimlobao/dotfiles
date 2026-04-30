@@ -54,20 +54,50 @@ function _auto_notify_format() {
 	printf "%s" "$MESSAGE"
 }
 
+function _auto_notify_format_elapsed() {
+	local elapsed="$1"
+	local hours=$((elapsed / 3600))
+	local minutes=$(((elapsed % 3600) / 60))
+	local seconds=$((elapsed % 60))
+	local formatted=""
+
+	if [[ $hours -gt 0 ]]; then
+		formatted+="$hours h"
+	fi
+	if [[ $minutes -gt 0 ]]; then
+		if [[ -n "$formatted" ]]; then
+			formatted+=", "
+		fi
+		formatted+="$minutes min"
+	fi
+	if [[ $seconds -gt 0 || -z "$formatted" ]]; then
+		if [[ -n "$formatted" ]]; then
+			formatted+=", "
+		fi
+		formatted+="$seconds sec"
+	fi
+
+	printf "%s" "$formatted"
+}
+
 function _auto_notify_message() {
 	local command="$1"
 	local elapsed="$2"
 	local exit_code="$3"
+	local elapsed_formatted="$(_auto_notify_format_elapsed "$elapsed")"
 	local platform="$(uname)"
 	# Run using echo -e in order to make sure notify-send picks up new line
-	local DEFAULT_TITLE="Terminal Command Completed"
-	local DEFAULT_BODY="'%command' finished after %elapseds with exit code %exit_code"
+	local DEFAULT_TITLE="Command Succeeded"
+	if [[ "$exit_code" != "0" ]]; then
+		DEFAULT_TITLE="Command Failed"
+	fi
+	local DEFAULT_BODY="'%command' took %elapsed sec and exited with code %exit_code."
 
 	local title="${AUTO_NOTIFY_TITLE:-$DEFAULT_TITLE}"
 	local text="${AUTO_NOTIFY_BODY:-$DEFAULT_BODY}"
 
-	title="$(_auto_notify_format "$title" "$command" "$elapsed" "$exit_code")"
-	body="$(_auto_notify_format "$text" "$command" "$elapsed" "$exit_code")"
+	title="$(_auto_notify_format "$title" "$command" "$elapsed_formatted" "$exit_code")"
+	body="$(_auto_notify_format "$text" "$command" "$elapsed_formatted" "$exit_code")"
 
 	if [[ "$platform" == "Linux" ]]; then
 		local urgency="normal"
