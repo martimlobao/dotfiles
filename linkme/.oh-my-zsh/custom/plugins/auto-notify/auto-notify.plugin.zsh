@@ -41,33 +41,64 @@
 	)
 
 function _auto_notify_format() {
-	local MESSAGE="$1"
+	local message="$1"
 	local command="$2"
 	local elapsed="$3"
 	local exit_code="$4"
 	if [[ ${#command} -gt $AUTO_NOTIFY_TRUNCATE_COMMAND ]]; then
 		command="${command:0:$AUTO_NOTIFY_TRUNCATE_COMMAND - 1}…"
 	fi
-	MESSAGE="${MESSAGE//\%command/$command}"
-	MESSAGE="${MESSAGE//\%elapsed/$elapsed}"
-	MESSAGE="${MESSAGE//\%exit_code/$exit_code}"
-	printf "%s" "$MESSAGE"
+	message="${message//\%command/$command}"
+	message="${message//\%elapsed/$elapsed}"
+	message="${message//\%exit_code/$exit_code}"
+	printf "%s" "$message"
+}
+
+function _auto_notify_format_elapsed() {
+	local elapsed="$1"
+	local hours=$((elapsed / 3600))
+	local minutes=$(((elapsed % 3600) / 60))
+	local seconds=$((elapsed % 60))
+	local formatted=""
+
+	if [[ $hours -gt 0 ]]; then
+		formatted+="$hours h"
+	fi
+	if [[ $minutes -gt 0 ]]; then
+		if [[ -n "$formatted" ]]; then
+			formatted+=", "
+		fi
+		formatted+="$minutes min"
+	fi
+	if [[ $seconds -gt 0 || -z "$formatted" ]]; then
+		if [[ -n "$formatted" ]]; then
+			formatted+=", "
+		fi
+		formatted+="$seconds sec"
+	fi
+
+	printf "%s" "$formatted"
 }
 
 function _auto_notify_message() {
 	local command="$1"
 	local elapsed="$2"
 	local exit_code="$3"
+	local elapsed_formatted="$(_auto_notify_format_elapsed "$elapsed")"
 	local platform="$(uname)"
 	# Run using echo -e in order to make sure notify-send picks up new line
-	local DEFAULT_TITLE="Terminal Command Completed"
-	local DEFAULT_BODY="'%command' finished after %elapseds with exit code %exit_code"
+	local default_title="Command Succeeded"
+	if [[ "$exit_code" != "0" ]]; then
+		default_title="Command Failed"
+	fi
+	local default_body="'%command' took %elapsed and exited with code %exit_code."
 
-	local title="${AUTO_NOTIFY_TITLE:-$DEFAULT_TITLE}"
-	local text="${AUTO_NOTIFY_BODY:-$DEFAULT_BODY}"
+	local title="${AUTO_NOTIFY_TITLE:-$default_title}"
+	local text="${AUTO_NOTIFY_BODY:-$default_body}"
+	local body=""
 
-	title="$(_auto_notify_format "$title" "$command" "$elapsed" "$exit_code")"
-	body="$(_auto_notify_format "$text" "$command" "$elapsed" "$exit_code")"
+	title="$(_auto_notify_format "$title" "$command" "$elapsed_formatted" "$exit_code")"
+	body="$(_auto_notify_format "$text" "$command" "$elapsed_formatted" "$exit_code")"
 
 	if [[ "$platform" == "Linux" ]]; then
 		local urgency="normal"
@@ -85,9 +116,9 @@ function _auto_notify_message() {
 		local arguments=("$title" "$body" "--app-name=zsh" "$transient" "--urgency=$urgency" "--expire-time=$AUTO_NOTIFY_EXPIRE_TIME")
 
 		if [[ -n "$icon" ]]; then
-				arguments+=("--icon=$icon")
+			arguments+=("--icon=$icon")
 		fi
-		notify-send ${arguments[@]}
+		notify-send "${arguments[@]}"
 		if [[ -n "$AUTO_NOTIFY_SOUND" ]]; then
 			if [[ "$exit_code" != "0" ]]; then
 				paplay "$AUTO_NOTIFY_SOUND_ERROR"
@@ -97,9 +128,9 @@ function _auto_notify_message() {
 		fi
 
 	elif [[ "$platform" == "Darwin" ]]; then
-		notification_command="display notification (item 1 of argv) with title (item 2 of argv)"
-		notification_body=($body $title)
-		if [[ ! -z "$AUTO_NOTIFY_SOUND" ]]; then
+		local notification_command="display notification (item 1 of argv) with title (item 2 of argv)"
+		local -a notification_body=("$body" "$title")
+		if [[ -n "$AUTO_NOTIFY_SOUND" ]]; then
 			notification_command+=" sound name (item 3 of argv)"
 			if [[ "$exit_code" != "0" ]]; then
 				notification_body+=("$AUTO_NOTIFY_SOUND_ERROR")
@@ -109,9 +140,9 @@ function _auto_notify_message() {
 		fi
 		osascript \
 			-e 'on run argv' \
-			-e ${notification_command[@]} \
+			-e "$notification_command" \
 			-e 'end run' \
-			${notification_body[@]}
+			"${notification_body[@]}"
 	else
 		printf "Unknown platform for sending notifications: $platform\n"
 	fi
@@ -213,9 +244,7 @@ function enable_auto_notify() {
 
 _auto_notify_reset_tracking
 
-
-platform="$(uname)"
-if [[ "$platform" == "Linux" ]] && ! type notify-send > /dev/null; then
+if [[ "$(uname)" == "Linux" ]] && ! command -v notify-send > /dev/null 2>&1; then
 	if [[ "$AUTO_NOTIFY_WARN_NOTIFY_SEND_MISSING" = "true" ]]; then
 		printf "'notify-send' must be installed for zsh-auto-notify to work\n"
 		printf "Please install it with your relevant package manager\n"
