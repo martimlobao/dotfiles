@@ -1,5 +1,4 @@
-#:schema https://raw.githubusercontent.com/martimlobao/starship/refs/heads/chore/python-binary-schema-context/.github/config-schema.json
-# Change back to `https://starship.rs/config-schema.json` after merging https://github.com/starship/starship/pull/7415
+#:schema https://starship.rs/config-schema.json
 
 add_newline = true
 
