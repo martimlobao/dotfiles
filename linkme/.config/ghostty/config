@@ -44,6 +44,8 @@ palette = 15=#f1f1f0
 font-size = 12
 font-thicken = true
 font-family = Source Code Pro
+# Match zsh/ZLE's legacy width calculations to avoid cursor/input desync on emoji paths.
+grapheme-width-method = legacy
 keybind = cmd+backspace=esc:w
 keybind = cmd+alt+up=scroll_to_top
 keybind = cmd+alt+down=scroll_to_bottom
