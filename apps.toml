@@ -29,8 +29,10 @@ awscli = "formula"  # Official Amazon AWS command-line interface
 citrix-workspace = "cask"  # Managed desktop virtualization solution
 microsoft-excel = "cask"  # Spreadsheet software
 microsoft-word = "cask"  # Word processor
+powershell = "formula"  # Command-line shell and scripting language
 
 [productivity]
+granola = "cask"  # AI-powered notepad for meetings
 linear = "cask"  # App to manage software development and track bugs
 notion = "cask"  # App to write, plan, collaborate, and get organised
 obsidian = "cask"  # Knowledge base that works on top of a local folder of plain text Markdown files
@@ -84,7 +86,6 @@ blip = "cask"  # Send any size file between devices
 calibre = "cask"  # E-books management software
 chatgpt-atlas = "cask"  # OpenAI's official browser with ChatGPT built in
 claude = "cask"  # Anthropic's official Claude AI desktop app
-comet = "cask"  # Web browser with integrated AI assistant
 dropbox = "cask"  # Client for the Dropbox cloud storage service
 google-drive = "cask"  # Client for the Google Drive storage service
 iina = "cask"  # Free and open-source media player [modern vlc alternative]
@@ -155,6 +156,7 @@ ipython = "uv"  # Interactive computing in Python
 marimo = "uv"  # Reactive notebook for Python [Jupyter alternative]
 mypy = "uv"  # Experimental optional static type checker for Python
 "pantsbuild/tap/pants" = "cask"  # Fast, scalable, user-friendly build system for codebases of all sizes
+playwright = "uv"  # Framework for web testing and automation
 poetry = "uv"  # Python package management tool
 pylint = "uv"  # It's not just a linter that annoys you!
 ruff = "uv"  # Extremely fast Python linter, written in Rust
