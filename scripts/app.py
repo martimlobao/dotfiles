@@ -1177,7 +1177,7 @@ class AppManagerFacade:
             )
         return self._service_cache[source]
 
-    def add_app(
+    def add_app(  # noqa: PLR0912
         self,
         *,
         app: str,
@@ -1230,23 +1230,29 @@ class AppManagerFacade:
             return
 
         failure_message: str | None = None
-        try:
-            if outcome.previous_source and outcome.previous_source != source:
+        if outcome.previous_source and outcome.previous_source != source:
+            try:
                 uninstall_result: OperationResult = self.get_service(
                     outcome.previous_source
                 ).ensure_uninstalled(outcome.app_key)
+            except AppManagerError as error:
+                failure_message = str(error)
+            else:
                 self.console.emit_operation(uninstall_result, success_style=Ansi.MAGENTA)
                 if not uninstall_result.success:
                     failure_message = uninstall_result.message
 
-            install_result: OperationResult = self.get_service(source).ensure_installed(
-                outcome.app_key
-            )
-            self.console.emit_operation(install_result)
-            if not install_result.success:
-                failure_message = install_result.message
-        except AppManagerError as error:
-            failure_message = str(error)
+        if not failure_message:
+            try:
+                install_result: OperationResult = self.get_service(source).ensure_installed(
+                    outcome.app_key
+                )
+            except AppManagerError as error:
+                failure_message = str(error)
+            else:
+                self.console.emit_operation(install_result)
+                if not install_result.success:
+                    failure_message = install_result.message
 
         if failure_message:
             self.console.paint(

@@ -762,6 +762,21 @@ def write_response_chunks(
             pbar.update(len(chunk))
 
 
+def _handle_download_retry(
+    attempt: int, label: str, error: Exception, req: requests.Response | None
+) -> None:
+    """Handle retry logic for download failures.
+
+    Raises:
+        RuntimeError: If maximum retry attempts exhausted.
+    """
+    if req is not None:
+        req.close()
+    if attempt == MAX_DOWNLOAD_RETRIES:
+        raise RuntimeError(f"{label}: download failed after retries ({error})") from error
+    time.sleep(RETRY_BACKOFF_SECONDS * attempt)
+
+
 def download_file_with_progress(download: AssetItem) -> str:
     """Download a file with progress bar.
 
@@ -805,36 +820,40 @@ def download_file_with_progress(download: AssetItem) -> str:
             req: requests.Response | None = None
             try:
                 req = start_download_request(parsed_url, headers)
-
-                if (
-                    req.status_code == HTTP_STATUS_RANGE_NOT_SATISFIABLE
-                    and total is not None
-                    and downloaded >= total
-                ):
-                    set_progress(pbar, total)
-                    return label
-
                 req.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                _handle_download_retry(attempt, label, e, req)
+                continue
 
-                if downloaded > 0 and req.status_code == HTTP_STATUS_OK:
-                    # Server ignored Range header.
-                    # Restart to avoid duplicated bytes.
-                    downloaded = 0
-                    file_path_obj.unlink(missing_ok=True)
-                    pbar.reset(total=total)
+            if (
+                req.status_code == HTTP_STATUS_RANGE_NOT_SATISFIABLE
+                and total is not None
+                and downloaded >= total
+            ):
+                set_progress(pbar, total)
+                req.close()
+                return label
 
+            if downloaded > 0 and req.status_code == HTTP_STATUS_OK:
+                downloaded = 0
+                file_path_obj.unlink(missing_ok=True)
+                pbar.reset(total=total)
+
+            try:
                 write_response_chunks(req, file_path_obj, downloaded, pbar)
-
-                current_size: int = file_path_obj.stat().st_size
-                if total is None or current_size >= total:
-                    return label
             except (OSError, requests.exceptions.RequestException) as e:
-                if attempt == MAX_DOWNLOAD_RETRIES:
-                    raise RuntimeError(f"{label}: download failed after retries ({e})") from e
-                time.sleep(RETRY_BACKOFF_SECONDS * attempt)
-            finally:
-                if req is not None:
-                    req.close()
+                _handle_download_retry(attempt, label, e, req)
+                continue
+
+            try:
+                current_size: int = file_path_obj.stat().st_size
+            except OSError as e:
+                _handle_download_retry(attempt, label, e, req)
+                continue
+
+            req.close()
+            if total is None or current_size >= total:
+                return label
 
     raise RuntimeError(f"{label}: download failed due to incomplete output")
 
