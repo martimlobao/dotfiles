@@ -762,7 +762,7 @@ def write_response_chunks(
             pbar.update(len(chunk))
 
 
-def _try_download_once(
+def try_download_once(
     parsed_url: str,
     headers: dict[str, str],
     file_path_obj: Path,
@@ -843,7 +843,7 @@ def download_file_with_progress(download: AssetItem) -> str:
                 headers["Range"] = f"bytes={downloaded}-"
 
             try:
-                if _try_download_once(
+                if try_download_once(
                     parsed_url, headers, file_path_obj, downloaded, total, pbar, label
                 ):
                     return label
