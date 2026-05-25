@@ -15,7 +15,7 @@ import plistlib
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -231,3 +231,36 @@ def test_clear_cache_reports_missing_file(
         aerials_module.clear_cache()
 
     assert "Cache file not found" in capsys.readouterr().out
+
+
+def test_handle_download_retry_closes_request() -> None:
+    mock_req = Mock()
+    error = Exception("test error")
+
+    with patch.object(aerials_module, "time") as mock_time:
+        aerials_module.handle_download_retry(1, "test_file", error, mock_req)
+
+    mock_req.close.assert_called_once()
+    mock_time.sleep.assert_called_once()
+
+
+def test_handle_download_retry_raises_on_max_attempts() -> None:
+    mock_req = Mock()
+    error = Exception("test error")
+
+    with (
+        patch.object(aerials_module, "MAX_DOWNLOAD_RETRIES", 3),
+        pytest.raises(RuntimeError, match="test_file: download failed after retries"),
+    ):
+        aerials_module.handle_download_retry(3, "test_file", error, mock_req)
+
+    mock_req.close.assert_called_once()
+
+
+def test_handle_download_retry_handles_none_request() -> None:
+    error = Exception("test error")
+
+    with patch.object(aerials_module, "time") as mock_time:
+        aerials_module.handle_download_retry(1, "test_file", error, None)
+
+    mock_time.sleep.assert_called_once()

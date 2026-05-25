@@ -762,7 +762,7 @@ def write_response_chunks(
             pbar.update(len(chunk))
 
 
-def _handle_download_retry(
+def handle_download_retry(
     attempt: int, label: str, error: Exception, req: requests.Response | None
 ) -> None:
     """Handle retry logic for download failures.
@@ -822,7 +822,7 @@ def download_file_with_progress(download: AssetItem) -> str:
                 req = start_download_request(parsed_url, headers)
                 req.raise_for_status()
             except requests.exceptions.RequestException as e:
-                _handle_download_retry(attempt, label, e, req)
+                handle_download_retry(attempt, label, e, req)
                 continue
 
             if (
@@ -842,13 +842,13 @@ def download_file_with_progress(download: AssetItem) -> str:
             try:
                 write_response_chunks(req, file_path_obj, downloaded, pbar)
             except (OSError, requests.exceptions.RequestException) as e:
-                _handle_download_retry(attempt, label, e, req)
+                handle_download_retry(attempt, label, e, req)
                 continue
 
             try:
                 current_size: int = file_path_obj.stat().st_size
             except OSError as e:
-                _handle_download_retry(attempt, label, e, req)
+                handle_download_retry(attempt, label, e, req)
                 continue
 
             req.close()
