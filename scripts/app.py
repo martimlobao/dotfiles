@@ -1177,7 +1177,64 @@ class AppManagerFacade:
             )
         return self._service_cache[source]
 
-    def add_app(  # noqa: PLR0912
+    def _print_add_outcome(self, outcome: AddAppOutcome, source: str) -> None:
+        """Print console output for add_app operation."""
+        if outcome.moved_from is not None:
+            move_message: str = (
+                f"Moved {outcome.app_key!r} from [{outcome.moved_from}] to "
+                f'[{outcome.group}] with source "{source}" '
+                f'and description "{outcome.description}".'
+            )
+            self.console.paint(move_message, Ansi.CYAN, icon="➡️")
+        elif outcome.existed:
+            self.console.paint(
+                f"Updated {outcome.app_key!r} in [{outcome.group}] with source '{source}' "
+                f'and description "{outcome.description}".',
+                Ansi.CYAN,
+                icon="🔄",
+            )
+        else:
+            self.console.paint(
+                f"Added {outcome.app_key!r} to [{outcome.group}] with source '{source}' "
+                f'and description "{outcome.description}".',
+                Ansi.GREEN,
+                icon="✅",
+            )
+
+    def _uninstall_previous_source(self, outcome: AddAppOutcome, new_source: str) -> str | None:
+        """Uninstall app from previous source if source changed.
+
+        Returns:
+            Error message if uninstall failed, None otherwise.
+        """
+        if not outcome.previous_source or outcome.previous_source == new_source:
+            return None
+
+        try:
+            result: OperationResult = self.get_service(outcome.previous_source).ensure_uninstalled(
+                outcome.app_key
+            )
+        except AppManagerError as error:
+            return str(error)
+
+        self.console.emit_operation(result, success_style=Ansi.MAGENTA)
+        return result.message if not result.success else None
+
+    def _install_to_new_source(self, app_key: str, source: str) -> str | None:
+        """Install app to new source.
+
+        Returns:
+            Error message if install failed, None otherwise.
+        """
+        try:
+            result: OperationResult = self.get_service(source).ensure_installed(app_key)
+        except AppManagerError as error:
+            return str(error)
+
+        self.console.emit_operation(result)
+        return result.message if not result.success else None
+
+    def add_app(
         self,
         *,
         app: str,
@@ -1203,27 +1260,7 @@ class AppManagerFacade:
             description=final_description,
         )
 
-        if outcome.moved_from is not None:
-            move_message: str = (
-                f"Moved {outcome.app_key!r} from [{outcome.moved_from}] to "
-                f'[{outcome.group}] with source "{source}" '
-                f'and description "{outcome.description}".'
-            )
-            self.console.paint(move_message, Ansi.CYAN, icon="➡️")
-        elif outcome.existed:
-            self.console.paint(
-                f"Updated {outcome.app_key!r} in [{outcome.group}] with source '{source}' "
-                f'and description "{outcome.description}".',
-                Ansi.CYAN,
-                icon="🔄",
-            )
-        else:
-            self.console.paint(
-                f"Added {outcome.app_key!r} to [{outcome.group}] with source '{source}' "
-                f'and description "{outcome.description}".',
-                Ansi.GREEN,
-                icon="✅",
-            )
+        self._print_add_outcome(outcome, source)
 
         if no_install:
             self.repository.save(document)
