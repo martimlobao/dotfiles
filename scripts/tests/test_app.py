@@ -612,6 +612,34 @@ def test_facade_add_app_rolls_back_when_install_fails(tmp_path: Path) -> None:
     assert apps_file.read_text() == initial_text
 
 
+def test_facade_add_app_rolls_back_when_uninstall_fails(tmp_path: Path) -> None:
+    initial_text = '[cli]\nhttpie = "formula"\n'
+    facade, apps_file, _ = build_facade(tmp_path, content=initial_text)
+    previous_source_service = Mock()
+    previous_source_service.ensure_uninstalled.side_effect = app_module.AppManagerError(
+        "uninstall failed"
+    )
+    new_source_service = Mock()
+
+    def service_for(source: str) -> object:
+        return {"formula": previous_source_service, "uv": new_source_service}[source]
+
+    with (
+        patch.object(facade, "get_service", side_effect=service_for),
+        pytest.raises(app_module.AppManagerError, match="uninstall failed"),
+    ):
+        facade.add_app(
+            app="httpie",
+            source="uv",
+            group="cli",
+            description="desc",
+            no_install=False,
+        )
+
+    assert apps_file.read_text() == initial_text
+    new_source_service.ensure_installed.assert_not_called()
+
+
 def test_facade_remove_app_not_found(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     facade, _, _ = build_facade(tmp_path, content='[cli]\nhttpie = "uv"\n')
     facade.remove_app(app="missing", no_install=False)
@@ -1503,3 +1531,52 @@ def test_parse_args_raises_when_no_sources_registered() -> None:
         pytest.raises(app_module.AppManagerError, match="No sources are registered"),
     ):
         app_module.parse_args()
+
+
+def test_facade_add_app_fails_when_uninstall_returns_failure_status(tmp_path: Path) -> None:
+    initial_text = '[cli]\nhttpie = "formula"\n'
+    facade, apps_file, _ = build_facade(tmp_path, content=initial_text)
+    previous_source_service = Mock()
+    previous_source_service.ensure_uninstalled.return_value = app_module.OperationResult.failed(
+        "uninstall failed"
+    )
+    new_source_service = Mock()
+
+    def service_for(source: str) -> object:
+        return {"formula": previous_source_service, "uv": new_source_service}[source]
+
+    with (
+        patch.object(facade, "get_service", side_effect=service_for),
+        pytest.raises(app_module.AppManagerError, match="uninstall failed"),
+    ):
+        facade.add_app(
+            app="httpie",
+            source="uv",
+            group="cli",
+            description="desc",
+            no_install=False,
+        )
+
+    assert apps_file.read_text() == initial_text
+    new_source_service.ensure_installed.assert_not_called()
+
+
+def test_facade_add_app_fails_when_install_returns_failure_status(tmp_path: Path) -> None:
+    initial_text = '[cli]\nfoo = "formula"\n'
+    facade, apps_file, _ = build_facade(tmp_path, content=initial_text)
+    service = Mock()
+    service.ensure_installed.return_value = app_module.OperationResult.failed("install failed")
+
+    with (
+        patch.object(facade, "get_service", return_value=service),
+        pytest.raises(app_module.AppManagerError, match="install failed"),
+    ):
+        facade.add_app(
+            app="bar",
+            source="uv",
+            group="cli",
+            description="desc",
+            no_install=False,
+        )
+
+    assert apps_file.read_text() == initial_text

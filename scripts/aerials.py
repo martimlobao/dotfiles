@@ -762,6 +762,46 @@ def write_response_chunks(
             pbar.update(len(chunk))
 
 
+def try_download_once(
+    parsed_url: str,
+    headers: dict[str, str],
+    file_path_obj: Path,
+    downloaded: int,
+    total: int | None,
+    pbar: tqdm.std.tqdm,
+    label: str,
+) -> str | None:
+    """Run one download pass.
+
+    Returns:
+        The asset label when the download is complete, otherwise None.
+    """
+    with start_download_request(parsed_url, headers) as req:
+        if (
+            req.status_code == HTTP_STATUS_RANGE_NOT_SATISFIABLE
+            and total is not None
+            and downloaded >= total
+        ):
+            set_progress(pbar, total)
+            return label
+
+        req.raise_for_status()
+
+        if downloaded > 0 and req.status_code == HTTP_STATUS_OK:
+            # Server ignored Range header.
+            # Restart to avoid duplicated bytes.
+            downloaded = 0
+            file_path_obj.unlink(missing_ok=True)
+            pbar.reset(total=total)
+
+        write_response_chunks(req, file_path_obj, downloaded, pbar)
+
+        current_size: int = file_path_obj.stat().st_size
+        if total is None or current_size >= total:
+            return label
+        return None
+
+
 def download_file_with_progress(download: AssetItem) -> str:
     """Download a file with progress bar.
 
@@ -802,39 +842,15 @@ def download_file_with_progress(download: AssetItem) -> str:
             if downloaded > 0:
                 headers["Range"] = f"bytes={downloaded}-"
 
-            req: requests.Response | None = None
             try:
-                req = start_download_request(parsed_url, headers)
-
-                if (
-                    req.status_code == HTTP_STATUS_RANGE_NOT_SATISFIABLE
-                    and total is not None
-                    and downloaded >= total
+                if try_download_once(
+                    parsed_url, headers, file_path_obj, downloaded, total, pbar, label
                 ):
-                    set_progress(pbar, total)
-                    return label
-
-                req.raise_for_status()
-
-                if downloaded > 0 and req.status_code == HTTP_STATUS_OK:
-                    # Server ignored Range header.
-                    # Restart to avoid duplicated bytes.
-                    downloaded = 0
-                    file_path_obj.unlink(missing_ok=True)
-                    pbar.reset(total=total)
-
-                write_response_chunks(req, file_path_obj, downloaded, pbar)
-
-                current_size: int = file_path_obj.stat().st_size
-                if total is None or current_size >= total:
                     return label
             except (OSError, requests.exceptions.RequestException) as e:
                 if attempt == MAX_DOWNLOAD_RETRIES:
                     raise RuntimeError(f"{label}: download failed after retries ({e})") from e
                 time.sleep(RETRY_BACKOFF_SECONDS * attempt)
-            finally:
-                if req is not None:
-                    req.close()
 
     raise RuntimeError(f"{label}: download failed due to incomplete output")
 

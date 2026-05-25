@@ -70,6 +70,7 @@ max-doc-length = 79
 
 [lint.pylint]
 max-args = 7
+max-branches = 15
 
 [format]
 docstring-code-format = true
