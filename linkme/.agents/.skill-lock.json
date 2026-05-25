@@ -1,0 +1,256 @@
+{
+  "dismissed": {
+    "findSkillsPrompt": true
+  },
+  "lastSelectedAgents": [
+    "amp",
+    "antigravity",
+    "claude-code",
+    "cline",
+    "codex",
+    "cursor",
+    "deepagents",
+    "dexto",
+    "firebender",
+    "gemini-cli",
+    "github-copilot",
+    "kimi-cli",
+    "opencode",
+    "warp"
+  ],
+  "skills": {
+    "bm-prd-creator": {
+      "installedAt": "2026-05-25T16:40:29.312Z",
+      "ref": "main",
+      "skillFolderHash": "58a2e88a21bc231f345b53afe40c1264126fdaa9",
+      "skillPath": "plugins/bm-prd-creator/skills/bm-prd-creator/SKILL.md",
+      "source": "buildermethods/bm-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/buildermethods/bm-skills.git",
+      "updatedAt": "2026-05-25T16:40:29.312Z"
+    },
+    "brainstorming": {
+      "installedAt": "2026-05-13T14:03:54.037Z",
+      "skillFolderHash": "f260c775073816860fef8a37c032ac77e2ff5821",
+      "skillPath": "skills/brainstorming/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.037Z"
+    },
+    "dispatching-parallel-agents": {
+      "installedAt": "2026-05-13T14:03:54.039Z",
+      "skillFolderHash": "ebd0490e6b0bccfdb9f9c0cc9dd6a066036c8d89",
+      "skillPath": "skills/dispatching-parallel-agents/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.039Z"
+    },
+    "docx": {
+      "installedAt": "2026-05-25T17:49:48.345Z",
+      "pluginName": "document-skills",
+      "skillFolderHash": "a0d216202f9793a78da44cf96aabe48f42e627ac",
+      "skillPath": "skills/docx/SKILL.md",
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "updatedAt": "2026-05-25T17:49:48.345Z"
+    },
+    "executing-plans": {
+      "installedAt": "2026-05-13T14:03:54.040Z",
+      "skillFolderHash": "7c20d2bd7ff7b166ea3064e21b1e5f0455750878",
+      "skillPath": "skills/executing-plans/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.040Z"
+    },
+    "find-skills": {
+      "installedAt": "2026-02-17T03:03:17.330Z",
+      "skillFolderHash": "3013fdeb8a11b10b1eb795ec3ae8bfca38f7c26d",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/skills.git",
+      "updatedAt": "2026-05-25T16:50:44.213Z"
+    },
+    "finishing-a-development-branch": {
+      "installedAt": "2026-05-13T14:03:54.041Z",
+      "skillFolderHash": "782e09faa5dcf7e9a7a173bd14b5622e35b80169",
+      "skillPath": "skills/finishing-a-development-branch/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.041Z"
+    },
+    "frontend-design": {
+      "installedAt": "2026-05-25T17:47:25.392Z",
+      "pluginName": "example-skills",
+      "skillFolderHash": "928950704df8a8b885c03de5da626331e6f29cf8",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "updatedAt": "2026-05-25T17:47:25.392Z"
+    },
+    "pdf": {
+      "installedAt": "2026-05-25T16:59:34.459Z",
+      "pluginName": "document-skills",
+      "skillFolderHash": "6369f4649de69bd6857c9bc3b058a77206009238",
+      "skillPath": "skills/pdf/SKILL.md",
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "updatedAt": "2026-05-25T16:59:34.459Z"
+    },
+    "playwright-cli": {
+      "installedAt": "2026-05-25T16:53:47.233Z",
+      "skillFolderHash": "7f1be9aef5c4435ed99dc74a383ca814d05c82c5",
+      "skillPath": "skills/playwright-cli/SKILL.md",
+      "source": "microsoft/playwright-cli",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/microsoft/playwright-cli.git",
+      "updatedAt": "2026-05-25T16:53:47.233Z"
+    },
+    "pptx": {
+      "installedAt": "2026-05-25T17:50:32.491Z",
+      "pluginName": "document-skills",
+      "skillFolderHash": "10b3d70962e489867ddfee7da92f7da6b0eccc4f",
+      "skillPath": "skills/pptx/SKILL.md",
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "updatedAt": "2026-05-25T17:50:32.491Z"
+    },
+    "receiving-code-review": {
+      "installedAt": "2026-05-13T14:03:54.041Z",
+      "skillFolderHash": "7750c56fddb8b2f1cbdb1550a6e3e40d2eeac5f1",
+      "skillPath": "skills/receiving-code-review/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.041Z"
+    },
+    "requesting-code-review": {
+      "installedAt": "2026-05-13T14:03:54.042Z",
+      "skillFolderHash": "ff419ec159bdf5ff2f2d83c7e544c586bcde69bb",
+      "skillPath": "skills/requesting-code-review/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.042Z"
+    },
+    "skill-creator": {
+      "installedAt": "2026-05-25T16:50:08.586Z",
+      "pluginName": "example-skills",
+      "skillFolderHash": "3cf9a8db32597ba3e24b584a3d696f4e11c7d7b6",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "updatedAt": "2026-05-25T16:50:08.586Z"
+    },
+    "subagent-driven-development": {
+      "installedAt": "2026-05-13T14:03:54.043Z",
+      "skillFolderHash": "73b43347c1bdc10f6ab81a5cdb036dd1c8098cc0",
+      "skillPath": "skills/subagent-driven-development/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.043Z"
+    },
+    "supabase": {
+      "installedAt": "2026-05-13T14:03:18.652Z",
+      "skillFolderHash": "5a23097ab0a5a9083eb8f9f58f59e02177674811",
+      "skillPath": "skills/supabase/SKILL.md",
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/supabase/agent-skills.git",
+      "updatedAt": "2026-05-25T16:39:11.813Z"
+    },
+    "supabase-postgres-best-practices": {
+      "installedAt": "2026-05-13T14:03:18.650Z",
+      "skillFolderHash": "38cc9cab8bdc817a546adf7949a83e10e7157f06",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/supabase/agent-skills.git",
+      "updatedAt": "2026-05-25T16:39:10.404Z"
+    },
+    "systematic-debugging": {
+      "installedAt": "2026-05-13T14:03:54.044Z",
+      "skillFolderHash": "e96f5f2620c17069d668be1880d5492e34c84ceb",
+      "skillPath": "skills/systematic-debugging/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.044Z"
+    },
+    "test-driven-development": {
+      "installedAt": "2026-05-13T14:03:54.045Z",
+      "skillFolderHash": "98904a7d8e0e04b9bd46220b9b17298f45fe0b72",
+      "skillPath": "skills/test-driven-development/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.045Z"
+    },
+    "using-git-worktrees": {
+      "installedAt": "2026-05-13T14:03:54.046Z",
+      "skillFolderHash": "13a9643fb9e4b236173f7d4b56b15dac10394f1b",
+      "skillPath": "skills/using-git-worktrees/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.046Z"
+    },
+    "using-superpowers": {
+      "installedAt": "2026-05-13T14:03:54.047Z",
+      "skillFolderHash": "225dd70596c396940ff158335a954a64d93ece40",
+      "skillPath": "skills/using-superpowers/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.047Z"
+    },
+    "verification-before-completion": {
+      "installedAt": "2026-05-13T14:03:54.048Z",
+      "skillFolderHash": "ceb2f1f67f4cadb29b32a06e54d3d0be832071f5",
+      "skillPath": "skills/verification-before-completion/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.048Z"
+    },
+    "writing-plans": {
+      "installedAt": "2026-05-13T14:03:54.048Z",
+      "skillFolderHash": "8fe8e8b6ee9e5cbe53cb172a36f0dc31f9875847",
+      "skillPath": "skills/writing-plans/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.048Z"
+    },
+    "writing-skills": {
+      "installedAt": "2026-05-13T14:03:54.049Z",
+      "skillFolderHash": "80e8c7d3be99d55d5d76c9516cc45a1e7f48f281",
+      "skillPath": "skills/writing-skills/SKILL.md",
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "updatedAt": "2026-05-13T14:03:54.049Z"
+    },
+    "xlsx": {
+      "installedAt": "2026-05-25T16:49:13.279Z",
+      "pluginName": "document-skills",
+      "skillFolderHash": "f5fb1cdb7993b2feee8367e983e9d4d58d2eedd4",
+      "skillPath": "skills/xlsx/SKILL.md",
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "updatedAt": "2026-05-25T16:49:13.279Z"
+    }
+  },
+  "version": 3
+}
