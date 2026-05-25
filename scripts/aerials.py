@@ -762,18 +762,19 @@ def write_response_chunks(
             pbar.update(len(chunk))
 
 
-def _perform_download_attempt(
+def _try_download_once(
     parsed_url: str,
     headers: dict[str, str],
     file_path_obj: Path,
     downloaded: int,
     total: int | None,
     pbar: tqdm.std.tqdm,
-) -> tuple[bool, int]:
-    """Perform single download attempt with response lifecycle management.
+    label: str,
+) -> str | None:
+    """Run one download pass.
 
     Returns:
-        Tuple of (completed, downloaded_bytes).
+        The asset label when the download is complete, otherwise None.
     """
     with start_download_request(parsed_url, headers) as req:
         if (
@@ -782,19 +783,23 @@ def _perform_download_attempt(
             and downloaded >= total
         ):
             set_progress(pbar, total)
-            return True, downloaded
+            return label
 
         req.raise_for_status()
 
         if downloaded > 0 and req.status_code == HTTP_STATUS_OK:
+            # Server ignored Range header.
+            # Restart to avoid duplicated bytes.
             downloaded = 0
             file_path_obj.unlink(missing_ok=True)
             pbar.reset(total=total)
 
         write_response_chunks(req, file_path_obj, downloaded, pbar)
 
-    current_size: int = file_path_obj.stat().st_size
-    return (total is None or current_size >= total), current_size
+        current_size: int = file_path_obj.stat().st_size
+        if total is None or current_size >= total:
+            return label
+        return None
 
 
 def download_file_with_progress(download: AssetItem) -> str:
@@ -838,10 +843,9 @@ def download_file_with_progress(download: AssetItem) -> str:
                 headers["Range"] = f"bytes={downloaded}-"
 
             try:
-                completed, downloaded = _perform_download_attempt(
-                    parsed_url, headers, file_path_obj, downloaded, total, pbar
-                )
-                if completed:
+                if _try_download_once(
+                    parsed_url, headers, file_path_obj, downloaded, total, pbar, label
+                ):
                     return label
             except (OSError, requests.exceptions.RequestException) as e:
                 if attempt == MAX_DOWNLOAD_RETRIES:
