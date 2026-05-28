@@ -1,0 +1,44 @@
+{
+  "interface": {
+    "displayName": "Plugins CLI"
+  },
+  "name": "plugins-cli",
+  "plugins": [
+    {
+      "category": "Coding",
+      "name": "build-ios-apps",
+      "policy": {
+        "authentication": "ON_INSTALL",
+        "installation": "AVAILABLE"
+      },
+      "source": {
+        "path": "./.codex/plugins/cache/openai-plugins/build-ios-apps/719ed65532de6300759b816f363ca7834a659b87",
+        "source": "local"
+      }
+    },
+    {
+      "category": "Coding",
+      "name": "build-macos-apps",
+      "policy": {
+        "authentication": "ON_INSTALL",
+        "installation": "AVAILABLE"
+      },
+      "source": {
+        "path": "./.codex/plugins/cache/openai-plugins/build-macos-apps/719ed65532de6300759b816f363ca7834a659b87",
+        "source": "local"
+      }
+    },
+    {
+      "category": "Coding",
+      "name": "build-web-apps",
+      "policy": {
+        "authentication": "ON_INSTALL",
+        "installation": "AVAILABLE"
+      },
+      "source": {
+        "path": "./.codex/plugins/cache/openai-plugins/build-web-apps/719ed65532de6300759b816f363ca7834a659b87",
+        "source": "local"
+      }
+    }
+  ]
+}
