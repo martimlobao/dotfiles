@@ -99,6 +99,14 @@ def test_parse_args_sync_flags() -> None:
     assert args.install_mas
 
 
+def test_parse_args_sync_yes_flag() -> None:
+    argv = ["app", "sync", "-y"]
+    with patch.object(sys, "argv", argv):
+        args = app_module.parse_args()
+    assert args.command == "sync"
+    assert args.yes
+
+
 def test_command_runner_get_executable_raises() -> None:
     runner = app_module.CommandRunner()
     with (
@@ -967,7 +975,24 @@ def test_sync_command_builds_options_and_executes_facade(tmp_path: Path) -> None
         cmd.execute(args)
         sync.assert_called_once()
         options = sync.call_args[0][0]
+        assert options.yes
         assert options.enabled_sources == {"formula", "uv"}
+
+
+def test_main_sync_command_propagates_yes_flag(tmp_path: Path) -> None:
+    apps_file = tmp_path / "apps.toml"
+    apps_file.write_text("")
+    argv = ["app", "--apps-file", str(apps_file), "sync", "-y"]
+
+    with (
+        patch.object(sys, "argv", argv),
+        patch.object(app_module.AppManagerFacade, "sync_apps") as sync,
+    ):
+        app_module.main()
+
+    sync.assert_called_once()
+    options = sync.call_args[0][0]
+    assert options.yes
 
 
 def test_main_list_command(capsys: pytest.CaptureFixture[str]) -> None:
