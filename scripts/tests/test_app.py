@@ -1363,6 +1363,7 @@ def test_brew_ensure_installed_skips_tap_trust_for_short_name() -> None:
     service = app_module.BrewFormulaSourceService(runner=runner, console=console)
 
     with (
+        patch("app_module.platform.system", return_value="Darwin"),
         patch.object(service, "is_installed", return_value=False),
         patch.object(console, "prompt_yes_no") as prompt,
     ):
@@ -1380,6 +1381,7 @@ def test_brew_ensure_installed_skips_tap_trust_for_official_tap() -> None:
     service = app_module.BrewFormulaSourceService(runner=runner, console=console)
 
     with (
+        patch("app_module.platform.system", return_value="Darwin"),
         patch.object(service, "is_installed", return_value=False),
         patch.object(console, "prompt_yes_no") as prompt,
     ):
@@ -1418,6 +1420,7 @@ def test_brew_ensure_installed_skips_prompt_for_already_trusted_tap(tmp_path: Pa
     service = app_module.BrewFormulaSourceService(runner=runner, console=console)
 
     with (
+        patch("app_module.platform.system", return_value="Darwin"),
         patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
         patch.object(service, "is_installed", return_value=False),
         patch.object(console, "prompt_yes_no") as prompt,
@@ -1436,6 +1439,7 @@ def test_brew_ensure_installed_trusts_tap_when_prompt_accepted(tmp_path: Path) -
     service = app_module.BrewFormulaSourceService(runner=runner, console=console)
 
     with (
+        patch("app_module.platform.system", return_value="Darwin"),
         patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
         patch.object(service, "is_installed", return_value=False),
         patch.object(console, "prompt_yes_no", return_value=True) as prompt,
@@ -1457,6 +1461,7 @@ def test_brew_ensure_installed_does_not_trust_tap_when_prompt_declined(tmp_path:
     service = app_module.BrewFormulaSourceService(runner=runner, console=console)
 
     with (
+        patch("app_module.platform.system", return_value="Darwin"),
         patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
         patch.object(service, "is_installed", return_value=False),
         patch.object(console, "prompt_yes_no", return_value=False) as prompt,
