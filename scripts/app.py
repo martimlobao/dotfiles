@@ -52,6 +52,7 @@ type JSON = dict[str, JSON] | list[JSON] | str | int | float | bool | None
 
 DOTPATH: Path = Path(os.environ.get("DOTPATH", Path(__file__).resolve().parent.parent))
 APPS_TOML: Path = DOTPATH / "apps.toml"
+FULLY_QUALIFIED_HOMEBREW_APP_SLASHES = 2
 
 
 class AppManagerError(Exception):
@@ -710,7 +711,12 @@ class BaseSourceService(ABC):
         }
         return bool(aliases & installed_tokens)
 
-    def ensure_installed(self, app: str) -> OperationResult:
+    def prepare_install(self, app: str, *, auto_yes: bool) -> None:
+        _ = self
+        del app, auto_yes
+
+    def ensure_installed(self, app: str, *, auto_yes: bool = False) -> OperationResult:
+        self.prepare_install(app, auto_yes=auto_yes)
         if self.is_installed(app):
             return OperationResult.skipped_result(
                 f"{app!r} is already installed via {self.source_name}."
@@ -789,6 +795,52 @@ class BrewSourceService(BaseSourceService, ABC):
         brew: str = self._brew()
         result = self.runner.run([brew, "list", self.list_flag])
         return {item: item for item in result.stdout.split()}
+
+    def prepare_install(self, app: str, *, auto_yes: bool) -> None:
+        tap: str | None = self._third_party_tap(app)
+        if tap is None or self._tap_is_trusted(tap):
+            return
+
+        if auto_yes or self.console.prompt_yes_no(
+            f"Trust Homebrew tap {tap}? (y/n) ",
+            auto_yes=False,
+        ):
+            brew: str = self._brew()
+            self.runner.run([brew, "trust", "--tap", tap])
+
+    @staticmethod
+    def _third_party_tap(app: str) -> str | None:
+        if app.count("/") != FULLY_QUALIFIED_HOMEBREW_APP_SLASHES:
+            return None
+
+        owner, tap_name, _ = app.split("/", 2)
+        tap = f"{owner}/{tap_name}"
+        if owner.casefold() == "homebrew":
+            return None
+        return tap
+
+    def _tap_is_trusted(self, tap: str) -> bool:
+        trust_file = self._trust_file()
+        try:
+            store = json.loads(trust_file.read_text())
+        except (OSError, json.JSONDecodeError):
+            return False
+
+        if not isinstance(store, dict):
+            return False
+
+        trusted_taps = store.get("trustedtaps", [])
+        if not isinstance(trusted_taps, list):
+            return False
+
+        return tap.casefold() in {str(trusted_tap).casefold() for trusted_tap in trusted_taps}
+
+    @staticmethod
+    def _trust_file() -> Path:
+        config_home = os.environ.get("HOMEBREW_USER_CONFIG_HOME")
+        if config_home:
+            return Path(config_home) / "trust.json"
+        return Path.home() / ".homebrew" / "trust.json"
 
     def install(self, app: str) -> None:
         brew: str = self._brew()
@@ -1185,6 +1237,7 @@ class AppManagerFacade:
         group: str | None,
         description: str | None,
         no_install: bool,
+        yes: bool = False,
     ) -> None:
         document = self.repository.load()
         selected_group: str = self._resolve_or_pick_group(document, group)
@@ -1246,7 +1299,8 @@ class AppManagerFacade:
         if not failure_message:
             try:
                 install_result: OperationResult = self.get_service(source).ensure_installed(
-                    outcome.app_key
+                    outcome.app_key,
+                    auto_yes=yes,
                 )
             except AppManagerError as error:
                 failure_message = str(error)
@@ -1476,7 +1530,8 @@ class AppManagerFacade:
                     current_group = group
 
                 result: OperationResult = self.get_service(record.source).ensure_installed(
-                    record.key
+                    record.key,
+                    auto_yes=options.yes,
                 )
                 if result.skipped and "Skipping" in result.message:
                     self.console.paint(result.message, Ansi.RED, icon="⏭️")
@@ -1595,6 +1650,7 @@ class AddAppCommand(BaseCommand):
             group=args.group,
             description=args.description,
             no_install=args.no_install,
+            yes=args.yes,
         )
 
 
@@ -1700,6 +1756,12 @@ def parse_args() -> argparse.Namespace:
         "--no-install",
         action="store_true",
         help="Skip installing or uninstalling apps and only update the apps.toml file",
+    )
+    add_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Auto-confirm Homebrew tap trust prompts",
     )
 
     remove_parser = subparsers.add_parser(
