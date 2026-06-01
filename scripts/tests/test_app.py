@@ -80,6 +80,14 @@ def test_parse_args_add_command() -> None:
     assert args.group == "cli"
 
 
+def test_parse_args_add_yes_flag() -> None:
+    argv = ["app", "add", "owner/tap/tool", "formula", "--group", "cli", "-y"]
+    with patch.object(sys, "argv", argv):
+        args = app_module.parse_args()
+    assert args.command == "add"
+    assert args.yes
+
+
 def test_parse_args_sync_flags() -> None:
     argv = ["app", "sync", "--no-cask", "--no-formula"]
     with patch.object(sys, "argv", argv):
@@ -562,6 +570,7 @@ def test_facade_add_app_no_install(tmp_path: Path) -> None:
         group="tools",
         description="desc",
         no_install=True,
+        yes=False,
     )
     text = apps_file.read_text()
     assert "[tools]" in text
@@ -585,10 +594,11 @@ def test_facade_add_app_source_change_calls_uninstall_and_install(tmp_path: Path
             group="cli",
             description="desc",
             no_install=False,
+            yes=True,
         )
 
     previous_source_service.ensure_uninstalled.assert_called_once_with("httpie")
-    new_source_service.ensure_installed.assert_called_once_with("httpie")
+    new_source_service.ensure_installed.assert_called_once_with("httpie", auto_yes=True)
 
 
 def test_facade_add_app_rolls_back_when_install_fails(tmp_path: Path) -> None:
@@ -607,6 +617,7 @@ def test_facade_add_app_rolls_back_when_install_fails(tmp_path: Path) -> None:
             group="cli",
             description="desc",
             no_install=False,
+            yes=False,
         )
 
     assert apps_file.read_text() == initial_text
@@ -634,6 +645,7 @@ def test_facade_add_app_rolls_back_when_uninstall_fails(tmp_path: Path) -> None:
             group="cli",
             description="desc",
             no_install=False,
+            yes=False,
         )
 
     assert apps_file.read_text() == initial_text
@@ -729,8 +741,21 @@ def test_facade_install_declared_skips_disabled_source(tmp_path: Path) -> None:
     with patch.object(facade, "get_service", side_effect=service_for):
         facade._install_declared(grouped, options)
 
-    uv_service.ensure_installed.assert_called_once_with("httpie")
+    uv_service.ensure_installed.assert_called_once_with("httpie", auto_yes=False)
     cask_service.ensure_installed.assert_not_called()
+
+
+def test_facade_install_declared_passes_auto_yes(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path)
+    formula_service = Mock()
+    formula_service.ensure_installed.return_value = app_module.OperationResult.ok("ok")
+    grouped = [("cli", [app_module.AppRecord("cli", "owner/tap/tool", "formula", "")])]
+    options = app_module.SyncOptions(yes=True, enabled_sources={"formula"})
+
+    with patch.object(facade, "get_service", return_value=formula_service):
+        facade._install_declared(grouped, options)
+
+    formula_service.ensure_installed.assert_called_once_with("owner/tap/tool", auto_yes=True)
 
 
 def test_facade_sync_unmanaged_no_missing(
@@ -876,9 +901,17 @@ def test_add_command_executes_facade(tmp_path: Path) -> None:
                 group="cli",
                 description="desc",
                 no_install=True,
+                yes=True,
             )
         )
-        add.assert_called_once()
+        add.assert_called_once_with(
+            app="foo",
+            source="uv",
+            group="cli",
+            description="desc",
+            no_install=True,
+            yes=True,
+        )
 
 
 def test_remove_command_executes_facade(tmp_path: Path) -> None:
@@ -1283,6 +1316,139 @@ def test_brew_source_methods_install_uninstall_upgrade_and_aliases() -> None:
     assert runner.run.call_count >= 5
 
 
+def test_brew_ensure_installed_skips_tap_trust_for_short_name() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    console = app_module.Console()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=console)
+
+    with (
+        patch.object(service, "is_installed", return_value=False),
+        patch.object(console, "prompt_yes_no") as prompt,
+    ):
+        service.ensure_installed("gh")
+
+    prompt.assert_not_called()
+    runner.run.assert_called_once_with(["brew", "install", "--formula", "gh"])
+
+
+def test_brew_ensure_installed_skips_tap_trust_for_official_tap() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    console = app_module.Console()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=console)
+
+    with (
+        patch.object(service, "is_installed", return_value=False),
+        patch.object(console, "prompt_yes_no") as prompt,
+    ):
+        service.ensure_installed("homebrew/core/gh")
+
+    prompt.assert_not_called()
+    runner.run.assert_called_once_with(["brew", "install", "--formula", "homebrew/core/gh"])
+
+
+def test_brew_ensure_installed_trusts_tap_even_when_already_installed(tmp_path: Path) -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    console = app_module.Console()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=console)
+
+    with (
+        patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
+        patch.object(service, "is_installed", return_value=True),
+        patch.object(console, "prompt_yes_no", return_value=True) as prompt,
+    ):
+        result = service.ensure_installed("owner/tap/tool")
+
+    prompt.assert_called_once_with("Trust Homebrew tap owner/tap? (y/n) ", auto_yes=False)
+    assert result.skipped
+    runner.run.assert_called_once_with(["brew", "trust", "--tap", "owner/tap"])
+
+
+def test_brew_ensure_installed_skips_prompt_for_already_trusted_tap(tmp_path: Path) -> None:
+    trust_file = tmp_path / "trust.json"
+    trust_file.write_text(json.dumps({"trustedtaps": ["owner/tap"]}))
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    console = app_module.Console()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=console)
+
+    with (
+        patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
+        patch.object(service, "is_installed", return_value=False),
+        patch.object(console, "prompt_yes_no") as prompt,
+    ):
+        service.ensure_installed("owner/tap/tool")
+
+    prompt.assert_not_called()
+    runner.run.assert_called_once_with(["brew", "install", "--formula", "owner/tap/tool"])
+
+
+def test_brew_ensure_installed_trusts_tap_when_prompt_accepted(tmp_path: Path) -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    console = app_module.Console()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=console)
+
+    with (
+        patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
+        patch.object(service, "is_installed", return_value=False),
+        patch.object(console, "prompt_yes_no", return_value=True) as prompt,
+    ):
+        service.ensure_installed("owner/tap/tool")
+
+    prompt.assert_called_once_with("Trust Homebrew tap owner/tap? (y/n) ", auto_yes=False)
+    assert runner.run.call_args_list == [
+        ((["brew", "trust", "--tap", "owner/tap"],), {}),
+        ((["brew", "install", "--formula", "owner/tap/tool"],), {}),
+    ]
+
+
+def test_brew_ensure_installed_does_not_trust_tap_when_prompt_declined(tmp_path: Path) -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    console = app_module.Console()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=console)
+
+    with (
+        patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
+        patch.object(service, "is_installed", return_value=False),
+        patch.object(console, "prompt_yes_no", return_value=False) as prompt,
+    ):
+        service.ensure_installed("owner/tap/tool")
+
+    prompt.assert_called_once_with("Trust Homebrew tap owner/tap? (y/n) ", auto_yes=False)
+    runner.run.assert_called_once_with(["brew", "install", "--formula", "owner/tap/tool"])
+
+
+def test_brew_ensure_installed_auto_trusts_tap_without_prompt(tmp_path: Path) -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    console = app_module.Console()
+    service = app_module.BrewCaskSourceService(runner=runner, console=console)
+
+    with (
+        patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
+        patch.object(service, "is_installed", return_value=False),
+        patch.object(console, "prompt_yes_no") as prompt,
+    ):
+        service.ensure_installed("owner/tap/tool", auto_yes=True)
+
+    prompt.assert_not_called()
+    assert runner.run.call_args_list == [
+        ((["brew", "trust", "--tap", "owner/tap"],), {}),
+        ((["brew", "install", "--cask", "owner/tap/tool"],), {}),
+    ]
+
+
 def test_brew_extract_install_state_with_list() -> None:
     installed, version = app_module.BrewSourceService._extract_install_state({
         "installed": [{"version": "1.2.3"}]
@@ -1555,6 +1721,7 @@ def test_facade_add_app_fails_when_uninstall_returns_failure_status(tmp_path: Pa
             group="cli",
             description="desc",
             no_install=False,
+            yes=False,
         )
 
     assert apps_file.read_text() == initial_text
@@ -1577,6 +1744,7 @@ def test_facade_add_app_fails_when_install_returns_failure_status(tmp_path: Path
             group="cli",
             description="desc",
             no_install=False,
+            yes=False,
         )
 
     assert apps_file.read_text() == initial_text
