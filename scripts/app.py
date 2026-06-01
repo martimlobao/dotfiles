@@ -716,15 +716,15 @@ class BaseSourceService(ABC):
         del app, auto_yes
 
     def ensure_installed(self, app: str, *, auto_yes: bool = False) -> OperationResult:
-        preflight: OperationResult | None = self.pre_install_check(app)
-        if preflight is not None:
-            return preflight
-
         self.prepare_install(app, auto_yes=auto_yes)
         if self.is_installed(app):
             return OperationResult.skipped_result(
                 f"{app!r} is already installed via {self.source_name}."
             )
+
+        preflight: OperationResult | None = self.pre_install_check(app)
+        if preflight is not None:
+            return preflight
 
         self.console.paint(f"Installing {app!r} via {self.source_name}...", Ansi.BLUE, icon="⬇️")
         self.install(app)

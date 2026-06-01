@@ -479,6 +479,20 @@ def test_base_strategy_ensure_installed_skips_when_installed() -> None:
     assert result.skipped
 
 
+def test_base_strategy_ensure_installed_skips_preflight_when_installed() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    with (
+        patch.object(service, "prepare_install") as prepare,
+        patch.object(service, "is_installed", return_value=True),
+        patch.object(service, "pre_install_check") as preflight,
+    ):
+        result = service.ensure_installed("owner/tap/tool")
+    assert result.skipped
+    prepare.assert_called_once_with("owner/tap/tool", auto_yes=False)
+    preflight.assert_not_called()
+
+
 def test_base_strategy_ensure_uninstalled_skips_when_not_installed() -> None:
     runner = Mock(spec=app_module.CommandRunner)
     service = app_module.UvSourceService(runner=runner, console=app_module.Console())
