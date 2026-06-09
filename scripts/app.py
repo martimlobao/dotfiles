@@ -854,7 +854,7 @@ class BrewSourceService(BaseSourceService, ABC):
     def upgrade_all(self) -> None:
         brew: str = self._brew()
         self.runner.run([brew, "update"], capture_output=False)
-        self.runner.run([brew, "upgrade"], capture_output=False)
+        self.runner.run([brew, "upgrade", "--yes"], capture_output=False)
         self.runner.run([brew, "cleanup"], capture_output=False)
 
     def fetch_info(

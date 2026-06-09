@@ -1355,6 +1355,17 @@ def test_brew_source_methods_install_uninstall_upgrade_and_aliases() -> None:
     assert runner.run.call_count >= 5
 
 
+def test_brew_upgrade_all_auto_accepts_upgrade_prompt() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+
+    service.upgrade_all()
+
+    runner.run.assert_any_call(["brew", "upgrade", "--yes"], capture_output=False)
+
+
 def test_brew_ensure_installed_skips_tap_trust_for_short_name() -> None:
     runner = Mock(spec=app_module.CommandRunner)
     runner.get_executable.return_value = "brew"
