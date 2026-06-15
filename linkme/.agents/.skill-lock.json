@@ -5,20 +5,29 @@
   "lastSelectedAgents": [
     "amp",
     "antigravity",
+    "antigravity-cli",
     "claude-code",
     "cline",
     "codex",
     "cursor",
     "deepagents",
-    "dexto",
-    "firebender",
     "gemini-cli",
     "github-copilot",
-    "kimi-cli",
+    "kimi-code-cli",
     "opencode",
-    "warp"
+    "warp",
+    "zed"
   ],
   "skills": {
+    "ask-questions-if-underspecified": {
+      "installedAt": "2026-06-09T18:28:49.106Z",
+      "skillFolderHash": "87fa7ff4bb3429b0bb835547fd7f10005d8eae4e",
+      "skillPath": "plugins/ask-questions-if-underspecified/skills/ask-questions-if-underspecified/SKILL.md",
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/trailofbits/skills.git",
+      "updatedAt": "2026-06-09T18:28:49.106Z"
+    },
     "bm-prd-creator": {
       "installedAt": "2026-05-25T16:40:29.312Z",
       "ref": "main",
