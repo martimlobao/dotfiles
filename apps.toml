@@ -30,6 +30,7 @@ citrix-workspace = "cask"  # Managed desktop virtualization solution
 microsoft-excel = "cask"  # Spreadsheet software
 microsoft-word = "cask"  # Word processor
 powershell = "formula"  # Command-line shell and scripting language
+windows-app = "cask"  # Connect to Windows
 
 [productivity]
 granola = "cask"  # AI-powered notepad for meetings
@@ -92,6 +93,7 @@ iina = "cask"  # Free and open-source media player [modern vlc alternative]
 istat-menus = "cask"  # System monitoring app
 localsend = "cask"  # Open-source cross-platform alternative to AirDrop
 nordvpn = "cask"  # VPN client for secure internet access and private browsing
+openvpn-connect = "cask"  # Client program for the OpenVPN Access Server
 rocket = "cask"  # Emoji picker optimised for blind people
 tailscale-app = "cask"  # Mesh VPN based on WireGuard
 the-unarchiver = "cask"  # Unpacks archive files
@@ -116,6 +118,7 @@ imagemagick = "formula"  # Tools and libraries to manipulate images in many form
 jq = "formula"  # Lightweight and flexible command-line JSON processor
 latexindent = "formula"  # Add indentation to LaTeX files
 leaf-md = "formula"  # Terminal Markdown previewer with a GUI-like experience
+lychee = "formula"  # Fast, async, resource-friendly link checker
 mcat = "formula"  # Terminal image, video, directory, and Markdown viewer
 mole = "formula"  # Deep clean and optimize your Mac
 mq = "formula"  # Jq-like command-line tool for markdown processing
