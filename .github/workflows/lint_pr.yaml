@@ -45,7 +45,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
       - name: Cache Oxipng
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/
           key: ${{ runner.os }}-cargo
