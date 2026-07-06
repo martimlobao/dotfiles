@@ -35,3 +35,7 @@ vault = "Private"
 [[ssh-keys]]
 item = "GitHub SSH Commit Signing Key"
 vault = "Private"
+
+[[ssh-keys]]
+item = "SSH BlueCrow Server"
+vault = "BlueCrow Capital"
