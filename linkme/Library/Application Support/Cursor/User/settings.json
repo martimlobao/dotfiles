@@ -189,7 +189,6 @@
   "python.terminal.activateEnvironment": false,
   "redhat.telemetry.enabled": true,
   "rewrap.wrappingColumn": 79,
-  "snowflake.connectionsConfigFile": "~/.snowflake/connections.toml",
   "sqlfluff.dialect": "postgres",
   "sqltools.results.reuseTabs": "connection",
   "terminal.integrated.defaultProfile.osx": "zsh",
