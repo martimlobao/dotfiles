@@ -1,5 +1,6 @@
 anthropic.claude-code
 anysphere.cursorpyright
+anysphere.remote-containers
 anysphere.remote-ssh
 astral-sh.ty
 batisteo.vscode-django
@@ -47,7 +48,6 @@ ms-toolsai.jupyter-renderers
 ms-toolsai.vscode-jupyter-cell-tags
 ms-toolsai.vscode-jupyter-powertoys
 ms-toolsai.vscode-jupyter-slideshow
-ms-vscode-remote.remote-containers
 ms-vscode.makefile-tools
 ms-vscode.remote-repositories
 ms-vscode.vscode-github-issue-notebooks
@@ -63,7 +63,6 @@ pnp.polacode
 redhat.vscode-yaml
 richie5um2.vscode-sort-json
 rvben.rumdl
-snowflake.snowflake-vsc
 sqlfluff.vscode-sqlfluff
 stkb.rewrap
 streetsidesoftware.code-spell-checker

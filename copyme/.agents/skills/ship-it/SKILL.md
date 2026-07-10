@@ -16,10 +16,10 @@ compatible with 1Password on macOS.
 ## Workflow
 
 1. Inspect state before changing anything:
-   - `git status --short --branch`
-   - `git diff --stat`
-   - `git diff --cached --stat`
-   - `git log -1 --oneline`
+    - `git status --short --branch`
+    - `git diff --stat`
+    - `git diff --cached --stat`
+    - `git log -1 --oneline`
 2. Identify the intended change set. Stage only those paths. Do not use `git add .`
    when unrelated edits may exist. If scope cannot be determined from the request
    and diff, ask before staging.
@@ -32,12 +32,12 @@ compatible with 1Password on macOS.
    scripts when they are discoverable. If checks fail, stop before committing
    unless the user explicitly asked to commit despite failures.
 5. Commit with conventional commit syntax:
-   - header: `<type>: <short imperative summary>`
-   - common types: `fix`, `feat`, `docs`, `test`, `refactor`, `chore`
-   - body: short bullet lines, each starting lowercase after `-`
+    - header: `<type>: <short imperative summary>`
+    - common types: `fix`, `feat`, `docs`, `test`, `refactor`, `chore`
+    - body: short bullet lines, each starting lowercase after `-`
 6. Push with plain Git:
-   - first run `git push -u origin <branch>`
-   - if upstream already exists, run `git push`
+    - first run `git push -u origin <branch>`
+    - if upstream already exists, run `git push`
 7. Open a GitHub PR. Use the commit header as the PR title and the commit body
    bullets as the PR body.
 
