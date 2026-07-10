@@ -106,10 +106,11 @@ eval "$(ruff generate-shell-completion zsh)"
 eval "$(rumdl completions zsh)"
 
 # bun and buncompletions
-[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
-
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+if [ -d "$HOME/.bun" ]; then
+	[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+	export BUN_INSTALL="$HOME/.bun"
+	export PATH="$BUN_INSTALL/bin:$PATH"
+fi
 
 # Mole shell completion
 if output="$(mole completion zsh 2>/dev/null)"; then eval "$output"; fi
