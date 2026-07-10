@@ -105,7 +105,7 @@ eval "$(ruff generate-shell-completion zsh)"
 # Shell completion for rumdl
 eval "$(rumdl completions zsh)"
 
-# bun and buncompletions
+# bun and bun completions
 if [ -d "$HOME/.bun" ]; then
 	[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 	export BUN_INSTALL="$HOME/.bun"
