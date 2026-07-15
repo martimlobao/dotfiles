@@ -312,6 +312,30 @@ def test_sylvan_insecure_request_warning_is_suppressed(tmp_path: Path) -> None:
     assert caught == []
 
 
+def test_non_sylvan_insecure_request_warning_is_not_suppressed(tmp_path: Path) -> None:
+    response = aerials_module.requests.Response()
+    response.headers["Content-Length"] = "123"
+
+    def warn_on_request(*_args: object, **_kwargs: object) -> object:
+        warnings.warn(
+            "unverified request",
+            aerials_module.urllib3.exceptions.InsecureRequestWarning,
+            stacklevel=2,
+        )
+        return response
+
+    with (
+        patch.object(aerials_module, "CACHE_FILE", tmp_path / "cache.json"),
+        patch.object(aerials_module.requests, "head", side_effect=warn_on_request),
+        warnings.catch_warnings(record=True) as caught,
+    ):
+        warnings.simplefilter("always")
+        aerials_module.get_content_length("https://updates.cdn-apple.com/video.mov")
+
+    assert len(caught) == 1
+    assert caught[0].category is aerials_module.urllib3.exceptions.InsecureRequestWarning
+
+
 def test_clear_cache_removes_existing_file(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

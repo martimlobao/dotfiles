@@ -47,7 +47,8 @@ import time
 import urllib.parse
 import warnings
 import webbrowser
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from multiprocessing.pool import ApplyResult, ThreadPool
 from pathlib import Path
 from typing import Any, Literal, TypedDict, cast
@@ -729,6 +730,19 @@ def should_verify_tls(url: str) -> bool:
     return urllib.parse.urlparse(url).hostname != "sylvan.apple.com"
 
 
+@contextmanager
+def suppress_insecure_warning_if_needed(*, verify_tls: bool) -> Iterator[None]:
+    """Suppress insecure-request warnings when TLS verification is disabled.
+
+    warnings.catch_warnings changes process-global warning state and is not
+    thread-safe, so keep this context limited to the request itself.
+    """
+    with warnings.catch_warnings():
+        if not verify_tls:
+            warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
+        yield
+
+
 def get_content_length(url: str) -> int:
     """Get content length from URL, using cache when possible.
 
@@ -750,9 +764,7 @@ def get_content_length(url: str) -> int:
 
     # Fetch from URL
     verify_tls: bool = should_verify_tls(url)
-    with warnings.catch_warnings():
-        if not verify_tls:
-            warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
+    with suppress_insecure_warning_if_needed(verify_tls=verify_tls):
         # SSL verification must be disabled for host 'sylvan.apple.com'.
         req: requests.Response = requests.head(url, verify=verify_tls, timeout=REQUEST_TIMEOUT)
     content_length: int = int(req.headers["Content-Length"])
@@ -789,9 +801,7 @@ def start_download_request(parsed_url: str, headers: dict[str, str]) -> requests
         Streaming HTTP response.
     """
     verify_tls: bool = should_verify_tls(parsed_url)
-    with warnings.catch_warnings():
-        if not verify_tls:
-            warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
+    with suppress_insecure_warning_if_needed(verify_tls=verify_tls):
         # SSL verification must be disabled for host 'sylvan.apple.com'.
         return requests.get(
             parsed_url,
