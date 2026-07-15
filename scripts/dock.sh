@@ -158,7 +158,7 @@ clear_dock
 add_app_to_dock "Dia"
 add_app_to_dock "Obsidian"
 add_app_to_dock "Todoist"
-add_app_to_dock "Codex"
+add_app_to_dock "ChatGPT"
 add_app_to_dock "Cursor"
 add_app_to_dock "Ghostty"
 add_app_to_dock "System Settings"
