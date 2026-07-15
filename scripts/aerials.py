@@ -68,6 +68,9 @@ MODERN_STRINGS_PATH: Path = (
 )
 ENTRIES_PATH: Path = AERIALS_PATH / "manifest/entries.json"
 VIDEO_PATH: Path = AERIALS_PATH / "videos"
+SYSTEM_ENTRIES_PATH: Path = Path(
+    "/System/Library/ExtensionKit/Extensions/WallpaperAerialsExtension.appex/Contents/Resources/entries.json"
+)
 
 # Constants
 CHUNK_SIZE: int = 32 * 1024  # 32KB chunks for downloading
@@ -256,7 +259,51 @@ def load_asset_data() -> tuple[Strings, AssetEntry]:
     with pathlib.Path(ENTRIES_PATH).open(encoding="utf-8") as fp:
         asset_entries: AssetEntry = json.load(fp)
 
+    merge_system_asset_entries(asset_entries)
+
     return strings, asset_entries
+
+
+def merge_system_asset_entries(
+    asset_entries: AssetEntry,
+    system_entries_path: Path = SYSTEM_ENTRIES_PATH,
+) -> None:
+    """Merge supported live assets missing from the downloaded manifest.
+
+    macOS can ship a newer live-wallpaper catalog than the per-user manifest.
+    Only assets assigned to at least one category already present in the
+    downloaded catalog are eligible, and downloaded entries always win when
+    IDs overlap.
+    """
+    if not system_entries_path.is_file():
+        return
+
+    with system_entries_path.open(encoding="utf-8") as fp:
+        system_entries: AssetEntry = json.load(fp)
+
+    categories: set[str] = {
+        category_id
+        for category in asset_entries.get("categories", [])
+        if isinstance((category_id := category.get("id")), str)
+    }
+    assets: list[Category] = asset_entries.setdefault("assets", [])
+    asset_ids: set[str] = {
+        asset_id for asset in assets if isinstance((asset_id := asset.get("id")), str)
+    }
+
+    for asset in system_entries.get("assets", []):
+        asset_id = asset.get("id")
+        asset_categories = asset.get("categories")
+        if (
+            not isinstance(asset_id, str)
+            or asset_id in asset_ids
+            or not isinstance(asset_categories, list)
+            or not asset_categories
+            or categories.isdisjoint(asset_categories)
+        ):
+            continue
+        assets.append(asset)
+        asset_ids.add(asset_id)
 
 
 def resolve_strings_path(aerials_path: Path = AERIALS_PATH) -> Path:
@@ -677,6 +724,11 @@ def save_cache(cache: ContentLengthCache) -> None:
         print(f"❌ Error saving cache to {CACHE_FILE}: {e}")
 
 
+def should_verify_tls(url: str) -> bool:
+    """Return whether TLS certificates should be verified for a URL."""
+    return urllib.parse.urlparse(url).hostname != "sylvan.apple.com"
+
+
 def get_content_length(url: str) -> int:
     """Get content length from URL, using cache when possible.
 
@@ -697,10 +749,12 @@ def get_content_length(url: str) -> int:
             return entry["length"]
 
     # Fetch from URL
+    verify_tls: bool = should_verify_tls(url)
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
-        # SSL verification must be disabled for host 'sylvan.apple.com'
-        req: requests.Response = requests.head(url, verify=False, timeout=REQUEST_TIMEOUT)  # noqa: S501
+        if not verify_tls:
+            warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
+        # SSL verification must be disabled for host 'sylvan.apple.com'.
+        req: requests.Response = requests.head(url, verify=verify_tls, timeout=REQUEST_TIMEOUT)
     content_length: int = int(req.headers["Content-Length"])
 
     # Update cache
@@ -734,14 +788,16 @@ def start_download_request(parsed_url: str, headers: dict[str, str]) -> requests
     Returns:
         Streaming HTTP response.
     """
+    verify_tls: bool = should_verify_tls(parsed_url)
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
+        if not verify_tls:
+            warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
         # SSL verification must be disabled for host 'sylvan.apple.com'.
         return requests.get(
             parsed_url,
             stream=True,
             headers=headers,
-            verify=False,  # noqa: S501
+            verify=verify_tls,
             timeout=(REQUEST_TIMEOUT, REQUEST_TIMEOUT * 6),
         )
 
