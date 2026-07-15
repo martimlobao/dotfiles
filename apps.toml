@@ -14,13 +14,10 @@ cursor = "cask"  # Write, edit, and chat about your code with AI
 cursor-cli = "cask"  # Command-line agent for Cursor
 docker-desktop = "cask"  # App to build and share containerised applications and microservices
 gcloud-cli = "cask"  # Set of tools to manage resources and applications hosted on Google Cloud
-gh = "formula"  # GitHub command-line tool
 ghostty = "cask"  # Terminal emulator that uses platform-native UI and GPU acceleration
-git-who = "formula"  # Git blame for file trees
 icon-composer = "cask"  # Apple tool to create multi-platform icons
 "postgresql@15" = "formula"  # Object-relational database system
 redis = "formula"  # Persistent key-value database, with built-in net interface
-tectonic = "formula"  # Modernized, complete, self-contained TeX/LaTeX engine
 xcodegen = "formula"  # Generate your Xcode project from a spec file and your folder structure
 
 [work]
@@ -39,7 +36,6 @@ linear = "cask"  # App to manage software development and track bugs
 notion = "cask"  # App to write, plan, collaborate, and get organised
 obsidian = "cask"  # Knowledge base that works on top of a local folder of plain text Markdown files
 slack = "cask"  # Team communication and collaboration software
-superwhisper = "cask"  # Dictation tool including LLM reformatting
 todoist-app = "cask"  # To-do list
 zoom = "cask"  # Video communication and virtual meeting platform
 
@@ -101,6 +97,8 @@ the-unarchiver = "cask"  # Unpacks archive files
 thebrowsercompany-dia = "cask"  # Web browser
 transmission = "cask"  # Open-source BitTorrent client
 utm = "cask"  # Virtual machines UI using QEMU
+whatcable = "cask"  # Menu bar app for USB-C cable diagnostics
+wispr-flow = "cask"  # Voice-to-text dictation with AI-powered auto-editing
 yubico-authenticator = "cask"  # Application for generating TOTP and HOTP codes
 
 [cli-tools]
@@ -115,7 +113,9 @@ exiftool = "formula"  # Perl lib for reading and writing EXIF metadata
 eza = "formula"  # Modern, maintained replacement for ls
 ffmpeg = "formula"  # Play, record, convert, and stream audio and video
 fresh-editor = "formula"  # Text editor for your terminal: easy, powerful and fast
+gh = "formula"  # GitHub command-line tool
 ghostscript = "formula"  # Interpreter for PostScript and PDF
+git-who = "formula"  # Git blame for file trees
 httpie = "uv"  # User-friendly cURL replacement (command-line HTTP client)
 imagemagick = "formula"  # Tools and libraries to manipulate images in many formats
 jq = "formula"  # Lightweight and flexible command-line JSON processor
@@ -141,6 +141,7 @@ supabase = "formula"  # Postgres development platform
 superseedr = "formula"  # BitTorrent Client in your Terminal
 swift-format = "formula"  # Formatting technology for Swift source code
 swiftlint = "formula"  # Tool to enforce Swift style and conventions
+tectonic = "formula"  # Modernized, complete, self-contained TeX/LaTeX engine
 telnet = "formula"  # User interface to the TELNET protocol
 testdisk = "formula"  # Powerful free data recovery utility
 tombi = "uv"  # TOML formatter, linter and language server
@@ -174,7 +175,7 @@ ty = "uv"  # Extremely fast Python type checker, written in Rust
 6753110395 = "mas"  # Folder Quick Look: Instant Folder & Archive Peek
 chromedriver = "cask"  # Automated testing of webapps for Google Chrome
 jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
-qlmarkdown = "cask"  # Quick Look generator for Markdown files
+markdown-preview = "cask"  # Markdown previewer with bundled Quick Look extension
 quicklook-video = "cask"  # Thumbnails, static previews, cover art and metadata for video files
 syntax-highlight = "cask"  # Quicklook extension for source files
 
