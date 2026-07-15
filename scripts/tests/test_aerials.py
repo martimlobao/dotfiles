@@ -11,8 +11,10 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import json
 import plistlib
 import sys
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -89,6 +91,36 @@ def test_resolve_strings_path_falls_back_to_legacy_location_when_missing(tmp_pat
     )
 
     assert aerials_module.resolve_strings_path(tmp_path) == expected_path
+
+
+def test_merge_system_asset_entries_adds_only_missing_supported_assets(tmp_path: Path) -> None:
+    primary_asset = {"id": "existing", "categories": ["landscape"], "source": "primary"}
+    duplicate_asset = {"id": "existing", "categories": ["landscape"], "source": "system"}
+    golden_gate = {"id": "golden-gate", "categories": ["landscape", "new-category"]}
+    unsupported = {"id": "dynamic", "categories": ["dynamic-aerials"]}
+    system_entries_path = tmp_path / "entries.json"
+    system_entries_path.write_text(
+        json.dumps({"assets": [duplicate_asset, golden_gate, unsupported]}), encoding="utf-8"
+    )
+    asset_entries = {
+        "categories": [{"id": "landscape"}],
+        "assets": [primary_asset],
+    }
+
+    aerials_module.merge_system_asset_entries(asset_entries, system_entries_path)
+
+    assert asset_entries["assets"] == [primary_asset, golden_gate]
+
+
+def test_merge_system_asset_entries_ignores_absent_system_catalog(tmp_path: Path) -> None:
+    asset_entries = {
+        "categories": [{"id": "landscape"}],
+        "assets": [{"id": "existing", "categories": ["landscape"]}],
+    }
+
+    aerials_module.merge_system_asset_entries(asset_entries, tmp_path / "missing.json")
+
+    assert asset_entries["assets"] == [{"id": "existing", "categories": ["landscape"]}]
 
 
 def test_parse_category_selection_all_returns_every_index() -> None:
@@ -207,6 +239,101 @@ def test_load_cache_returns_empty_for_invalid_json(
     output = capsys.readouterr().out
     assert "Error loading cache file" in output
     assert "Starting with fresh cache." in output
+
+
+@pytest.mark.parametrize(
+    ("url", "verify_tls"),
+    [
+        ("https://sylvan.apple.com/video.mov", False),
+        ("https://updates.cdn-apple.com/video.mov", True),
+        ("https://sylvan.apple.com.example.com/video.mov", True),
+    ],
+)
+def test_get_content_length_verifies_tls_except_for_exact_sylvan_host(
+    tmp_path: Path, url: str, verify_tls: object
+) -> None:
+    response = aerials_module.requests.Response()
+    response.headers["Content-Length"] = "123"
+
+    with (
+        patch.object(aerials_module, "CACHE_FILE", tmp_path / "cache.json"),
+        patch.object(aerials_module.requests, "head", return_value=response) as head,
+    ):
+        assert aerials_module.get_content_length(url) == 123
+
+    head.assert_called_once_with(url, verify=verify_tls, timeout=aerials_module.REQUEST_TIMEOUT)
+
+
+@pytest.mark.parametrize(
+    ("url", "verify_tls"),
+    [
+        ("https://sylvan.apple.com/video.mov", False),
+        ("https://updates.cdn-apple.com/video.mov", True),
+        ("https://not-sylvan.apple.com/video.mov", True),
+    ],
+)
+def test_start_download_request_verifies_tls_except_for_exact_sylvan_host(
+    url: str, verify_tls: object
+) -> None:
+    response = aerials_module.requests.Response()
+
+    with patch.object(aerials_module.requests, "get", return_value=response) as get:
+        assert aerials_module.start_download_request(url, {"Range": "bytes=1-"}) is response
+
+    get.assert_called_once_with(
+        url,
+        stream=True,
+        headers={"Range": "bytes=1-"},
+        verify=verify_tls,
+        timeout=(aerials_module.REQUEST_TIMEOUT, aerials_module.REQUEST_TIMEOUT * 6),
+    )
+
+
+def test_sylvan_insecure_request_warning_is_suppressed(tmp_path: Path) -> None:
+    response = aerials_module.requests.Response()
+    response.headers["Content-Length"] = "123"
+
+    def warn_on_request(*_args: object, **_kwargs: object) -> object:
+        warnings.warn(
+            "unverified request",
+            aerials_module.urllib3.exceptions.InsecureRequestWarning,
+            stacklevel=2,
+        )
+        return response
+
+    with (
+        patch.object(aerials_module, "CACHE_FILE", tmp_path / "cache.json"),
+        patch.object(aerials_module.requests, "head", side_effect=warn_on_request),
+        warnings.catch_warnings(record=True) as caught,
+    ):
+        warnings.simplefilter("always")
+        aerials_module.get_content_length("https://sylvan.apple.com/video.mov")
+
+    assert caught == []
+
+
+def test_non_sylvan_insecure_request_warning_is_not_suppressed(tmp_path: Path) -> None:
+    response = aerials_module.requests.Response()
+    response.headers["Content-Length"] = "123"
+
+    def warn_on_request(*_args: object, **_kwargs: object) -> object:
+        warnings.warn(
+            "unverified request",
+            aerials_module.urllib3.exceptions.InsecureRequestWarning,
+            stacklevel=2,
+        )
+        return response
+
+    with (
+        patch.object(aerials_module, "CACHE_FILE", tmp_path / "cache.json"),
+        patch.object(aerials_module.requests, "head", side_effect=warn_on_request),
+        warnings.catch_warnings(record=True) as caught,
+    ):
+        warnings.simplefilter("always")
+        aerials_module.get_content_length("https://updates.cdn-apple.com/video.mov")
+
+    assert len(caught) == 1
+    assert caught[0].category is aerials_module.urllib3.exceptions.InsecureRequestWarning
 
 
 def test_clear_cache_removes_existing_file(
