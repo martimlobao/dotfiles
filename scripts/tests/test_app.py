@@ -70,6 +70,17 @@ def test_source_registry_create_unknown_raises() -> None:
         )
 
 
+def test_source_registry_ignores_empty_source_name() -> None:
+    class EmptySource(app_module.BaseSourceService):
+        source_name = ""
+
+    before = app_module.SourceRegistry.source_names()
+
+    app_module.SourceRegistry.register(EmptySource)
+
+    assert app_module.SourceRegistry.source_names() == before
+
+
 def test_parse_args_add_command() -> None:
     argv = ["app", "add", "httpie", "uv", "--group", "cli", "--description", "desc"]
     with patch.object(sys, "argv", argv):
