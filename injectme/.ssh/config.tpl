@@ -14,6 +14,12 @@ Host {{ op://5ebyeb4rgmu73mcoodmzro4kyu/sbpc6n3eorvjrlpyzhioxuture/name }}
 	HostName {{ op://5ebyeb4rgmu73mcoodmzro4kyu/sbpc6n3eorvjrlpyzhioxuture/URL }}
 	User {{ op://5ebyeb4rgmu73mcoodmzro4kyu/sbpc6n3eorvjrlpyzhioxuture/username }}
 
+Host {{ op://5ebyeb4rgmu73mcoodmzro4kyu/2zumvkvybp4oqesi7ls7g3ptqq/name }}
+	HostName {{ op://5ebyeb4rgmu73mcoodmzro4kyu/2zumvkvybp4oqesi7ls7g3ptqq/URL }}
+	User {{ op://5ebyeb4rgmu73mcoodmzro4kyu/2zumvkvybp4oqesi7ls7g3ptqq/username }}
+	Port {{ op://5ebyeb4rgmu73mcoodmzro4kyu/2zumvkvybp4oqesi7ls7g3ptqq/port }}
+	ProxyCommand {{ op://5ebyeb4rgmu73mcoodmzro4kyu/2zumvkvybp4oqesi7ls7g3ptqq/command }}
+
 Host {{ op://5ebyeb4rgmu73mcoodmzro4kyu/exely6m4mmyhfy5chd7se7ph5a/name }}
 	HostName {{ op://5ebyeb4rgmu73mcoodmzro4kyu/exely6m4mmyhfy5chd7se7ph5a/URL }}
 	User {{ op://5ebyeb4rgmu73mcoodmzro4kyu/exely6m4mmyhfy5chd7se7ph5a/username }}
