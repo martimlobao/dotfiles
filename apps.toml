@@ -27,6 +27,7 @@ citrix-workspace = "cask"  # Managed desktop virtualization solution
 microsoft-excel = "cask"  # Spreadsheet software
 microsoft-teams = "cask"  # Meet, chat, call, and collaborate in just one place
 microsoft-word = "cask"  # Word processor
+onedrive = "cask"  # Cloud storage client
 powershell = "formula"  # Command-line shell and scripting language
 windows-app = "cask"  # Connect to Windows
 
@@ -82,7 +83,6 @@ font-with-a-syntax-highlighter = "cask"  # Font With A Syntax Highlighter
 937984704 = "mas"  # Amphetamine: Powerful keep-awake utility
 blip = "cask"  # Send any size file between devices
 calibre = "cask"  # E-books management software
-chatgpt-atlas = "cask"  # OpenAI's official browser with ChatGPT built in
 claude = "cask"  # Anthropic's official Claude AI desktop app
 dropbox = "cask"  # Client for the Dropbox cloud storage service
 google-drive = "cask"  # Client for the Google Drive storage service
@@ -120,7 +120,7 @@ httpie = "uv"  # User-friendly cURL replacement (command-line HTTP client)
 imagemagick = "formula"  # Tools and libraries to manipulate images in many formats
 jq = "formula"  # Lightweight and flexible command-line JSON processor
 latexindent = "formula"  # Add indentation to LaTeX files
-leaf-md = "formula"  # Terminal Markdown previewer with a GUI-like experience
+leaf-markdown-viewer = "formula"  # Terminal Markdown previewer with a GUI-like experience
 lychee = "formula"  # Fast, async, resource-friendly link checker
 mcat = "formula"  # Terminal image, video, directory, and Markdown viewer
 mole = "formula"  # Deep clean and optimize your Mac
@@ -173,7 +173,6 @@ ty = "uv"  # Extremely fast Python type checker, written in Rust
 
 [utilities]
 6753110395 = "mas"  # Folder Quick Look: Instant Folder & Archive Peek
-chromedriver = "cask"  # Automated testing of webapps for Google Chrome
 jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
 markdown-preview = "cask"  # Markdown previewer with bundled Quick Look extension
 quicklook-video = "cask"  # Thumbnails, static previews, cover art and metadata for video files
