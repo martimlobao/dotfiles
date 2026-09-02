@@ -229,3 +229,4 @@ pyrightconfig.json
 # repo specific
 temp/
 *.private
+.git/
