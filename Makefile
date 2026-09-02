@@ -77,4 +77,4 @@ test:
 		--with-requirements scripts/tests/test_app.py \
 		--with-requirements scripts/tests/test_aerials.py \
 		pytest scripts/tests/test_app.py scripts/tests/test_aerials.py \
-		--cov=app_module --cov=aerials_module --cov-report=term-missing --cov-fail-under=78
+		--cov=app_module --cov=aerials_module --cov-report=term-missing --cov-fail-under=80
