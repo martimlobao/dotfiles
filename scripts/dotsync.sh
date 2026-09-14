@@ -11,9 +11,9 @@ source "${root}/bash_traceback.sh"
 ###############################################################################
 
 function dotlink() {
-	find "linkme" -mindepth 1 -type d | sed "s|^linkme/||" |
+	find "${root}/linkme" -mindepth 1 -type d | sed "s|^${root}/linkme/||" |
 		while read -r dir; do mkdir -p "${HOME}/${dir}"; done
-	find "linkme" -type f -not -name '.DS_Store' | sed "s|^linkme/||" |
+	find "${root}/linkme" \( -type f -o -type l \) -not -name '.DS_Store' | sed "s|^${root}/linkme/||" |
 		while read -r file; do
 			echo -e "\033[1;32m✅ Linked linkme/${file} -> ~/${file}\033[0m"
 			ln -fvns "${root}/linkme/${file}" "${HOME}/${file}" 1>/dev/null
@@ -21,7 +21,7 @@ function dotlink() {
 }
 
 function dotunlink() {
-	rsync -av --exclude='.DS_Store' linkme/ "${HOME}" |
+	rsync -av --exclude='.DS_Store' "${root}/linkme/" "${HOME}" |
 		grep -v "building file list ... done" |
 		awk '/^$/ { exit } !/\/$/ { printf "\033[1;32m🔙 Restored %s\033[0m\n", $0; }'
 }

@@ -55,12 +55,18 @@ else
 fi
 if [[ ${COPYME} =~ ^[Yy]$ ]]; then
 	echo -e "\n📝 \033[1;35mCopying files from copyme/ to ${HOME}...\033[0m"
-	rsync -av --exclude='.DS_Store' copyme/ "${HOME}" |
+	set -o pipefail
+	if ! rsync -av --exclude='.DS_Store' "${root}/copyme/" "${HOME}" |
 		grep -v "building file list ... done" |
 		grep -v "Transfer starting:" |
 		grep -v "sent " |
 		grep -v "total size" |
-		awk '/^[^.]/{next} /^\.\/$/{next} /^$/ { exit } { sub(/\/$/, "", $0); printf "✅ \033[1;32mCopied copyme/%s -> ~/%s\033[0m\n", $0, $0; }'
+		awk '/^[^.]/{next} /^\.\/$/{next} /^$/ { exit } { sub(/\/$/, "", $0); printf "✅ \033[1;32mCopied copyme/%s -> ~/%s\033[0m\n", $0, $0; }'; then
+		set +o pipefail
+		echo -e "❌ \033[1;31mFailed to copy files from ${root}/copyme/.\033[0m" >&2
+		exit 1
+	fi
+	set +o pipefail
 	# 1Password needs the permissions to be set to 700
 	chmod 700 "${HOME}/.config/op"
 	chmod 700 "${HOME}/.config/op/plugins/used_items"
