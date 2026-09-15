@@ -27,7 +27,7 @@ I wanted to share some of my preferences here so we can be more aligned as we wo
 - Untyped code and freeform strings are bad. Constraints are good. Loose dictionary objects are
   unlintable, strict dataclasses or pydantic objects ensure consistency. `ty` is a good library for
   type checking.
-- Unless required by a specific project, always use `uv`, Never use `python` directly, and never
+- Unless required by a specific project, always use `uv`, never use `python` directly, and never
   ever use `pip` or `poetry`.
 
 ### Coding preferences (Typescript focused)
@@ -117,7 +117,11 @@ How to apply:
   > ✅ My "new worktree" default was ignored when starting new threads on existing worktrees. Super unintuitive. Now your preferences always apply.
   ```
 
-- Add a blurb to the end of the PR description about what model and harness is making the changes.
+  Do not mention files not included in the PR itself, e.g. "`make check` succeeded with only
+  unrelated unstaged settings file need linting".
+- Add a blurb to the end of the PR description about what model and harness is making the changes,
+  e.g. "Model: GPT-5.6-Sol // Harness: Codex". Do not include this blurb as another bullet in the
+  PR description itself.
 - **Open a real PR, not a draft.** Drafts do not get review-bot coverage.
 - **Rebase onto latest `main` before opening.** Stale branches conflict and waste a review round.
 - When asked to monitor or babysit a PR: poll checks and comments newer than the last push; verify
