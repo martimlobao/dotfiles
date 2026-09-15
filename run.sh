@@ -80,7 +80,7 @@ fi
 echo
 echo -e "🚀 \033[1;33mRunning dotsync.sh...\033[0m"
 sleep 1
-./scripts/dotsync.sh "${1-}"
+"${root}/scripts/dotsync.sh" "${1-}"
 
 ###############################################################################
 # macOS preferences                                                           #
@@ -89,7 +89,7 @@ if [[ ${os} == "Darwin" ]]; then
 	sleep 1
 	echo
 	echo -e "🚀 \033[1;33mRunning macos.sh...\033[0m"
-	./scripts/macos.sh "${1-}"
+	"${root}/scripts/macos.sh" "${1-}"
 fi
 
 ###############################################################################
@@ -108,9 +108,9 @@ echo
 echo -e "🚀 \033[1;33mRunning app sync...\033[0m"
 sleep 1
 if [[ ${os} == "Darwin" ]]; then
-	./scripts/app.py sync ${1+"$1"}
+	"${root}/scripts/app.py" sync ${1+"$1"}
 elif [[ ${os} == "Linux" ]]; then
-	./scripts/app.py sync --no-mas --no-cask ${1+"$1"}
+	"${root}/scripts/app.py" sync --no-mas --no-cask ${1+"$1"}
 fi
 
 ###############################################################################
@@ -119,7 +119,7 @@ fi
 echo
 echo -e "🚀 \033[1;33mRunning chshell.sh...\033[0m"
 sleep 1
-./scripts/chshell.sh "${1-}"
+"${root}/scripts/chshell.sh" "${1-}"
 
 ###############################################################################
 # Linux exit                                                                  #
@@ -136,7 +136,7 @@ fi
 echo
 echo -e "🚀 \033[1;33mRunning dock.sh...\033[0m"
 sleep 1
-./scripts/dock.sh
+"${root}/scripts/dock.sh"
 
 ###############################################################################
 # Install Aerial Live Wallpapers                                              #
@@ -144,7 +144,7 @@ sleep 1
 echo
 echo -e "🚀 \033[1;33mRunning aerials.py...\033[0m"
 sleep 1
-./scripts/aerials.py -d -y
+"${root}/scripts/aerials.py" -d -y
 
 ###############################################################################
 # Install Cursor extensions                                                   #
@@ -152,7 +152,7 @@ sleep 1
 echo
 echo -e "🚀 \033[1;33mRunning code.sh...\033[0m"
 sleep 1
-./scripts/code.sh --sync "${1-}"
+"${root}/scripts/code.sh" --sync "${1-}"
 
 ###############################################################################
 # Local settings and variables                                                #
@@ -160,7 +160,7 @@ sleep 1
 echo
 echo -e "🚀 \033[1;33mRunning local.sh...\033[0m"
 sleep 1
-./scripts/local.sh "${1-}"
+"${root}/scripts/local.sh" "${1-}"
 
 echo
 echo -e "🎉 \033[1;32mSetup complete!\033[0m"
