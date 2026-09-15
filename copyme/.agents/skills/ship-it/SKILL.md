@@ -29,8 +29,8 @@ compatible with 1Password on macOS.
    `fix/retry-api-timeouts`. Never commit directly on `main` or `master` unless
    the user explicitly asks.
 4. Run the repo's required checks from `AGENTS.md`, `CLAUDE.md`, README, or package
-   scripts when they are discoverable. If a check fails, stop before committing unless
-   the user explicitly asked to commit despite failures. The only exception is a failure
+   scripts when they are discoverable. If a check fails, stop before committing. The only
+   exception is a failure
    demonstrably caused exclusively by unrelated unstaged or untracked work: record the
    failing command, error, and paths; preserve that work untouched; and run relevant
    scoped checks for the intended staged change. Treat any ambiguity or a failure involving
