@@ -47,9 +47,8 @@ Always run `make check` before committing to ensure CI will pass. A failure rema
 unless evidence shows it is caused exclusively by unrelated unstaged or untracked work that will
 not be in the commit; document the failing path and error, preserve that work untouched, and run
 the relevant scoped checks for the staged change before proceeding. Treat ambiguous failures as
-blockers.
-`make check` includes `make test`, which runs the `scripts/app.py` and `scripts/aerials.py`
-unit tests.
+blockers. `make check` includes `make test`, which runs the `scripts/app.py` and
+`scripts/aerials.py` unit tests.
 
 ### App Management
 
