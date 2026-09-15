@@ -24,6 +24,8 @@ list-item-empty-lines = false  # Allow trailing spaces in empty list item lines 
 [MD013]
 line-length = 99
 code-blocks = false
+reflow = true
+reflow-mode = "normalize"
 
 [MD029]
 style = "ordered"
