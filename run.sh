@@ -152,7 +152,7 @@ sleep 1
 echo
 echo -e "🚀 \033[1;33mRunning code.sh...\033[0m"
 sleep 1
-"${root}/scripts/code.sh" --sync "${1-}"
+"${root}/scripts/code.sh" code --sync "${1-}"
 
 ###############################################################################
 # Local settings and variables                                                #

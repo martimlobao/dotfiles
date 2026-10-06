@@ -10,7 +10,6 @@ charles = "cask"  # Web debugging Proxy application
 chatgpt = "cask"  # OpenAI's official ChatGPT desktop app
 "claude-code@latest" = "cask"  # Terminal-based AI coding assistant
 codex = "cask"  # OpenAI's coding agent that runs in your terminal
-cursor = "cask"  # Write, edit, and chat about your code with AI
 cursor-cli = "cask"  # Command-line agent for Cursor
 docker-desktop = "cask"  # App to build and share containerised applications and microservices
 gcloud-cli = "cask"  # Set of tools to manage resources and applications hosted on Google Cloud
@@ -18,6 +17,7 @@ ghostty = "cask"  # Terminal emulator that uses platform-native UI and GPU accel
 icon-composer = "cask"  # Apple tool to create multi-platform icons
 "postgresql@15" = "formula"  # Object-relational database system
 redis = "formula"  # Persistent key-value database, with built-in net interface
+visual-studio-code = "cask"  # Open-source code editor
 xcodegen = "formula"  # Generate your Xcode project from a spec file and your folder structure
 
 [work]

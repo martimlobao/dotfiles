@@ -159,7 +159,6 @@ add_app_to_dock "Dia"
 add_app_to_dock "Obsidian"
 add_app_to_dock "Todoist"
 add_app_to_dock "ChatGPT"
-add_app_to_dock "Cursor"
 add_app_to_dock "Ghostty"
 add_app_to_dock "System Settings"
 add_folder_to_dock "/Applications" --sortby 1 --displayas 1 --viewcontentas 2
