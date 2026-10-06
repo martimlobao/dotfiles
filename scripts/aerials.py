@@ -47,7 +47,7 @@ import time
 import urllib.parse
 import warnings
 import webbrowser
-from collections.abc import Iterator, Mapping
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from multiprocessing.pool import ApplyResult, ThreadPool
 from pathlib import Path
@@ -731,7 +731,7 @@ def should_verify_tls(url: str) -> bool:
 
 
 @contextmanager
-def suppress_insecure_warning_if_needed(*, verify_tls: bool) -> Iterator[None]:
+def suppress_insecure_warning_if_needed(*, verify_tls: bool) -> Generator[None]:
     """Suppress insecure-request warnings when TLS verification is disabled.
 
     warnings.catch_warnings changes process-global warning state and is not
