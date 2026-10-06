@@ -71,12 +71,12 @@ function o() {
 	fi
 }
 
-# `c` with no arguments opens Cursor in the current directory, otherwise opens at the given location
+# `c` with no arguments opens Visual Studio Code in the current directory, otherwise opens at the given location
 function c() {
 	if [[ $# -eq 0 ]]; then
-		open -a "Cursor" -- .
+		code .
 	else
-		open -a "Cursor" -- "$@"
+		code "$@"
 	fi
 }
 
@@ -341,12 +341,12 @@ function starwars() {
 	telnet towel.blinkenlights.nl
 }
 
-# Cursor jump
+# Code jump
 function jc {
 	if [[ -z $1 || $1 == "." ]]; then
-		open -a "Cursor" -- .
+		code .
 	else
-		open -a "Cursor" -- "$(j "$1")"
+		code "$(j "$1")"
 	fi
 }
 
