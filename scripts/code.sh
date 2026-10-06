@@ -79,7 +79,7 @@ sync_extensions() {
 }
 
 # Parse arguments
-editor="cursor" # default editor
+editor="code" # default editor
 action=""
 
 for arg in "$@"; do
