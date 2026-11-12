@@ -798,7 +798,13 @@ class BrewSourceService(BaseSourceService, ABC):
         """
         if platform.system() != "Darwin":
             return
-        # The same probe Homebrew runs in brew.sh, so the two can't disagree.
+        # Mirrors brew.sh, so the two can't disagree. Without a developer
+        # directory, xcrun would pop up the Command Line Tools installer.
+        developer_dir = self.runner.run(
+            ["/usr/bin/xcode-select", "--print-path"], check=False
+        ).stdout.strip()
+        if developer_dir in {"", "/"}:
+            return
         probe = self.runner.run(["/usr/bin/xcrun", "--find", "clang"], check=False)
         if probe.returncode == 0 or "license" not in f"{probe.stdout}{probe.stderr}":
             return

@@ -324,7 +324,8 @@ def test_brew_accepts_xcode_license_only_when_it_blocks_homebrew(
 ) -> None:
     runner = Mock(spec=app_module.CommandRunner)
     runner.get_executable.return_value = "brew"
-    runner.run.side_effect = [probe, make_result(), make_result()]
+    developer_dir = make_result(stdout="/Applications/Xcode.app/Contents/Developer\n")
+    runner.run.side_effect = [developer_dir, probe, make_result(), make_result()]
     service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
     with (
         patch.object(app_module.BrewSourceService, "_ensure_xcode_license", ENSURE_XCODE_LICENSE),
@@ -333,8 +334,26 @@ def test_brew_accepts_xcode_license_only_when_it_blocks_homebrew(
         service.install("charles")
     commands = [call.args[0] for call in runner.run.call_args_list]
     assert commands == [
+        ["/usr/bin/xcode-select", "--print-path"],
         ["/usr/bin/xcrun", "--find", "clang"],
         *([["sudo", "xcodebuild", "-license", "accept"]] if accepts else []),
+        ["brew", "install", "--cask", "charles"],
+    ]
+
+
+def test_brew_skips_xcode_license_probe_without_developer_dir() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.side_effect = [make_result(returncode=2), make_result()]
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    with (
+        patch.object(app_module.BrewSourceService, "_ensure_xcode_license", ENSURE_XCODE_LICENSE),
+        patch.object(app_module.platform, "system", return_value="Darwin"),
+    ):
+        service.install("charles")
+    commands = [call.args[0] for call in runner.run.call_args_list]
+    assert commands == [
+        ["/usr/bin/xcode-select", "--print-path"],
         ["brew", "install", "--cask", "charles"],
     ]
 
