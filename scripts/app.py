@@ -785,7 +785,31 @@ class BrewSourceService(BaseSourceService, ABC):
     list_flag: ClassVar[str] = ""
 
     def _brew(self) -> str:
+        self._ensure_xcode_license()
         return self.runner.get_executable("brew")
+
+    def _ensure_xcode_license(self) -> None:
+        """Accept the Xcode license if it's blocking Homebrew.
+
+        Homebrew refuses to run while a full Xcode's license is
+        unaccepted, which happens right after Xcode is installed (or
+        upgraded) mid-sync. Checking before every brew call instead of
+        once per run is what catches that case.
+        """
+        if platform.system() != "Darwin":
+            return
+        # Mirrors brew.sh, so the two can't disagree. Without a developer
+        # directory, xcrun would pop up the Command Line Tools installer.
+        developer_dir = self.runner.run(
+            ["/usr/bin/xcode-select", "--print-path"], check=False
+        ).stdout.strip()
+        if developer_dir in {"", "/"}:
+            return
+        probe = self.runner.run(["/usr/bin/xcrun", "--find", "clang"], check=False)
+        if probe.returncode == 0 or "license" not in f"{probe.stdout}{probe.stderr}":
+            return
+        self.console.paint("Accepting the Xcode license...", Ansi.BLUE, icon="🔑")
+        self.runner.run(["sudo", "xcodebuild", "-license", "accept"], capture_output=False)
 
     @staticmethod
     def managed_aliases(app: str) -> set[str]:

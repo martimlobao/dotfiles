@@ -17,11 +17,14 @@ import json
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
 import pytest
 import tomlkit
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 SPEC = importlib.util.spec_from_file_location("app_module", Path("scripts/app.py"))
 if SPEC is None or SPEC.loader is None:
@@ -30,6 +33,17 @@ app = importlib.util.module_from_spec(SPEC)
 sys.modules["app_module"] = app
 SPEC.loader.exec_module(app)
 app_module: ModuleType = app
+ENSURE_XCODE_LICENSE = app_module.BrewSourceService._ensure_xcode_license
+
+
+@pytest.fixture
+def skip_xcode_license_check() -> Iterator[None]:
+    """Keep brew command assertions independent of the host OS."""
+    with patch.object(app_module.BrewSourceService, "_ensure_xcode_license"):
+        yield
+
+
+pytestmark = pytest.mark.usefixtures("skip_xcode_license_check")
 
 
 def make_result(
@@ -295,6 +309,66 @@ def test_repository_list_grouped_records(tmp_path: Path) -> None:
     assert grouped
     assert grouped[0][0] == "cli"
     assert grouped[0][1][0].description == "HTTP client"
+
+
+@pytest.mark.parametrize(
+    ("probe", "accepts"),
+    [
+        (make_result(returncode=1, stderr="You have not agreed to the Xcode license"), True),
+        (make_result(), False),
+        (make_result(returncode=1, stderr="xcrun: error: unable to find utility"), False),
+    ],
+)
+def test_brew_accepts_xcode_license_only_when_it_blocks_homebrew(
+    probe: SimpleNamespace, *, accepts: bool
+) -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    developer_dir = make_result(stdout="/Applications/Xcode.app/Contents/Developer\n")
+    runner.run.side_effect = [developer_dir, probe, make_result(), make_result()]
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    with (
+        patch.object(app_module.BrewSourceService, "_ensure_xcode_license", ENSURE_XCODE_LICENSE),
+        patch.object(app_module.platform, "system", return_value="Darwin"),
+    ):
+        service.install("charles")
+    commands = [call.args[0] for call in runner.run.call_args_list]
+    assert commands == [
+        ["/usr/bin/xcode-select", "--print-path"],
+        ["/usr/bin/xcrun", "--find", "clang"],
+        *([["sudo", "xcodebuild", "-license", "accept"]] if accepts else []),
+        ["brew", "install", "--cask", "charles"],
+    ]
+
+
+def test_brew_skips_xcode_license_probe_without_developer_dir() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.side_effect = [make_result(returncode=2), make_result()]
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    with (
+        patch.object(app_module.BrewSourceService, "_ensure_xcode_license", ENSURE_XCODE_LICENSE),
+        patch.object(app_module.platform, "system", return_value="Darwin"),
+    ):
+        service.install("charles")
+    commands = [call.args[0] for call in runner.run.call_args_list]
+    assert commands == [
+        ["/usr/bin/xcode-select", "--print-path"],
+        ["brew", "install", "--cask", "charles"],
+    ]
+
+
+def test_brew_skips_xcode_license_check_off_macos() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    with (
+        patch.object(app_module.BrewSourceService, "_ensure_xcode_license", ENSURE_XCODE_LICENSE),
+        patch.object(app_module.platform, "system", return_value="Linux"),
+    ):
+        service.install("jq")
+    runner.run.assert_called_once_with(["brew", "install", "--formula", "jq"])
 
 
 def test_brew_cask_fetch_info() -> None:
