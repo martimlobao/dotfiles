@@ -28,16 +28,21 @@
 		echo -e "🛠️  \033[1;33mInstalling Xcode Command Line Tools (complete the dialog to continue)...\033[0m"
 		# Exits non-zero if an install is already pending, which is fine since we wait for it anyway
 		xcode-select --install &>/dev/null || true
-		# Give up eventually so a cancelled or failed install doesn't hang the bootstrap
-		SECONDS=0
-		until xcode-select -p &>/dev/null; do
-			if ((SECONDS > 1800)); then
-				echo -e "❌ \033[1;31mTimed out waiting for the Command Line Tools. Install them with" \
-					"'xcode-select --install', then rerun the bootstrap.\033[0m"
-				exit 1
-			fi
-			sleep 5
+		# The installer app stays open until the install finishes or is cancelled. Give it a few
+		# seconds to launch, then wait for it to quit.
+		installer="Install Command Line Developer Tools"
+		for _ in {1..20}; do
+			pgrep -qf "${installer}" && break
+			sleep 0.5
 		done
+		while pgrep -qf "${installer}"; do
+			sleep 2
+		done
+		if ! xcode-select -p &>/dev/null; then
+			echo -e "❌ \033[1;31mCommand Line Tools were not installed (cancelled?). Rerun the bootstrap" \
+				"to try again.\033[0m"
+			exit 1
+		fi
 		echo -e "✅ \033[1;32mXcode Command Line Tools installed\033[0m"
 	fi
 
