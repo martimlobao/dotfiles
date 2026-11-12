@@ -1177,7 +1177,7 @@ class MasSourceService(BaseSourceService):
             # An install that triggers the App Store sign-in prompt
             # is reported as cancelled (-128) even after signing in
             # successfully, so retry once.
-            if "Code=-128" not in str(error):
+            if not re.search(r"\bCode=-128\b", str(error)):
                 raise
             self.runner.run([self._mas(), "install", app])
 
