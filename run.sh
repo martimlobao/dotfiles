@@ -43,11 +43,24 @@ echo -e "💻 \033[1;33mModel:\033[0m         ${model:-N/A}"
 ###############################################################################
 echo
 echo -e "🍺 \033[1;33mInstalling Homebrew...\033[0m"
-if ! command -v brew &>/dev/null; then
-	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-	echo -e "🍻 \033[1;32mHomebrew installed.\033[0m"
-else
+# A fresh shell doesn't have brew on PATH yet (even right after installing it), so look for it at
+# its known install locations and load its environment into this session.
+load_brew() {
+	local brew
+	for brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+		if [[ -x ${brew} ]]; then
+			eval "$("${brew}" shellenv)"
+			return 0
+		fi
+	done
+	return 1
+}
+if load_brew; then
 	echo -e "🍻 \033[1;32mHomebrew is already installed.\033[0m"
+else
+	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+	load_brew
+	echo -e "🍻 \033[1;32mHomebrew installed.\033[0m"
 fi
 
 ###############################################################################
@@ -57,17 +70,6 @@ echo
 echo -e "🥚 \033[1;33mInstalling uv...\033[0m"
 sleep 1
 if ! command -v uv &>/dev/null; then
-	# Ensure brew is in PATH for this session (required when freshly installed)
-	if [[ "$(uname)" == "Darwin" ]]; then
-		if [[ -f /opt/homebrew/bin/brew ]]; then
-			eval "$(/opt/homebrew/bin/brew shellenv)"
-		else
-			# for old versions of macOS
-			eval "$(/usr/local/bin/brew shellenv)"
-		fi
-	else
-		eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-	fi
 	brew install uv
 	echo -e "🐍 \033[1;32muv installed.\033[0m"
 else

@@ -22,6 +22,17 @@
 	if [[ -z ${BRANCH} ]]; then
 		BRANCH="main"
 	fi
+	# git on a fresh Mac is a stub that needs the Command Line Tools, so install them and wait for
+	# the GUI installer to finish before cloning
+	if [[ $(uname) == "Darwin" ]] && ! xcode-select -p &>/dev/null; then
+		echo -e "🛠️  \033[1;33mInstalling Xcode Command Line Tools (complete the dialog to continue)...\033[0m"
+		xcode-select --install &>/dev/null || true
+		until xcode-select -p &>/dev/null; do
+			sleep 5
+		done
+		echo -e "✅ \033[1;32mXcode Command Line Tools installed\033[0m"
+	fi
+
 	if [[ ! -d ${DOTPATH} ]]; then
 		echo -e "📑 \033[1;33mCloning dotfiles on branch ${BRANCH}...\033[0m"
 		git clone https://github.com/martimlobao/dotfiles.git --branch "${BRANCH}" "${DOTPATH}"
