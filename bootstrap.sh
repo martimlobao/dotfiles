@@ -22,6 +22,31 @@
 	if [[ -z ${BRANCH} ]]; then
 		BRANCH="main"
 	fi
+	# git on a fresh Mac is a stub that needs the Command Line Tools, so install them and wait for
+	# the GUI installer to finish before cloning
+	if [[ $(uname) == "Darwin" ]] && ! xcode-select -p &>/dev/null; then
+		echo -e "🛠️  \033[1;33mInstalling Xcode Command Line Tools (complete the dialog to continue)...\033[0m"
+		# Exits non-zero if an install is already pending, which is fine since we wait for it anyway.
+		# Its output is left visible so a real failure explains the error below.
+		xcode-select --install || true
+		# The installer app stays open until the install finishes or is cancelled. Give it a few
+		# seconds to launch, then wait for it to quit.
+		installer="Install Command Line Developer Tools"
+		for _ in {1..20}; do
+			pgrep -qf "${installer}" && break
+			sleep 0.5
+		done
+		while pgrep -qf "${installer}"; do
+			sleep 2
+		done
+		if ! xcode-select -p &>/dev/null; then
+			echo -e "❌ \033[1;31mCommand Line Tools were not installed (cancelled?). Rerun the bootstrap" \
+				"to try again.\033[0m"
+			exit 1
+		fi
+		echo -e "✅ \033[1;32mXcode Command Line Tools installed\033[0m"
+	fi
+
 	if [[ ! -d ${DOTPATH} ]]; then
 		echo -e "📑 \033[1;33mCloning dotfiles on branch ${BRANCH}...\033[0m"
 		git clone https://github.com/martimlobao/dotfiles.git --branch "${BRANCH}" "${DOTPATH}"
