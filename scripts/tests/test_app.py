@@ -490,6 +490,22 @@ def test_mas_uninstall_failure_returns_failed_result() -> None:
     assert not result.success
 
 
+@pytest.mark.parametrize(
+    ("error", "expected_calls"),
+    [('Code=-128 "Unknown Error."', 2), ("Code=-1", 1), ("Code=-1280", 1)],
+)
+def test_mas_install_retries_only_after_cancelled_sign_in(error: str, expected_calls: int) -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "mas"
+    runner.run.side_effect = [app_module.AppManagerError(error), app_module.AppManagerError(error)]
+    service = app_module.MasSourceService(runner=runner, console=app_module.Console())
+    with pytest.raises(app_module.AppManagerError):
+        service.install("1")
+    assert [call.args[0] for call in runner.run.call_args_list] == [
+        ["mas", "install", "1"]
+    ] * expected_calls
+
+
 def test_base_strategy_ensure_installed_skips_when_installed() -> None:
     runner = Mock(spec=app_module.CommandRunner)
     service = app_module.UvSourceService(runner=runner, console=app_module.Console())

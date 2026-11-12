@@ -1171,7 +1171,15 @@ class MasSourceService(BaseSourceService):
         return apps
 
     def install(self, app: str) -> None:
-        self.runner.run([self._mas(), "install", app])
+        try:
+            self.runner.run([self._mas(), "install", app])
+        except AppManagerError as error:
+            # An install that triggers the App Store sign-in prompt
+            # is reported as cancelled (-128) even after signing in
+            # successfully, so retry once.
+            if not re.search(r"\bCode=-128\b", str(error)):
+                raise
+            self.runner.run([self._mas(), "install", app])
 
     def uninstall(self, app: str) -> OperationResult:
         result = self.runner.run(
