@@ -44,12 +44,15 @@ echo -e "💻 \033[1;33mModel:\033[0m         ${model:-N/A}"
 echo
 echo -e "🍺 \033[1;33mInstalling Homebrew...\033[0m"
 # A fresh shell doesn't have brew on PATH yet (even right after installing it), so look for it at
-# its known install locations and load its environment into this session.
+# its known install locations and load its environment into this session. A brew whose shellenv
+# fails counts as not installed.
 load_brew() {
-	local brew
-	for brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+	local brew env
+	for brew in "$(command -v brew || true)" /opt/homebrew/bin/brew /usr/local/bin/brew \
+		/home/linuxbrew/.linuxbrew/bin/brew; do
 		if [[ -x ${brew} ]]; then
-			eval "$("${brew}" shellenv)"
+			env=$("${brew}" shellenv) || return 1
+			eval "${env}"
 			return 0
 		fi
 	done
