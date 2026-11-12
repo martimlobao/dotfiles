@@ -78,7 +78,7 @@ uv run scripts/app.py       # CLI managed via shell function `app`
 
 - **`bootstrap.sh`** - Entry point for fresh installs (downloads repo, runs `run.sh`)
 - **`run.sh`** - Orchestrates full setup: Homebrew → dotsync → macos → install → dock → aerials →
-  code → local
+  local
 - **`apps.toml`** - TOML file listing all apps with source (cask/formula/mas/uv) and category
 - **`linkme/.functions`** - Shell functions including `app`, `aerials`, `bootstrap`
 - **`linkme/.aliases`** - Shell aliases (`ls` → `eza`, navigation shortcuts, etc.)

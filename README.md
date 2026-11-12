@@ -21,7 +21,6 @@ Here's a short description of each script in this repository:
 - [`app.py`](scripts/app.py) CLI tool to manage and sync fonts, tools, and apps using Homebrew,
   [`uv`](https://docs.astral.sh/uv/), and the Mac App Store, listed in[`apps.toml`](apps.toml)
 - [`dock.sh`](scripts/dock.sh) configure macOS dock
-- [`code.sh`](scripts/code.sh) install Cursor extensions
 - [`local.sh`](scripts/local.sh) final local settings, like configuring git user details and
   registering apps using keys stored in 1Password
 - [`bash_traceback.sh`](bash_traceback.sh) helper script used by other scripts to print a more
