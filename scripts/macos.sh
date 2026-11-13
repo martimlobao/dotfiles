@@ -93,7 +93,7 @@ function finder_plist_add {
 
 function finder_plist_set {
 	# sets a value in finder_plist only if it differs, creating the parent dicts a clean Mac lacks
-	# usage: finder_plist_set <label> <dict path> <key> <bool|real|string> <value>
+	# usage: finder_plist_set <label> <dict path> <key> <bool|integer|real|string> <value>
 	local label="${1}" path="${2}" key="${3}" type="${4}" value="${5}"
 	finder_plist_load
 	local current
@@ -127,16 +127,19 @@ function finder_view_option {
 }
 
 function finder_view_column {
-	# shows or hides a list view column
-	# usage: finder_view_column <list view settings path> <column identifier> <true|false>
-	local path="${1}" column="${2}" visible="${3}"
-	local label="com.apple.finder ${path} column ${column} visible = ${visible}"
+	# shows or hides a list view column and puts it at a position (0 is the first column)
+	# usage: finder_view_column <list view settings path> <column identifier> <true|false> <position>
+	local path="${1}" column="${2}" visible="${3}" position="${4}"
+	local label="com.apple.finder ${path} column ${column}"
 	if [[ ${path} != *ExtendedListViewSettingsV2 ]]; then
-		# ListViewSettings keys its columns by identifier
-		finder_plist_set "${label}" "${path}:columns:${column}" visible bool "${visible}"
+		# ListViewSettings keys its columns by identifier and orders them by index
+		finder_plist_set "${label} visible = ${visible}" "${path}:columns:${column}" visible bool \
+			"${visible}"
+		finder_plist_set "${label} index = ${position}" "${path}:columns:${column}" index integer \
+			"${position}"
 		return
 	fi
-	# ExtendedListViewSettingsV2 keeps its columns in an array, so find the column's index
+	# ExtendedListViewSettingsV2 orders its columns by their place in an array, so find the column
 	finder_plist_load
 	finder_plist_add "${path%%:*}" dict
 	finder_plist_add "${path}" dict
@@ -149,11 +152,26 @@ function finder_view_column {
 		[[ -z ${identifier} || ${identifier} == "${column}" ]] && break
 		i=$((i + 1))
 	done
+	# Columns are placed in order, so every position before this one is already taken and the
+	# column can't be at an index below it
 	if [[ ${identifier} != "${column}" ]]; then
-		finder_plist_add "${path}:columns:${i}" dict
-		finder_plist_add "${path}:columns:${i}:identifier" string "${column}"
+		# Adding at an array index inserts there, even when another column already sits at it
+		/usr/libexec/PlistBuddy -c "Add :${path}:columns:${position} dict" \
+			-c "Add :${path}:columns:${position}:identifier string ${column}" "${finder_plist}"
+		finder_changed_tops="${finder_changed_tops} ${path%%:*}"
+	elif ((i == position)); then
+		already_set "${label} position = ${position}"
+	else
+		# Copying into an array index inserts there, keeping the column's width and sort order
+		/usr/libexec/PlistBuddy -c "Copy :${path}:columns:${i} :finder_moved_column" \
+			-c "Delete :${path}:columns:${i}" \
+			-c "Copy :finder_moved_column :${path}:columns:${position}" \
+			-c "Delete :finder_moved_column" "${finder_plist}"
+		finder_changed_tops="${finder_changed_tops} ${path%%:*}"
+		updated "${label} position = ${position}"
 	fi
-	finder_plist_set "${label}" "${path}:columns:${i}" visible bool "${visible}"
+	finder_plist_set "${label} visible = ${visible}" "${path}:columns:${position}" visible bool \
+		"${visible}"
 }
 
 function finder_views_save {
@@ -273,15 +291,24 @@ for settings in StandardViewSettings FK_StandardViewSettings ComputerViewSetting
 		finder_view_option "${view}" sortColumn string "${sort}"
 		finder_view_option "${view}" useRelativeDates bool true
 		finder_view_option "${view}" showIconPreview bool true
-		# Set every column so a clean Mac, which has no column list yet, gets exactly these
-		for column in name dateModified dateCreated size kind; do
-			finder_view_column "${view}" "${column}" true
+		# Set every column, in order, so a clean Mac, which has no column list yet, gets exactly these
+		shown=(name dateModified dateCreated size kind)
+		hidden=(label version comments dateLastOpened ubiquity shareOwner shareLastEditor
+			invitationStatus)
+		if [[ ${sort} == dateAdded ]]; then
+			shown=(name dateAdded "${shown[@]:1}")
+		else
+			hidden+=(dateAdded)
+		fi
+		position=0
+		for column in "${shown[@]}"; do
+			finder_view_column "${view}" "${column}" true "${position}"
+			position=$((position + 1))
 		done
-		for column in label version comments dateLastOpened ubiquity shareOwner shareLastEditor \
-			invitationStatus; do
-			finder_view_column "${view}" "${column}" false
+		for column in "${hidden[@]}"; do
+			finder_view_column "${view}" "${column}" false "${position}"
+			position=$((position + 1))
 		done
-		finder_view_column "${view}" dateAdded "$([[ ${sort} == dateAdded ]] && echo true || echo false)"
 	done
 done
 
