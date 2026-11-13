@@ -136,6 +136,18 @@ if [[ ${os} == "Linux" ]]; then
 fi
 
 ###############################################################################
+# Set default browser                                                         #
+###############################################################################
+# Runs after app sync, which installs Dia and defaultbrowser
+echo
+if [[ $(defaultbrowser) == *"* dia"* ]]; then
+	echo -e "✅ \033[1;32mDia is already the default browser.\033[0m"
+else
+	echo -e "🌐 \033[1;33mSetting Dia as the default browser, confirm it in the dialog...\033[0m"
+	defaultbrowser dia
+fi
+
+###############################################################################
 # Configure macOS Dock                                                        #
 ###############################################################################
 echo

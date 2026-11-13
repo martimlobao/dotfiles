@@ -265,6 +265,13 @@ set_default com.apple.finder ShowHardDrivesOnDesktop bool true
 set_default com.apple.finder ShowExternalHardDrivesOnDesktop bool true
 set_default com.apple.finder ShowMountedServersOnDesktop bool true
 set_default com.apple.finder ShowRemovableMediaOnDesktop bool true
+label="Library folder visible"
+if [[ $(/bin/ls -lOd "${HOME}/Library") == *hidden* ]]; then
+	chflags nohidden "${HOME}/Library"
+	updated "${label}"
+else
+	already_set "${label}"
+fi
 set_default com.apple.desktopservices DSDontWriteNetworkStores bool true
 set_default com.apple.desktopservices DSDontWriteUSBStores bool true
 # Sidebar: show it with Locations expanded and Tags and iCloud collapsed
@@ -442,6 +449,69 @@ set_default NSGlobalDomain AppleMenuBarVisibleInFullscreen bool true
 set_default -currentHost com.apple.Spotlight MenuItemHidden bool true
 set_default com.apple.Siri StatusMenuVisible bool false
 set_default -currentHost com.apple.controlcenter BatteryShowPercentage bool true
+
+###############################################################################
+# Wallpaper & screen saver                                                    #
+###############################################################################
+
+echo -e "\n🖼️  \033[1;35mWallpaper & screen saver...\033[0m"
+on_change=""
+
+# The wallpaper store keeps each choice and its options as nested binary plists. A "linked" choice
+# for all spaces and displays also shows the wallpaper as the screen saver. Writing the store resets
+# any per-display or per-space wallpaper, which is the point: every screen shuffles the same aerials
+wallpaper_store="${HOME}/Library/Application Support/com.apple.wallpaper/Store/Index.plist"
+wallpaper_content="AllSpacesAndDisplays.Linked.Content"
+wallpaper_config='{"assetID":"shuffle-all-aerials"}'
+wallpaper_options='{"values":{"aerialShuffleFrequency":{"picker":{"_0":{"id":"shuffle_every_12_hours"}}}}}'
+
+function wallpaper_store_json {
+	# prints a nested plist from the wallpaper store as compact JSON, or nothing if it's missing
+	# usage: wallpaper_store_json <keypath>
+	plutil -extract "${1}" raw -o - "${wallpaper_store}" 2>/dev/null | base64 -d |
+		plutil -convert json -o - - 2>/dev/null || true
+}
+
+function encode_plist {
+	# prints a JSON object as a base64-encoded binary plist
+	printf '%s' "${1}" | plutil -convert binary1 -o - - | base64
+}
+
+label="wallpaper and screen saver = shuffle all aerials every 12 hours"
+wallpaper_type=$(plutil -extract AllSpacesAndDisplays.Type raw -o - "${wallpaper_store}" 2>/dev/null || true)
+current_config=$(wallpaper_store_json "${wallpaper_content}.Choices.0.Configuration")
+current_options=$(wallpaper_store_json "${wallpaper_content}.EncodedOptionValues")
+if [[ ${wallpaper_type} == linked && ${current_config} == "${wallpaper_config}" &&
+	${current_options} == "${wallpaper_options}" ]]; then
+	already_set "${label}"
+else
+	wallpaper_linked="<dict><key>Content</key><dict>
+		<key>Choices</key><array><dict>
+			<key>Configuration</key><data>$(encode_plist "${wallpaper_config}")</data>
+			<key>Files</key><array/>
+			<key>Provider</key><string>com.apple.wallpaper.choice.aerials</string>
+		</dict></array>
+		<key>EncodedOptionValues</key><data>$(encode_plist "${wallpaper_options}")</data>
+		<key>Shuffle</key><string>\$null</string>
+	</dict></dict>"
+	mkdir -p "$(dirname "${wallpaper_store}")"
+	plutil -convert binary1 -o "${wallpaper_store}" - <<-EOF
+		<?xml version="1.0" encoding="UTF-8"?>
+		<plist version="1.0"><dict>
+			<key>AllSpacesAndDisplays</key><dict>
+				<key>Linked</key>${wallpaper_linked}<key>Type</key><string>linked</string>
+			</dict>
+			<key>Displays</key><dict/>
+			<key>Spaces</key><dict/>
+			<key>SystemDefault</key><dict>
+				<key>Linked</key>${wallpaper_linked}<key>Type</key><string>linked</string>
+			</dict>
+		</dict></plist>
+	EOF
+	# WallpaperAgent caches the store and only rereads it on launch
+	killall WallpaperAgent 2>/dev/null || true
+	updated "${label}"
+fi
 
 ###############################################################################
 # Screenshots                                                                 #

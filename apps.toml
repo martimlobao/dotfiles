@@ -106,6 +106,7 @@ basictex = "cask"  # Compact TeX distribution as alternative to the full TeX Liv
 bat = "formula"  # Clone of cat(1) with syntax highlighting and Git integration
 bun = "formula"  # Incredibly fast JavaScript runtime, bundler, test runner, and package manager
 checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
+defaultbrowser = "formula"  # Command-line tool for getting & setting the default browser
 domain-check = "formula"  # CLI tool for checking domain availability using RDAP and WHOIS protocols
 exiftool = "formula"  # Perl lib for reading and writing EXIF metadata
 eza = "formula"  # Modern, maintained replacement for ls
