@@ -55,6 +55,7 @@ blockers. `make check` includes `make test`, which runs the `scripts/app.py` and
 app add <name> <source> [--group <group>] [--description <text>]  # Add app to apps.toml and install
 app remove <name>                                                 # Remove app from apps.toml and uninstall
 app list                                                          # List all apps
+app validate                                                      # Check every app exists under its source
 # Sources: cask, formula, mas, uv
 # Use --no-install to skip installation
 ```
