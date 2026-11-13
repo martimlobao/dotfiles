@@ -971,6 +971,39 @@ class BrewCaskSourceService(BrewSourceService):
     info_entries_key = "casks"
     list_flag = "--cask"
 
+    def pre_install_check(self, app: str) -> OperationResult | None:
+        # Apps installed some other way (by hand, or by an MDM on a work
+        # Mac) make `brew install` fail, and overwriting them isn't ours to
+        # do, so leave them be.
+        for path in self._app_paths(app):
+            if path.exists():
+                return OperationResult.skipped_result(
+                    f"{app!r} is already installed outside Homebrew ({path}), skipping."
+                )
+        return None
+
+    def _app_paths(self, app: str) -> list[Path]:
+        brew: str = self._brew()
+        result = self.runner.run([brew, "info", "--json=v2", "--cask", app], check=False)
+        if result.returncode != 0:
+            # Let the install itself report why the cask can't be found.
+            return []
+        casks: list[dict[str, JSON]] = json.loads(result.stdout).get("casks", [])
+        paths: list[Path] = []
+        for cask in casks:
+            artifacts: JSON = cask.get("artifacts")
+            for artifact in artifacts if isinstance(artifacts, list) else []:
+                if not isinstance(artifact, dict) or "app" not in artifact:
+                    continue
+                target: JSON = artifact.get("target")
+                if isinstance(target, str):
+                    paths.append(Path(target).expanduser())
+                    continue
+                names: JSON = artifact["app"]
+                if isinstance(names, list):
+                    paths.extend(Path("/Applications") / n for n in names if isinstance(n, str))
+        return paths
+
     def find_unmanaged(self, managed: set[str]) -> list[UnmanagedApp]:
         managed_norm: set[str] = {item.casefold() for item in managed}
         installed: dict[str, str] = self.list_installed()
