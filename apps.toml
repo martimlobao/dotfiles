@@ -98,6 +98,7 @@ transmission = "cask"  # Open-source BitTorrent client
 whatcable = "cask"  # Menu bar app for USB-C cable diagnostics
 wispr-flow = "cask"  # Voice-to-text dictation with AI-powered auto-editing
 yubico-authenticator = "cask"  # Application for generating TOTP and HOTP codes
+"martimlobao/private/intray" = "cask"  # Menu bar app that automagically sorts files dropped into a tracked folder
 
 [cli-tools]
 ack = "formula"  # Search tool like grep, but optimized for programmers
