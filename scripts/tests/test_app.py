@@ -1067,9 +1067,18 @@ def test_facade_sync_apps_orchestrates(tmp_path: Path) -> None:
     upgrade.assert_called_once()
 
 
-def test_sudo_kept_alive_skipped_without_brew_sources(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("system", "sources"),
+    [("Darwin", {"uv", "mas"}), ("Linux", {"formula"})],
+)
+def test_sudo_kept_alive_skipped_when_brew_needs_no_sudo(
+    tmp_path: Path, system: str, sources: set[str]
+) -> None:
     facade, _, runner = build_facade(tmp_path)
-    with facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources={"uv", "mas"})):
+    with (
+        patch("app_module.platform.system", return_value=system),
+        facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources=sources)),
+    ):
         pass
     runner.run.assert_not_called()
 
@@ -1078,6 +1087,7 @@ def test_sudo_kept_alive_skips_refresh_when_sudo_fails(tmp_path: Path) -> None:
     facade, _, runner = build_facade(tmp_path)
     runner.run.return_value = make_result(returncode=1)
     with (
+        patch("app_module.platform.system", return_value="Darwin"),
         patch.object(app_module.threading, "Thread") as thread,
         facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources={"cask"})),
     ):
@@ -1088,19 +1098,23 @@ def test_sudo_kept_alive_skips_refresh_when_sudo_fails(tmp_path: Path) -> None:
 
 def test_sudo_kept_alive_refreshes_until_sync_ends(tmp_path: Path) -> None:
     facade, _, runner = build_facade(tmp_path)
-    refreshed = threading.Event()
+    refreshes: list[None] = []
+    refreshed_twice = threading.Event()
 
     def run(command: list[str], **_: object) -> SimpleNamespace:
         if command == ["sudo", "-n", "-v"]:
-            refreshed.set()
+            refreshes.append(None)
+            if len(refreshes) >= 2:
+                refreshed_twice.set()
         return make_result()
 
     runner.run.side_effect = run
     with (
+        patch("app_module.platform.system", return_value="Darwin"),
         patch.object(app_module, "SUDO_REFRESH_SECONDS", 0.01),
         facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources={"formula"})),
     ):
-        assert refreshed.wait(5)
+        assert refreshed_twice.wait(5)
     calls_at_exit = runner.run.call_count
     time.sleep(0.05)
     assert runner.run.call_count == calls_at_exit
