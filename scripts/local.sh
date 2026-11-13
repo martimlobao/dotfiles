@@ -14,17 +14,20 @@ echo -e "🔑 \033[1;34mSetting local settings and variables...\033[0m"
 
 # ensure signed in to 1Password
 echo -e "\n🔐 \033[1;35mSigning in to 1Password...\033[0m"
-# The CLI gets its accounts from the 1Password app. stdin is closed so op can't fall back to its
-# interactive "add an account" prompt, which would hang invisibly inside $(...).
+# stdin is closed so op can't start its interactive "add an account" prompt, which would hang
+# invisibly inside $(...).
 op_has_account() {
 	[[ $(op account list --format=json </dev/null 2>/dev/null) == *my.1password.com* ]]
 }
 if ! op_has_account; then
-	open -a 1Password
-	echo -e "ℹ️  \033[1;33mIn the 1Password app, sign in to my.1password.com, then turn on Settings >" \
-		"Developer > Integrate with 1Password CLI (and the SSH Agent while you're there).\033[0m"
+	echo -e "ℹ️  \033[1;33mSigning in to 1Password for the first time: enter your email, Secret Key" \
+		"and password below.\033[0m"
+	session=$(op account add --address my.1password.com --signin) && eval "${session}"
+	# With the 1Password app's CLI integration on, the CLI refuses to add accounts and only sees
+	# the ones added to the app, so sign in there instead.
 	until op_has_account; do
-		read -rp $'❓ \e[1;31mPress Enter once that\'s done...\e[0m '
+		open -a 1Password
+		read -rp $'❓ \e[1;31mSign in to my.1password.com in the 1Password app, then press Enter...\e[0m '
 	done
 fi
 eval "$(op signin --account my.1password.com)"
