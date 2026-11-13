@@ -608,13 +608,22 @@ def test_mas_fetch_info() -> None:
     runner = Mock(spec=app_module.CommandRunner)
     runner.get_executable.return_value = "mas"
     runner.run.side_effect = [
-        make_result(stdout="Numbers  1.0 [foo]\nFrom: https://example.com\n"),
+        make_result(
+            stdout=json.dumps({
+                "name": "Numbers",
+                "version": "1.0",
+                "appStorePageURL": "https://apps.apple.com/app/id409203825",
+            })
+        ),
         make_result(stdout="409203825 Numbers (1.0)\n"),
     ]
     service = app_module.MasSourceService(runner=runner, console=app_module.Console())
     info = service.fetch_info("409203825", repo=Mock(), document=tomlkit.document())
+    runner.run.assert_any_call(["mas", "info", "--json", "409203825"])
     assert info.source == "mas"
     assert info.description == "Numbers"
+    assert info.version == "1.0"
+    assert info.website == "https://apps.apple.com/app/id409203825"
     assert info.installed
 
 

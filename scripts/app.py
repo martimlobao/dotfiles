@@ -1234,41 +1234,24 @@ class MasSourceService(BaseSourceService):
     ) -> AppInfo:
         del repo, document
 
-        result = self.runner.run([self._mas(), "info", app])
-
-        description_line: str | None = None
-        website: str | None = None
-        for raw_line in result.stdout.splitlines():
-            stripped: str = raw_line.strip()
-            if not stripped:
-                continue
-            if stripped.startswith("From:"):
-                website = stripped.split(":", 1)[1].strip() or None
-                continue
-            if description_line is None:
-                description_line = stripped
-
-        if not description_line:
+        result = self.runner.run([self._mas(), "info", "--json", app])
+        try:
+            entry: JSON = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise AppManagerError("Could not parse mas info output.") from exc
+        if not isinstance(entry, dict) or not isinstance(name := entry.get("name"), str):
             raise AppManagerError("Could not parse mas info output.")
 
-        match: re.Match[str] | None = re.match(
-            r"^(?P<name>.+?)\s+(?P<version>\d[\w.\-]+)(?:\s+\[.*\])?$",
-            description_line,
-        )
-        description: str = description_line
-        version: str | None = None
-        if match:
-            description = match.group("name").strip()
-            version = match.group("version")
-
+        version: JSON = entry.get("version")
+        website: JSON = entry.get("appStorePageURL")
         installed_ids: set[str] = set(self.list_installed())
 
         return AppInfo(
             name=app,
             source=self.source_name,
-            description=description,
-            website=website,
-            version=version,
+            description=name,
+            website=website if isinstance(website, str) else None,
+            version=version if isinstance(version, str) else None,
             installed=app in installed_ids,
         )
 
