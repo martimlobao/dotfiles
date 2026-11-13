@@ -86,9 +86,11 @@ if [[ ${COPYME} =~ ^[Yy]$ ]]; then
 		exit 1
 	fi
 	set +o pipefail
-	# 1Password needs the permissions to be set to 700
+	# 1Password refuses to read its config unless only the owner can access it, and git can only
+	# store files as 644, so rsync copies them with permissions that are too broad
 	chmod 700 "${HOME}/.config/op"
 	chmod 700 "${HOME}/.config/op/plugins/used_items"
+	chmod 600 "${HOME}/.config/op/plugins/used_items/"*.json
 fi
 
 # iStat Menus
