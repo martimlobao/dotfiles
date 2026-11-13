@@ -14,12 +14,20 @@ echo -e "🔑 \033[1;34mSetting local settings and variables...\033[0m"
 
 # ensure signed in to 1Password
 echo -e "\n🔐 \033[1;35mSigning in to 1Password...\033[0m"
-if [[ -z "$(op account get 2>/dev/null)" ]]; then
-	echo -e "ℹ️  \033[1;33mSigning in to 1Password for the first time, please follow the instructions and enable the SSH Agent in the 1Password app.\033[0m"
-	op signin --help
-	open /Applications/1Password.app
-	eval "$(op account add --address my.1password.com)"
-fi
+# stdin comes from /dev/null so op can't start its interactive "add an account" prompt, which
+# would hang invisibly inside $(...).
+op_has_account() {
+	[[ $(op account list --format=json </dev/null 2>/dev/null) == *my.1password.com* ]]
+}
+until op_has_account; do
+	echo -e "ℹ️  \033[1;33mSigning in to 1Password: enter your email, Secret Key and password below.\033[0m"
+	session=$(op account add --address my.1password.com --signin) && eval "${session}"
+	op_has_account && break
+	# Either the sign-in failed, or the 1Password app's CLI integration is on, in which case the
+	# CLI only sees accounts signed in to the app.
+	open -a 1Password
+	read -rp $'❓ \e[1;31mPress Enter to try again, or sign in to my.1password.com in the 1Password app and turn on Settings > Developer > Integrate with 1Password CLI first...\e[0m '
+done
 eval "$(op signin --account my.1password.com)"
 
 # Inject secrets into files using 1Password
