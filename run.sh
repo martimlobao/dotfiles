@@ -107,24 +107,6 @@ if [[ ${CI-} == "true" ]]; then
 fi
 
 ###############################################################################
-# Log in to GitHub CLI                                                        #
-###############################################################################
-# git authenticates GitHub over HTTPS with gh (see .gitconfig), so log in before app sync fetches
-# private Homebrew taps.
-echo
-echo -e "🐙 \033[1;33mSetting up GitHub CLI...\033[0m"
-sleep 1
-if ! command -v gh &>/dev/null; then
-	brew install gh
-fi
-if gh auth status &>/dev/null; then
-	echo -e "✅ \033[1;32mGitHub CLI is already authenticated.\033[0m"
-else
-	gh auth login --git-protocol ssh --hostname github.com --skip-ssh-key --web
-	echo -e "✅ \033[1;32mGitHub CLI is authenticated.\033[0m"
-fi
-
-###############################################################################
 # Install apps and software                                                   #
 ###############################################################################
 echo

@@ -1651,15 +1651,23 @@ def test_brew_ensure_installed_skips_tap_trust_for_official_tap() -> None:
 
 
 TRUST_LIST = ["brew", "trust", "--json=v1"]
+TAP_LIST = ["brew", "tap"]
 
 
-def trust_runner(*trusted: str) -> Mock:
-    # `brew trust --json=v1` reports `trusted`; every other command succeeds.
+def trust_runner(*trusted: str, tapped: str = "owner/tap", trust_list_ok: bool = True) -> Mock:
+    # `brew tap` lists `tapped`, `brew trust --json=v1` reports `trusted`, and
+    # tapping anything else fails; every other command succeeds.
     runner = Mock(spec=app_module.CommandRunner)
     runner.get_executable.return_value = "brew"
 
     def run(command: list[str], **_: object) -> SimpleNamespace:
+        if command == TAP_LIST:
+            return make_result(stdout=tapped)
+        if command[:2] == TAP_LIST:
+            return make_result(returncode=1, stderr="fatal: could not read Username")
         if command == TRUST_LIST:
+            if not trust_list_ok:
+                return make_result(returncode=1, stderr="Unknown option --json")
             return make_result(stdout=json.dumps({"taps": list(trusted)}))
         return make_result()
 
@@ -1681,6 +1689,7 @@ def test_brew_ensure_installed_trusts_tap_even_when_already_installed() -> None:
     prompt.assert_called_once_with("Trust Homebrew tap owner/tap? (y/n) ", auto_yes=False)
     assert result.skipped
     assert runner.run.call_args_list == [
+        call(TAP_LIST),
         call(TRUST_LIST, check=False),
         call(["brew", "trust", "--tap", "owner/tap"]),
     ]
@@ -1700,6 +1709,7 @@ def test_brew_ensure_installed_skips_prompt_for_already_trusted_tap() -> None:
 
     prompt.assert_not_called()
     assert runner.run.call_args_list == [
+        call(TAP_LIST),
         call(TRUST_LIST, check=False),
         call(["brew", "install", "--formula", "owner/tap/tool"]),
     ]
@@ -1722,6 +1732,7 @@ def test_brew_ensure_installed_asks_about_each_tap_once(*, accept: bool) -> None
     prompt.assert_called_once_with("Trust Homebrew tap owner/tap? (y/n) ", auto_yes=False)
     trust = [call(["brew", "trust", "--tap", "owner/tap"])] if accept else []
     assert runner.run.call_args_list == [
+        call(TAP_LIST),
         call(TRUST_LIST, check=False),
         *trust,
         call(["brew", "install", "--formula", "owner/tap/one"]),
@@ -1729,10 +1740,51 @@ def test_brew_ensure_installed_asks_about_each_tap_once(*, accept: bool) -> None
     ]
 
 
-def test_brew_ensure_installed_prompts_when_trust_list_is_unreadable() -> None:
+def test_brew_ensure_installed_skips_app_when_tap_is_unreachable() -> None:
+    runner = trust_runner(tapped="")
+    console = app_module.Console()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=console)
+
+    with patch.object(console, "prompt_yes_no") as prompt:
+        first = service.ensure_installed("owner/tap/one")
+        second = service.ensure_installed("owner/tap/two")
+
+    prompt.assert_not_called()
+    assert first.skipped
+    assert "couldn't tap owner/tap" in first.message
+    assert second.skipped
+    # Tried once, not once per app.
+    assert runner.run.call_args_list == [
+        call(TAP_LIST),
+        call(["brew", "tap", "owner/tap"], check=False),
+    ]
+
+
+def test_brew_ensure_installed_taps_reachable_tap_before_install() -> None:
+    # Nothing tapped yet, and every command (including the tap) succeeds.
     runner = Mock(spec=app_module.CommandRunner)
     runner.get_executable.return_value = "brew"
-    runner.run.return_value = make_result(returncode=1, stderr="Unknown option --json")
+    runner.run.return_value = make_result()
+    console = app_module.Console()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=console)
+
+    with (
+        patch("app_module.platform.system", return_value="Darwin"),
+        patch.object(service, "is_installed", return_value=False),
+        patch.object(console, "prompt_yes_no", return_value=False),
+    ):
+        result = service.ensure_installed("owner/tap/tool")
+
+    assert not result.skipped
+    assert runner.run.call_args_list[:2] == [
+        call(TAP_LIST),
+        call(["brew", "tap", "owner/tap"], check=False),
+    ]
+    runner.run.assert_called_with(["brew", "install", "--formula", "owner/tap/tool"])
+
+
+def test_brew_ensure_installed_prompts_when_trust_list_is_unreadable() -> None:
+    runner = trust_runner(trust_list_ok=False)
     console = app_module.Console()
     service = app_module.BrewFormulaSourceService(runner=runner, console=console)
 
@@ -1759,6 +1811,7 @@ def test_brew_ensure_installed_auto_trusts_tap_without_prompt() -> None:
 
     prompt.assert_not_called()
     assert runner.run.call_args_list == [
+        call(TAP_LIST),
         call(TRUST_LIST, check=False),
         call(["brew", "trust", "--tap", "owner/tap"]),
         call(["brew", "install", "--cask", "owner/tap/tool"]),

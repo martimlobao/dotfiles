@@ -715,9 +715,15 @@ class BaseSourceService(ABC):
         }
         return bool(aliases & installed_tokens)
 
-    def prepare_install(self, app: str, *, auto_yes: bool) -> None:
+    def prepare_install(self, app: str, *, auto_yes: bool) -> OperationResult | None:
+        """Get ready to install the app.
+
+        Returns:
+            A result that skips the app, or None to go ahead.
+        """
         _ = self
         del app, auto_yes
+        return None
 
     def validate_declared(self, apps: list[str]) -> None:
         """Raise if any declared app doesn't exist under this source."""
@@ -725,7 +731,9 @@ class BaseSourceService(ABC):
         del apps
 
     def ensure_installed(self, app: str, *, auto_yes: bool = False) -> OperationResult:
-        self.prepare_install(app, auto_yes=auto_yes)
+        blocked: OperationResult | None = self.prepare_install(app, auto_yes=auto_yes)
+        if blocked is not None:
+            return blocked
         if self.is_installed(app):
             return OperationResult.skipped_result(
                 f"{app!r} is already installed via {self.source_name}."
@@ -793,6 +801,8 @@ class BrewSourceService(BaseSourceService, ABC):
     info_entries_key: ClassVar[str] = ""
     list_flag: ClassVar[str] = ""
     _settled_taps_cache: set[str] | None = None
+    # Tap name -> whether it's tapped or could be tapped this run.
+    _tap_status_cache: dict[str, bool] | None = None
 
     def _brew(self) -> str:
         self._ensure_xcode_license()
@@ -830,13 +840,17 @@ class BrewSourceService(BaseSourceService, ABC):
         result = self.runner.run([brew, "list", self.list_flag])
         return {item: item for item in result.stdout.split()}
 
-    def prepare_install(self, app: str, *, auto_yes: bool) -> None:
+    def prepare_install(self, app: str, *, auto_yes: bool) -> OperationResult | None:
         tap: str | None = self._third_party_tap(app)
         if tap is None:
-            return
+            return None
+        if not self._tap_reachable(tap):
+            return OperationResult.skipped_result(
+                f"Skipping {app!r}: couldn't tap {tap} (private repo without access?)"
+            )
         settled: set[str] = self._settled_taps()
         if tap.casefold() in settled:
-            return
+            return None
 
         # Remember the answer either way, so each tap is asked about once.
         settled.add(tap.casefold())
@@ -846,6 +860,21 @@ class BrewSourceService(BaseSourceService, ABC):
         ):
             brew: str = self._brew()
             self.runner.run([brew, "trust", "--tap", tap])
+        return None
+
+    def _tap_reachable(self, tap: str) -> bool:
+        if self._tap_status_cache is None:
+            brew: str = self._brew()
+            tapped: list[str] = self.runner.run([brew, "tap"]).stdout.split()
+            self._tap_status_cache = {name.casefold(): True for name in tapped}
+        key: str = tap.casefold()
+        if key not in self._tap_status_cache:
+            brew = self._brew()
+            # Skip a private tap rather than block setup on a GitHub login.
+            # brew disables git's credential prompt, so this fails fast.
+            result = self.runner.run([brew, "tap", tap], check=False)
+            self._tap_status_cache[key] = result.returncode == 0
+        return self._tap_status_cache[key]
 
     @staticmethod
     def _third_party_tap(app: str) -> str | None:

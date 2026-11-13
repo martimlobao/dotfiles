@@ -104,6 +104,15 @@ else
 	echo -e "✅ \033[1;32mCharles is already registered.\033[0m"
 fi
 
+# GitHub CLI
+echo -e "\n📝 \033[1;35mSetting up GitHub CLI...\033[0m"
+if [[ -z $(gh auth status 2>/dev/null || echo '') ]]; then
+	gh auth login --git-protocol ssh --hostname github.com --skip-ssh-key --web
+	echo -e "✅ \033[1;32mGitHub CLI is authenticated.\033[0m"
+else
+	echo -e "✅ \033[1;32mGitHub CLI is already authenticated.\033[0m"
+fi
+
 # Set computer name
 confirm_set() {
 	while true; do
