@@ -53,6 +53,7 @@ from contextlib import contextmanager
 from multiprocessing.pool import ApplyResult, ThreadPool
 from pathlib import Path
 from typing import Any, Literal, TypedDict, cast
+from xml.parsers.expat import ExpatError
 
 import requests
 import tqdm
@@ -238,9 +239,16 @@ def print_summary(
 
 
 def manifest_ready(aerials_path: Path = AERIALS_PATH) -> bool:
-    """Returns whether macOS has downloaded the aerials manifest."""
+    """Returns whether macOS has finished downloading the aerials manifest."""
     entries_path = aerials_path / ENTRIES_PATH.relative_to(AERIALS_PATH)
-    return resolve_strings_path(aerials_path).is_file() and entries_path.is_file()
+    # Parse rather than just check the files exist: they're written while
+    # the download is still being unpacked.
+    try:
+        json.loads(entries_path.read_text())
+        load_strings(resolve_strings_path(aerials_path))
+    except (OSError, ValueError, ExpatError):
+        return False
+    return True
 
 
 def ensure_manifest() -> None:
@@ -251,18 +259,25 @@ def ensure_manifest() -> None:
     """
     if manifest_ready():
         return
-    print(
-        "🖼️  macOS hasn't downloaded the aerials catalog yet. Opening Wallpaper settings to"
-        " start the download; they'll close by themselves..."
-    )
     pgrep = subprocess.run(["/usr/bin/pgrep", "-xq", "System Settings"], check=False)
     already_open = pgrep.returncode == 0
-    subprocess.run(["/usr/bin/open", WALLPAPER_SETTINGS_URL], check=False)  # noqa: S603
-    deadline = time.monotonic() + MANIFEST_WAIT_SECONDS
-    while not manifest_ready() and time.monotonic() < deadline:
-        time.sleep(MANIFEST_POLL_SECONDS)
-    if not already_open:
-        subprocess.run(["/usr/bin/osascript", "-e", 'quit app "System Settings"'], check=False)
+    print(
+        "🖼️  macOS hasn't downloaded the aerials catalog yet. Opening Wallpaper settings to"
+        " start the download" + ("..." if already_open else "; they'll close by themselves...")
+    )
+    opened = subprocess.run(["/usr/bin/open", WALLPAPER_SETTINGS_URL], check=False)  # noqa: S603
+    if opened.returncode != 0:
+        print("❌ Couldn't open Wallpaper settings. Open them yourself, then rerun aerials.")
+        sys.exit(1)
+    try:
+        deadline = time.monotonic() + MANIFEST_WAIT_SECONDS
+        while not manifest_ready() and time.monotonic() < deadline:
+            time.sleep(MANIFEST_POLL_SECONDS)
+    finally:
+        if not already_open:
+            # A signal rather than AppleScript, which would first ask for
+            # permission to control System Settings.
+            subprocess.run(["/usr/bin/pkill", "-x", "System Settings"], check=False)
     if not manifest_ready():
         print(
             "❌ macOS didn't download the aerials catalog. Check your connection, open"
