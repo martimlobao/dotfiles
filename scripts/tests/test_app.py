@@ -439,6 +439,53 @@ def test_brew_fetch_info_raises_when_empty() -> None:
         service.fetch_info("missing", repo=Mock(), document=tomlkit.document())
 
 
+@pytest.mark.parametrize("exists", [True, False])
+def test_brew_cask_pre_install_check_skips_apps_installed_outside_brew(
+    tmp_path: Path, *, exists: bool
+) -> None:
+    target = tmp_path / "Slack.app"
+    if exists:
+        target.mkdir()
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(
+        stdout=json.dumps({
+            "casks": [{"artifacts": [{"app": ["Slack.app"], "target": str(target)}]}]
+        })
+    )
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+
+    result = service.pre_install_check("slack")
+
+    runner.run.assert_called_once_with(
+        ["brew", "info", "--json=v2", "--cask", "slack"], check=False
+    )
+    if exists:
+        assert result is not None
+        assert result.skipped
+        assert str(target) in result.message
+    else:
+        assert result is None
+
+
+def test_brew_cask_pre_install_check_falls_back_to_applications_dir() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(
+        stdout=json.dumps({"casks": [{"artifacts": [{"app": ["Slack.app"]}, {"zap": []}]}]})
+    )
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    assert service._app_paths("slack") == [Path("/Applications/Slack.app")]
+
+
+def test_brew_cask_pre_install_check_leaves_unknown_casks_to_install() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(returncode=1, stderr="No available cask")
+    service = app_module.BrewCaskSourceService(runner=runner, console=app_module.Console())
+    assert service.pre_install_check("missing") is None
+
+
 def test_brew_cask_find_unmanaged() -> None:
     runner = Mock(spec=app_module.CommandRunner)
     runner.get_executable.return_value = "brew"
@@ -1638,6 +1685,7 @@ def test_brew_ensure_installed_auto_trusts_tap_without_prompt(tmp_path: Path) ->
     with (
         patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
         patch.object(service, "is_installed", return_value=False),
+        patch.object(service, "pre_install_check", return_value=None),
         patch.object(console, "prompt_yes_no") as prompt,
     ):
         service.ensure_installed("owner/tap/tool", auto_yes=True)
