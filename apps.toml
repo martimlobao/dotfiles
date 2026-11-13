@@ -27,6 +27,7 @@ xcodegen = "formula"  # Generate your Xcode project from a spec file and your fo
 aws-sso-cli = "formula"  # Securely manage AWS API credentials using AWS SSO
 awscli = "formula"  # Official Amazon AWS command-line interface
 azure-cli = "cask"  # Microsoft Azure CLI 2.0
+"flexapp/internal/flexai" = "formula"  # Route Claude Code and OpenCode through Flex's LiteLLM gateway
 microsoft-excel = "cask"  # Spreadsheet software
 microsoft-teams = "cask"  # Meet, chat, call, and collaborate in just one place
 microsoft-word = "cask"  # Word processor
