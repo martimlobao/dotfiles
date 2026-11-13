@@ -48,9 +48,11 @@
 	fi
 
 	# Once a full Xcode is installed, git refuses to run until its license is accepted, and would
-	# otherwise prompt for it interactively and then fail without root. stdin is closed so the probe
-	# can't start that prompt itself.
-	if [[ $(uname) == "Darwin" ]] && [[ $(/usr/bin/xcrun --find clang 2>&1 </dev/null) == *license* ]]; then
+	# otherwise prompt for it interactively and then fail without root. The probe mirrors Homebrew's:
+	# it skips a missing developer directory (where xcrun would open the installer instead) and only
+	# trusts a failing xcrun, and its stdin is closed so it can't start the prompt itself.
+	if [[ $(uname) == "Darwin" ]] && [[ ! $(xcode-select --print-path 2>/dev/null) =~ ^/?$ ]] &&
+		! probe=$(/usr/bin/xcrun --find clang 2>&1 </dev/null) && [[ ${probe} == *license* ]]; then
 		echo -e "🔑 \033[1;33mAccepting the Xcode license...\033[0m"
 		sudo xcodebuild -license accept
 	fi
