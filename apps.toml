@@ -169,7 +169,6 @@ ty = "uv"  # Extremely fast Python type checker, written in Rust
 
 [utilities]
 6753110395 = "mas"  # Folder Quick Look: Instant Folder & Archive Peek
-jupyter-notebook-viewer = "cask"  # Utility to render Jupyter notebooks
 markdown-preview = "cask"  # Markdown previewer with bundled Quick Look extension
 quicklook-video = "cask"  # Thumbnails, static previews, cover art and metadata for video files
 syntax-highlight = "cask"  # Quicklook extension for source files
