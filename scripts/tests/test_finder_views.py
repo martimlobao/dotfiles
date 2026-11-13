@@ -106,6 +106,21 @@ def test_resets_home_views_and_pins_downloads_to_the_trash_view(tmp_path: Path) 
     assert read_store(nested) == {("Projects", b"vstl"): b"icnv"}
 
 
+def test_replaces_a_store_with_a_malformed_view(tmp_path: Path) -> None:
+    write_store(
+        tmp_path / ".DS_Store",
+        [
+            entry("Downloads", b"vstl", b"Nlsv"),
+            entry("Downloads", b"lsvp", b"not a plist"),
+            entry("Downloads", b"lsvC", plist(TRASH_EXTENDED_LIST_VIEW)),
+        ],
+    )
+
+    assert killed_finder(run(tmp_path))
+    home = read_store(tmp_path / ".DS_Store")
+    assert plistlib.loads(home["Downloads", b"lsvp"]) == TRASH_LIST_VIEW
+
+
 def test_leaves_finder_alone_when_only_downloads_is_pinned(tmp_path: Path) -> None:
     # Finder adds its own records and rewrites scroll positions as you browse
     write_store(

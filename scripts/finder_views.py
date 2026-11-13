@@ -117,11 +117,11 @@ def is_enforced(path: Path, pinned: PinnedView) -> bool:
     try:
         with DSStore.open(str(path), "r") as store:
             views = [entry for entry in store if entry.code in VIEW_CODES]
+        # Each code appears once per folder, so this is exactly the pinned ones
+        return len(views) == len(pinned.entries()) and all(map(pinned.matches, views))
     except Exception as error:  # noqa: BLE001 - a corrupt store is replaced like a stale one
         print(f"⚠️  \033[1;33mReplacing unreadable {path}: {error}\033[0m")
         return False
-    # Each code appears once per folder, so this is exactly the pinned records
-    return len(views) == len(pinned.entries()) and all(map(pinned.matches, views))
 
 
 def write_store(path: Path, entries: list[DSStoreEntry]) -> None:
