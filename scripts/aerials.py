@@ -41,6 +41,7 @@ import json
 import locale
 import pathlib
 import plistlib
+import subprocess  # noqa: S404
 import sys
 import textwrap
 import time
@@ -83,6 +84,9 @@ HTTP_STATUS_RANGE_NOT_SATISFIABLE: int = 416
 DEFAULT_NAME_LENGTH: int = 30  # default length for formatted names
 CACHE_EXPIRY_DAYS: int = 90  # Cache expiry in days
 CACHE_FILE: Path = AERIALS_PATH / "cache.json"
+WALLPAPER_SETTINGS_URL: str = "x-apple.systempreferences:com.apple.Wallpaper-Settings.extension"
+MANIFEST_WAIT_SECONDS: int = 60
+MANIFEST_POLL_SECONDS: int = 2
 
 
 # Type aliases for better readability
@@ -233,8 +237,44 @@ def print_summary(
     print("=" * 50)
 
 
+def manifest_ready(aerials_path: Path = AERIALS_PATH) -> bool:
+    """Returns whether macOS has downloaded the aerials manifest."""
+    entries_path = aerials_path / ENTRIES_PATH.relative_to(AERIALS_PATH)
+    return resolve_strings_path(aerials_path).is_file() and entries_path.is_file()
+
+
+def ensure_manifest() -> None:
+    """Gets macOS to download the aerials manifest if it's missing.
+
+    A fresh Mac only downloads it once the Wallpaper settings are opened,
+    so open them, wait for the download, and close them again.
+    """
+    if manifest_ready():
+        return
+    print(
+        "🖼️  macOS hasn't downloaded the aerials catalog yet. Opening Wallpaper settings to"
+        " start the download; they'll close by themselves..."
+    )
+    pgrep = subprocess.run(["/usr/bin/pgrep", "-xq", "System Settings"], check=False)
+    already_open = pgrep.returncode == 0
+    subprocess.run(["/usr/bin/open", WALLPAPER_SETTINGS_URL], check=False)  # noqa: S603
+    deadline = time.monotonic() + MANIFEST_WAIT_SECONDS
+    while not manifest_ready() and time.monotonic() < deadline:
+        time.sleep(MANIFEST_POLL_SECONDS)
+    if not already_open:
+        subprocess.run(["/usr/bin/osascript", "-e", 'quit app "System Settings"'], check=False)
+    if not manifest_ready():
+        print(
+            "❌ macOS didn't download the aerials catalog. Check your connection, open"
+            " System Settings > Wallpaper, then rerun aerials."
+        )
+        sys.exit(1)
+    print("✅ Downloaded the aerials catalog.")
+
+
 def validate_environment() -> None:
     """Validates that all required paths and files exist."""
+    ensure_manifest()
     if not pathlib.Path(AERIALS_PATH).is_dir():
         print("❌ Unable to find aerials path.")
         sys.exit(1)
