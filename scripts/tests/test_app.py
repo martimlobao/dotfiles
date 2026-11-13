@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING, Any
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import pytest
 import tomlkit
@@ -1594,15 +1594,29 @@ def test_brew_ensure_installed_skips_tap_trust_for_official_tap() -> None:
     runner.run.assert_called_once_with(["brew", "install", "--formula", "homebrew/core/gh"])
 
 
-def test_brew_ensure_installed_trusts_tap_even_when_already_installed(tmp_path: Path) -> None:
+TRUST_LIST = ["brew", "trust", "--json=v1"]
+
+
+def trust_runner(*trusted: str) -> Mock:
+    # `brew trust --json=v1` reports `trusted`; every other command succeeds.
     runner = Mock(spec=app_module.CommandRunner)
     runner.get_executable.return_value = "brew"
-    runner.run.return_value = make_result()
+
+    def run(command: list[str], **_: object) -> SimpleNamespace:
+        if command == TRUST_LIST:
+            return make_result(stdout=json.dumps({"taps": list(trusted)}))
+        return make_result()
+
+    runner.run.side_effect = run
+    return runner
+
+
+def test_brew_ensure_installed_trusts_tap_even_when_already_installed() -> None:
+    runner = trust_runner()
     console = app_module.Console()
     service = app_module.BrewFormulaSourceService(runner=runner, console=console)
 
     with (
-        patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
         patch.object(service, "is_installed", return_value=True),
         patch.object(console, "prompt_yes_no", return_value=True) as prompt,
     ):
@@ -1610,80 +1624,77 @@ def test_brew_ensure_installed_trusts_tap_even_when_already_installed(tmp_path: 
 
     prompt.assert_called_once_with("Trust Homebrew tap owner/tap? (y/n) ", auto_yes=False)
     assert result.skipped
-    runner.run.assert_called_once_with(["brew", "trust", "--tap", "owner/tap"])
+    assert runner.run.call_args_list == [
+        call(TRUST_LIST, check=False),
+        call(["brew", "trust", "--tap", "owner/tap"]),
+    ]
 
 
-def test_brew_ensure_installed_skips_prompt_for_already_trusted_tap(tmp_path: Path) -> None:
-    trust_file = tmp_path / "trust.json"
-    trust_file.write_text(json.dumps({"trustedtaps": ["owner/tap"]}))
-    runner = Mock(spec=app_module.CommandRunner)
-    runner.get_executable.return_value = "brew"
-    runner.run.return_value = make_result()
+def test_brew_ensure_installed_skips_prompt_for_already_trusted_tap() -> None:
+    runner = trust_runner("Owner/Tap")
     console = app_module.Console()
     service = app_module.BrewFormulaSourceService(runner=runner, console=console)
 
     with (
         patch("app_module.platform.system", return_value="Darwin"),
-        patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
         patch.object(service, "is_installed", return_value=False),
         patch.object(console, "prompt_yes_no") as prompt,
     ):
         service.ensure_installed("owner/tap/tool")
 
     prompt.assert_not_called()
-    runner.run.assert_called_once_with(["brew", "install", "--formula", "owner/tap/tool"])
-
-
-def test_brew_ensure_installed_trusts_tap_when_prompt_accepted(tmp_path: Path) -> None:
-    runner = Mock(spec=app_module.CommandRunner)
-    runner.get_executable.return_value = "brew"
-    runner.run.return_value = make_result()
-    console = app_module.Console()
-    service = app_module.BrewFormulaSourceService(runner=runner, console=console)
-
-    with (
-        patch("app_module.platform.system", return_value="Darwin"),
-        patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
-        patch.object(service, "is_installed", return_value=False),
-        patch.object(console, "prompt_yes_no", return_value=True) as prompt,
-    ):
-        service.ensure_installed("owner/tap/tool")
-
-    prompt.assert_called_once_with("Trust Homebrew tap owner/tap? (y/n) ", auto_yes=False)
     assert runner.run.call_args_list == [
-        ((["brew", "trust", "--tap", "owner/tap"],), {}),
-        ((["brew", "install", "--formula", "owner/tap/tool"],), {}),
+        call(TRUST_LIST, check=False),
+        call(["brew", "install", "--formula", "owner/tap/tool"]),
     ]
 
 
-def test_brew_ensure_installed_does_not_trust_tap_when_prompt_declined(tmp_path: Path) -> None:
-    runner = Mock(spec=app_module.CommandRunner)
-    runner.get_executable.return_value = "brew"
-    runner.run.return_value = make_result()
+@pytest.mark.parametrize("accept", [True, False])
+def test_brew_ensure_installed_asks_about_each_tap_once(*, accept: bool) -> None:
+    runner = trust_runner()
     console = app_module.Console()
     service = app_module.BrewFormulaSourceService(runner=runner, console=console)
 
     with (
         patch("app_module.platform.system", return_value="Darwin"),
-        patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
         patch.object(service, "is_installed", return_value=False),
+        patch.object(console, "prompt_yes_no", return_value=accept) as prompt,
+    ):
+        service.ensure_installed("owner/tap/one")
+        service.ensure_installed("owner/tap/two")
+
+    prompt.assert_called_once_with("Trust Homebrew tap owner/tap? (y/n) ", auto_yes=False)
+    trust = [call(["brew", "trust", "--tap", "owner/tap"])] if accept else []
+    assert runner.run.call_args_list == [
+        call(TRUST_LIST, check=False),
+        *trust,
+        call(["brew", "install", "--formula", "owner/tap/one"]),
+        call(["brew", "install", "--formula", "owner/tap/two"]),
+    ]
+
+
+def test_brew_ensure_installed_prompts_when_trust_list_is_unreadable() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(returncode=1, stderr="Unknown option --json")
+    console = app_module.Console()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=console)
+
+    with (
+        patch.object(service, "is_installed", return_value=True),
         patch.object(console, "prompt_yes_no", return_value=False) as prompt,
     ):
         service.ensure_installed("owner/tap/tool")
 
-    prompt.assert_called_once_with("Trust Homebrew tap owner/tap? (y/n) ", auto_yes=False)
-    runner.run.assert_called_once_with(["brew", "install", "--formula", "owner/tap/tool"])
+    prompt.assert_called_once()
 
 
-def test_brew_ensure_installed_auto_trusts_tap_without_prompt(tmp_path: Path) -> None:
-    runner = Mock(spec=app_module.CommandRunner)
-    runner.get_executable.return_value = "brew"
-    runner.run.return_value = make_result()
+def test_brew_ensure_installed_auto_trusts_tap_without_prompt() -> None:
+    runner = trust_runner()
     console = app_module.Console()
     service = app_module.BrewCaskSourceService(runner=runner, console=console)
 
     with (
-        patch.dict(app_module.os.environ, {"HOMEBREW_USER_CONFIG_HOME": str(tmp_path)}),
         patch.object(service, "is_installed", return_value=False),
         patch.object(service, "pre_install_check", return_value=None),
         patch.object(console, "prompt_yes_no") as prompt,
@@ -1692,8 +1703,9 @@ def test_brew_ensure_installed_auto_trusts_tap_without_prompt(tmp_path: Path) ->
 
     prompt.assert_not_called()
     assert runner.run.call_args_list == [
-        ((["brew", "trust", "--tap", "owner/tap"],), {}),
-        ((["brew", "install", "--cask", "owner/tap/tool"],), {}),
+        call(TRUST_LIST, check=False),
+        call(["brew", "trust", "--tap", "owner/tap"]),
+        call(["brew", "install", "--cask", "owner/tap/tool"]),
     ]
 
 

@@ -788,6 +788,7 @@ class BrewSourceService(BaseSourceService, ABC):
     provider_name: ClassVar[str] = "brew"
     info_entries_key: ClassVar[str] = ""
     list_flag: ClassVar[str] = ""
+    _settled_taps_cache: set[str] | None = None
 
     def _brew(self) -> str:
         self._ensure_xcode_license()
@@ -827,9 +828,14 @@ class BrewSourceService(BaseSourceService, ABC):
 
     def prepare_install(self, app: str, *, auto_yes: bool) -> None:
         tap: str | None = self._third_party_tap(app)
-        if tap is None or self._tap_is_trusted(tap):
+        if tap is None:
+            return
+        settled: set[str] = self._settled_taps()
+        if tap.casefold() in settled:
             return
 
+        # Remember the answer either way, so each tap is asked about once.
+        settled.add(tap.casefold())
         if auto_yes or self.console.prompt_yes_no(
             f"Trust Homebrew tap {tap}? (y/n) ",
             auto_yes=False,
@@ -848,28 +854,21 @@ class BrewSourceService(BaseSourceService, ABC):
             return None
         return tap
 
-    def _tap_is_trusted(self, tap: str) -> bool:
-        trust_file = self._trust_file()
-        try:
-            store = json.loads(trust_file.read_text())
-        except (OSError, json.JSONDecodeError):
-            return False
-
-        if not isinstance(store, dict):
-            return False
-
-        trusted_taps = store.get("trustedtaps", [])
-        if not isinstance(trusted_taps, list):
-            return False
-
-        return tap.casefold() in {str(trusted_tap).casefold() for trusted_tap in trusted_taps}
-
-    @staticmethod
-    def _trust_file() -> Path:
-        config_home = os.environ.get("HOMEBREW_USER_CONFIG_HOME")
-        if config_home:
-            return Path(config_home) / "trust.json"
-        return Path.home() / ".homebrew" / "trust.json"
+    def _settled_taps(self) -> set[str]:
+        # Taps that need no trust prompt: trusted, or answered this run.
+        if self._settled_taps_cache is None:
+            # Ask brew rather than reading its trust file, whose location
+            # depends on XDG_CONFIG_HOME and the brew install.
+            brew: str = self._brew()
+            result = self.runner.run([brew, "trust", "--json=v1"], check=False)
+            try:
+                taps: JSON = json.loads(result.stdout).get("taps")
+            except (json.JSONDecodeError, AttributeError):
+                taps = None
+            self._settled_taps_cache = {
+                str(tap).casefold() for tap in (taps if isinstance(taps, list) else [])
+            }
+        return self._settled_taps_cache
 
     def validate_declared(self, apps: list[str]) -> None:
         # Homebrew migrates packages between formula and cask, and an
