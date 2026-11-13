@@ -136,6 +136,22 @@ if [[ ${os} == "Linux" ]]; then
 fi
 
 ###############################################################################
+# Set default browser                                                         #
+###############################################################################
+# Runs after app sync, which installs Dia and defaultbrowser
+echo
+browsers=$(defaultbrowser 2>/dev/null || true)
+if [[ ${browsers} == *"* dia"* ]]; then
+	echo -e "✅ \033[1;32mDia is already the default browser.\033[0m"
+# App sync can skip casks or formulae, leaving Dia or defaultbrowser uninstalled
+elif [[ ${browsers} != *" dia"* ]]; then
+	echo -e "⏭️  \033[1;33mSkipping the default browser: Dia or defaultbrowser isn't installed.\033[0m"
+else
+	echo -e "🌐 \033[1;33mSetting Dia as the default browser, confirm it in the dialog...\033[0m"
+	defaultbrowser dia
+fi
+
+###############################################################################
 # Configure macOS Dock                                                        #
 ###############################################################################
 echo
