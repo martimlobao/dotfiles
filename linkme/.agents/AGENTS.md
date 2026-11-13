@@ -70,12 +70,12 @@ Taste covers UI/UX, code quality, API design, and copy.
 | model         | cost | intelligence | taste |
 | ------------- | ---- | ------------ | ----- |
 | gpt-6-luna    | 10   | 3            | 2     |
-| gpt-5.6-terra | 7    | 5            | 5     |
+| gpt-6.1-terra | 7    | 5            | 5     |
 | gpt-6.1-sol   | 8    | 7            | 7     |
 | gpt-6-astra   | 2    | 9            | 8     |
-| sonnet-5      | 5    | 4            | 7     |
+| sonnet-5.5    | 5    | 4            | 7     |
 | opus-5.5      | 4    | 8            | 8     |
-| fable-5.1     | 1    | 8            | 9     |
+| fable-5.2     | 1    | 9            | 9     |
 
 How to apply:
 
@@ -87,8 +87,6 @@ How to apply:
   option.
 - Bulk/mechanical work (clear-spec implementation, data analysis, migrations): gpt-6-luna - it's
   effectively free.
-- Never pick gpt-5.6-terra or gpt-5.6-luna as gpt-6.1-sol and gpt-6-luna are strictly better,
-  respectively.
 
 ## Blast radius
 
