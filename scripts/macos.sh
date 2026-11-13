@@ -68,36 +68,103 @@ function set_collection {
 	fi
 }
 
-function set_finder_calculate_all_sizes {
-	# enables "Calculate all sizes" in Finder's default list view settings
-	# These are nested dicts, so edit an exported copy and write the edited top-level dicts back:
-	# writing the plist file directly can be clobbered by the copy cached in cfprefsd, and importing
-	# the whole domain would revert anything Finder saved in the meantime
-	local plist path top changed_tops=""
-	plist=$(mktemp)
-	defaults export com.apple.finder - >"${plist}"
-	# StandardViewSettings are Finder's default views and FK_StandardViewSettings the open/save panels'
-	for path in StandardViewSettings:ListViewSettings StandardViewSettings:ExtendedListViewSettingsV2 \
-		FK_StandardViewSettings:ListViewSettings FK_StandardViewSettings:ExtendedListViewSettingsV2; do
-		local label="com.apple.finder ${path}:calculateAllSizes = true"
-		if [[ $(/usr/libexec/PlistBuddy -c "Print :${path}:calculateAllSizes" "${plist}" 2>/dev/null || true) == "true" ]]; then
-			already_set "${label}"
-		else
-			# The parent dicts don't exist on a clean Mac
-			/usr/libexec/PlistBuddy -c "Add :${path%%:*} dict" "${plist}" >/dev/null 2>&1 || true
-			/usr/libexec/PlistBuddy -c "Add :${path} dict" "${plist}" >/dev/null 2>&1 || true
-			/usr/libexec/PlistBuddy -c "Delete :${path}:calculateAllSizes" "${plist}" >/dev/null 2>&1 || true
-			/usr/libexec/PlistBuddy -c "Add :${path}:calculateAllSizes bool true" "${plist}"
-			changed_tops="${changed_tops} ${path%%:*}"
-			updated "${label}"
-		fi
+# Finder keeps its view options in nested dicts, which `defaults write` can't edit in place, so
+# finder_view_option and finder_view_column edit an exported copy and finder_views_save writes the
+# edited top-level dicts back: writing the plist file directly can be clobbered by the copy cached
+# in cfprefsd, and importing the whole domain would revert anything Finder saved in the meantime
+finder_plist=""
+# Space-separated list of the top-level dicts edited in finder_plist
+finder_changed_tops=""
+
+function finder_plist_load {
+	if [[ -z ${finder_plist} ]]; then
+		finder_plist=$(mktemp)
+		defaults export com.apple.finder - >"${finder_plist}"
+	fi
+}
+
+function finder_plist_add {
+	# adds an entry to finder_plist if it's missing
+	# usage: finder_plist_add <path> <type> [value]
+	if ! /usr/libexec/PlistBuddy -c "Print :${1}" "${finder_plist}" >/dev/null 2>&1; then
+		/usr/libexec/PlistBuddy -c "Add :${1} ${2}${3:+ ${3}}" "${finder_plist}"
+	fi
+}
+
+function finder_plist_set {
+	# sets a value in finder_plist only if it differs, creating the parent dicts a clean Mac lacks
+	# usage: finder_plist_set <label> <dict path> <key> <bool|real|string> <value>
+	local label="${1}" path="${2}" key="${3}" type="${4}" value="${5}"
+	finder_plist_load
+	local current
+	current=$(/usr/libexec/PlistBuddy -c "Print :${path}:${key}" "${finder_plist}" 2>/dev/null || true)
+	# PlistBuddy prints reals as e.g. 32.000000, and Finder stores some sizes as integers
+	if [[ ${type} == "real" && -n ${current} ]]; then
+		current=$(printf '%g' "${current}")
+	fi
+	if [[ ${current} == "${value}" ]]; then
+		already_set "${label}"
+		return
+	fi
+	local part parent=""
+	local -a parts
+	IFS=: read -ra parts <<<"${path}"
+	for part in "${parts[@]}"; do
+		parent="${parent:+${parent}:}${part}"
+		finder_plist_add "${parent}" dict
 	done
-	for top in StandardViewSettings FK_StandardViewSettings; do
-		if [[ " ${changed_tops} " == *" ${top} "* ]]; then
-			defaults write com.apple.finder "${top}" "$(plutil -extract "${top}" xml1 -o - "${plist}")"
-		fi
+	/usr/libexec/PlistBuddy -c "Delete :${path}:${key}" "${finder_plist}" >/dev/null 2>&1 || true
+	/usr/libexec/PlistBuddy -c "Add :${path}:${key} ${type} ${value}" "${finder_plist}"
+	finder_changed_tops="${finder_changed_tops} ${path%%:*}"
+	updated "${label}"
+}
+
+function finder_view_option {
+	# sets a Finder view option, e.g. in the default list view
+	# usage: finder_view_option <view settings path> <key> <bool|real|string> <value>
+	# example: finder_view_option StandardViewSettings:ListViewSettings iconSize real 32
+	finder_plist_set "com.apple.finder ${1}:${2} = ${4}" "$@"
+}
+
+function finder_view_column {
+	# shows or hides a list view column
+	# usage: finder_view_column <list view settings path> <column identifier> <true|false>
+	local path="${1}" column="${2}" visible="${3}"
+	local label="com.apple.finder ${path} column ${column} visible = ${visible}"
+	if [[ ${path} != *ExtendedListViewSettingsV2 ]]; then
+		# ListViewSettings keys its columns by identifier
+		finder_plist_set "${label}" "${path}:columns:${column}" visible bool "${visible}"
+		return
+	fi
+	# ExtendedListViewSettingsV2 keeps its columns in an array, so find the column's index
+	finder_plist_load
+	finder_plist_add "${path%%:*}" dict
+	finder_plist_add "${path}" dict
+	finder_plist_add "${path}:columns" array
+	local i=0 identifier=""
+	while true; do
+		# Printing past the end of the array fails; `|| true` keeps the error trap quiet
+		identifier=$(/usr/libexec/PlistBuddy -c "Print :${path}:columns:${i}:identifier" \
+			"${finder_plist}" 2>/dev/null || true)
+		[[ -z ${identifier} || ${identifier} == "${column}" ]] && break
+		i=$((i + 1))
 	done
-	rm -f "${plist}"
+	if [[ ${identifier} != "${column}" ]]; then
+		finder_plist_add "${path}:columns:${i}" dict
+		finder_plist_add "${path}:columns:${i}:identifier" string "${column}"
+	fi
+	finder_plist_set "${label}" "${path}:columns:${i}" visible bool "${visible}"
+}
+
+function finder_views_save {
+	# writes the top-level dicts edited by finder_view_option and finder_view_column back
+	local top
+	for top in $(echo "${finder_changed_tops}" | tr ' ' '\n' | sort -u); do
+		defaults write com.apple.finder "${top}" "$(plutil -extract "${top}" xml1 -o - "${finder_plist}")"
+	done
+	rm -f "${finder_plist}"
+	finder_plist=""
+	finder_changed_tops=""
 }
 
 function set_pmset {
@@ -182,7 +249,50 @@ set_default com.apple.finder ShowMountedServersOnDesktop bool true
 set_default com.apple.finder ShowRemovableMediaOnDesktop bool true
 set_default com.apple.desktopservices DSDontWriteNetworkStores bool true
 set_default com.apple.desktopservices DSDontWriteUSBStores bool true
-set_finder_calculate_all_sizes
+# Sidebar: show it with Locations expanded and Tags and iCloud collapsed
+set_default com.apple.finder ShowSidebar bool true
+set_default com.apple.finder SidebarDevicesSectionDisclosedState bool true
+set_default com.apple.finder SidebarPlacesSectionDisclosedState bool true
+# Apple's own typo: the key really is "Sction"
+set_default com.apple.finder SidebarTagsSctionDisclosedState bool false
+set_default com.apple.finder SidebariCloudDriveSectionDisclosedState bool false
+
+# The list view every location uses: the default for Finder windows (StandardViewSettings) and
+# open/save panels (FK_StandardViewSettings), plus the locations Finder keeps their own view for.
+# The Trash is sorted by date added, and finder_views.py makes Downloads match it
+for settings in StandardViewSettings FK_StandardViewSettings ComputerViewSettings ICloudViewSettings \
+	NetworkViewSettings TrashViewSettings; do
+	sort=name
+	[[ ${settings} == TrashViewSettings ]] && sort=dateAdded
+	# ExtendedListViewSettingsV2 supersedes ListViewSettings on newer macOS
+	for view in "${settings}:ListViewSettings" "${settings}:ExtendedListViewSettingsV2"; do
+		finder_view_option "${view}" calculateAllSizes bool true
+		# 32 is the "large" icon size option
+		finder_view_option "${view}" iconSize real 32
+		finder_view_option "${view}" textSize real 13
+		finder_view_option "${view}" sortColumn string "${sort}"
+		finder_view_option "${view}" useRelativeDates bool true
+		finder_view_option "${view}" showIconPreview bool true
+		# Set every column so a clean Mac, which has no column list yet, gets exactly these
+		for column in name dateModified dateCreated size kind; do
+			finder_view_column "${view}" "${column}" true
+		done
+		for column in label version comments dateLastOpened ubiquity shareOwner shareLastEditor \
+			invitationStatus; do
+			finder_view_column "${view}" "${column}" false
+		done
+		finder_view_column "${view}" dateAdded "$([[ ${sort} == dateAdded ]] && echo true || echo false)"
+	done
+done
+
+# Desktop icons: sorted by name, with item info such as the free space under each drive
+finder_view_option DesktopViewSettings:IconViewSettings arrangeBy string name
+finder_view_option DesktopViewSettings:IconViewSettings iconSize real 64
+finder_view_option DesktopViewSettings:IconViewSettings showItemInfo bool true
+finder_views_save
+
+# The home folder and the folders in it keep any view saved for them over the defaults above
+uv run "${root}/scripts/finder_views.py"
 
 ###############################################################################
 # Trackpad                                                                    #
@@ -267,6 +377,9 @@ set_default NSGlobalDomain AppleInterfaceStyle string Dark
 # Reopen windows when relaunching apps ("Close windows when quitting an application" off)
 set_default NSGlobalDomain NSQuitAlwaysKeepsWindows bool true
 set_default com.apple.WindowManager EnableTiledWindowMargins bool false
+# Hide widgets on the desktop and in Stage Manager
+set_default com.apple.WindowManager StandardHideWidgets bool true
+set_default com.apple.WindowManager StageManagerHideWidgets bool true
 
 ###############################################################################
 # Dock, Mission Control & hot corners                                         #

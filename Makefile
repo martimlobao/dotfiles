@@ -4,7 +4,7 @@ SHELL=/bin/bash
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 MAKEFLAGS += -j$(JOBS) --output-sync=target
 
-.PHONY: check test test-app test-aerials \
+.PHONY: check test test-app test-aerials test-finder-views \
         lint-apps lint-checkov lint-jsort lint-oxipng lint-ruff lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
 
 # All tracked shell scripts (recursive, includes repo root).
@@ -63,6 +63,8 @@ lint-ty:
 	uvx --with-requirements scripts/app.py ty check scripts/app.py
 	uvx --with-requirements scripts/tests/test_app.py ty check scripts/tests/test_app.py
 	uvx --with-requirements scripts/aerials.py --with-requirements scripts/tests/test_aerials.py ty check scripts/tests/test_aerials.py
+	uvx --with-requirements scripts/finder_views.py ty check scripts/finder_views.py
+	uvx --with-requirements scripts/finder_views.py --with-requirements scripts/tests/test_finder_views.py ty check scripts/tests/test_finder_views.py
 
 lint-yamllint:
 	uvx yamllint -c linkme/.config/yamllint/config .
@@ -75,11 +77,17 @@ test-aerials:
 	uvx --with-requirements scripts/aerials.py --with-requirements scripts/tests/test_aerials.py \
 		pytest scripts/tests/test_aerials.py
 
+test-finder-views:
+	uvx --with-requirements scripts/finder_views.py --with-requirements scripts/tests/test_finder_views.py \
+		pytest scripts/tests/test_finder_views.py
+
 test:
 	mkdir -p temp
 	COVERAGE_FILE=temp/.coverage.total \
 	uvx --with-requirements scripts/app.py --with-requirements scripts/aerials.py \
+		--with-requirements scripts/finder_views.py \
 		--with-requirements scripts/tests/test_app.py \
 		--with-requirements scripts/tests/test_aerials.py \
-		pytest scripts/tests/test_app.py scripts/tests/test_aerials.py \
-		--cov=app_module --cov=aerials_module --cov-report=term-missing --cov-fail-under=80
+		--with-requirements scripts/tests/test_finder_views.py \
+		pytest scripts/tests/test_app.py scripts/tests/test_aerials.py scripts/tests/test_finder_views.py \
+		--cov=app_module --cov=aerials_module --cov=finder_views_module --cov-report=term-missing --cov-fail-under=80
