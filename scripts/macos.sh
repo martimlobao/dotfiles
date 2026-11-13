@@ -329,10 +329,19 @@ if [[ $(sysadminctl -screenLock status 2>&1 || true) == *"screenLock delay is 5 
 	already_set "${label}"
 elif [[ ${CI-} == "true" ]]; then
 	echo -e "⏭️  \033[1;33mSkipping ${label} in CI.\033[0m"
+# A profile's screensaver settings land here (machine- or user-level), and macOS then refuses to
+# change the delay, so don't ask for a password that can't help.
+elif [[ -f "/Library/Managed Preferences/com.apple.screensaver.plist" ||
+	-f "/Library/Managed Preferences/${USER}/com.apple.screensaver.plist" ]]; then
+	echo -e "ℹ️  \033[1;34mSkipping ${label}: the screen lock is managed by a configuration profile.\033[0m"
 else
 	echo -e "🔑 \033[1;35mSetting the screen lock delay requires your login password:\033[0m"
-	sysadminctl -screenLock 5 -password -
-	updated "${label}"
+	# Not worth aborting the rest of the setup over, e.g. on a mistyped password.
+	if sysadminctl -screenLock 5 -password -; then
+		updated "${label}"
+	else
+		echo -e "⏭️  \033[1;33mCouldn't set the ${label}, set it in System Settings > Lock Screen.\033[0m"
+	fi
 fi
 
 ###############################################################################
