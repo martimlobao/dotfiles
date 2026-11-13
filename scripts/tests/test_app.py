@@ -15,10 +15,12 @@ import builtins
 import importlib.util
 import json
 import sys
+import threading
+import time
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING, Any
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import pytest
 import tomlkit
@@ -1063,6 +1065,46 @@ def test_facade_sync_apps_orchestrates(tmp_path: Path) -> None:
     prime.assert_called_once()
     sync_unmanaged.assert_called_once()
     upgrade.assert_called_once()
+
+
+def test_sudo_kept_alive_skipped_without_brew_sources(tmp_path: Path) -> None:
+    facade, _, runner = build_facade(tmp_path)
+    with facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources={"uv", "mas"})):
+        pass
+    runner.run.assert_not_called()
+
+
+def test_sudo_kept_alive_skips_refresh_when_sudo_fails(tmp_path: Path) -> None:
+    facade, _, runner = build_facade(tmp_path)
+    runner.run.return_value = make_result(returncode=1)
+    with (
+        patch.object(app_module.threading, "Thread") as thread,
+        facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources={"cask"})),
+    ):
+        pass
+    runner.run.assert_called_once_with(["sudo", "-v"], check=False, capture_output=False)
+    thread.assert_not_called()
+
+
+def test_sudo_kept_alive_refreshes_until_sync_ends(tmp_path: Path) -> None:
+    facade, _, runner = build_facade(tmp_path)
+    refreshed = threading.Event()
+
+    def run(command: list[str], **_: object) -> SimpleNamespace:
+        if command == ["sudo", "-n", "-v"]:
+            refreshed.set()
+        return make_result()
+
+    runner.run.side_effect = run
+    with (
+        patch.object(app_module, "SUDO_REFRESH_SECONDS", 0.01),
+        facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources={"formula"})),
+    ):
+        assert refreshed.wait(5)
+    calls_at_exit = runner.run.call_count
+    time.sleep(0.05)
+    assert runner.run.call_count == calls_at_exit
+    assert runner.run.call_args_list[0] == call(["sudo", "-v"], check=False, capture_output=False)
 
 
 def test_facade_validate_apps_checks_each_source(tmp_path: Path) -> None:
