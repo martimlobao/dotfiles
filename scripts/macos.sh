@@ -155,8 +155,10 @@ function finder_view_column {
 	# Columns are placed in order, so every position before this one is already taken and the
 	# column can't be at an index below it
 	if [[ ${identifier} != "${column}" ]]; then
-		finder_plist_add "${path}:columns:${position}" dict
-		finder_plist_add "${path}:columns:${position}:identifier" string "${column}"
+		# Adding at an array index inserts there, even when another column already sits at it
+		/usr/libexec/PlistBuddy -c "Add :${path}:columns:${position} dict" \
+			-c "Add :${path}:columns:${position}:identifier string ${column}" "${finder_plist}"
+		finder_changed_tops="${finder_changed_tops} ${path%%:*}"
 	elif ((i == position)); then
 		already_set "${label} position = ${position}"
 	else
