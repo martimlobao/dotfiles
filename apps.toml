@@ -1,6 +1,7 @@
 [core]
 1password = "cask"  # Password manager that keeps all passwords secure behind one password
 1password-cli = "cask"  # Command-line interface for 1Password [command: op]
+gh = "formula"  # GitHub command-line tool
 mas = "formula"  # Mac App Store command-line interface
 uv = "formula"  # Extremely fast Python package installer and resolver, written in Rust
 
@@ -110,7 +111,6 @@ domain-check = "formula"  # CLI tool for checking domain availability using RDAP
 exiftool = "formula"  # Perl lib for reading and writing EXIF metadata
 eza = "formula"  # Modern, maintained replacement for ls
 ffmpeg = "formula"  # Play, record, convert, and stream audio and video
-gh = "formula"  # GitHub command-line tool
 ghostscript = "formula"  # Interpreter for PostScript and PDF
 git-who = "formula"  # Git blame for file trees
 httpie = "uv"  # User-friendly cURL replacement (command-line HTTP client)
