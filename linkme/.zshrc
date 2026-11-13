@@ -84,10 +84,20 @@ plugins=(
 	thefuck
 )
 
-# Workbrew-managed Macs own /opt/homebrew as the `workbrew` user, which compaudit flags as
-# insecure. oh-my-zsh would then drop those dirs (zsh's own functions included) from fpath,
-# breaking add-zsh-hook and compdump.
-ZSH_DISABLE_COMPFIX=true
+# compaudit only trusts dirs owned by root or you, but Workbrew-managed Macs own /opt/homebrew
+# as the `workbrew` user. oh-my-zsh would then drop those dirs (zsh's own functions included)
+# from fpath, breaking add-zsh-hook and compdump. Skip the check only when everything it flags
+# is Workbrew's and not writable by anyone else.
+autoload -Uz compaudit
+() {
+	(( $# )) || return
+	local f
+	for f in "$@"; do
+		local -a ok=(${~f}(Nu:workbrew:^IW))
+		(( $#ok )) || return
+	done
+	ZSH_DISABLE_COMPFIX=true
+} ${(f)"$(compaudit 2>/dev/null)"}
 source $ZSH/oh-my-zsh.sh
 
 # Activate Homebrew-installed plugins
