@@ -14,9 +14,9 @@
 	# Use gh's login for GitHub over HTTPS (e.g. private Homebrew taps). The
 	# osxkeychain helper prompts for the keychain password when the github.com
 	# entry was saved by a different git binary. The empty helper clears it.
-	# Absolute path because Homebrew runs git with a PATH that omits its bin.
+	# Homebrew runs git with a PATH that omits its bin, so add every prefix.
 	helper =
-	helper = !/opt/homebrew/bin/gh auth git-credential
+	helper = !PATH=\"/opt/homebrew/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin:$PATH\" gh auth git-credential
 
 [core]
 	editor = nano
