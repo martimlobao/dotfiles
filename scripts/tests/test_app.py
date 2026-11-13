@@ -1078,10 +1078,11 @@ def test_sudo_kept_alive_skipped_when_brew_needs_no_sudo(
     facade, _, runner = build_facade(tmp_path)
     with (
         patch("app_module.platform.system", return_value=system),
+        patch.dict(os.environ, {"HOMEBREW_SUDO_CHECKED": "0"}),
         patch.object(app_module.threading, "Thread") as thread,
         facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources=sources)),
     ):
-        assert "HOMEBREW_SUDO_CHECKED" not in os.environ
+        assert os.environ["HOMEBREW_SUDO_CHECKED"] == "0"
     runner.run.assert_not_called()
     thread.assert_not_called()
 

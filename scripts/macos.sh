@@ -142,8 +142,11 @@ function finder_view_column {
 	finder_plist_add "${path}" dict
 	finder_plist_add "${path}:columns" array
 	local i=0 identifier=""
-	while identifier=$(/usr/libexec/PlistBuddy -c "Print :${path}:columns:${i}:identifier" "${finder_plist}" 2>/dev/null); do
-		[[ ${identifier} == "${column}" ]] && break
+	while true; do
+		# Printing past the end of the array fails; `|| true` keeps the error trap quiet
+		identifier=$(/usr/libexec/PlistBuddy -c "Print :${path}:columns:${i}:identifier" \
+			"${finder_plist}" 2>/dev/null || true)
+		[[ -z ${identifier} || ${identifier} == "${column}" ]] && break
 		i=$((i + 1))
 	done
 	if [[ ${identifier} != "${column}" ]]; then
@@ -250,6 +253,7 @@ set_default com.apple.desktopservices DSDontWriteUSBStores bool true
 set_default com.apple.finder ShowSidebar bool true
 set_default com.apple.finder SidebarDevicesSectionDisclosedState bool true
 set_default com.apple.finder SidebarPlacesSectionDisclosedState bool true
+# Apple's own typo: the key really is "Sction"
 set_default com.apple.finder SidebarTagsSctionDisclosedState bool false
 set_default com.apple.finder SidebariCloudDriveSectionDisclosedState bool false
 
@@ -273,7 +277,8 @@ for settings in StandardViewSettings FK_StandardViewSettings ComputerViewSetting
 		for column in name dateModified dateCreated size kind; do
 			finder_view_column "${view}" "${column}" true
 		done
-		for column in label version comments dateLastOpened; do
+		for column in label version comments dateLastOpened ubiquity shareOwner shareLastEditor \
+			invitationStatus; do
 			finder_view_column "${view}" "${column}" false
 		done
 		finder_view_column "${view}" dateAdded "$([[ ${sort} == dateAdded ]] && echo true || echo false)"
@@ -286,7 +291,7 @@ finder_view_option DesktopViewSettings:IconViewSettings iconSize real 64
 finder_view_option DesktopViewSettings:IconViewSettings showItemInfo bool true
 finder_views_save
 
-# Folders whose view was ever changed keep their own and ignore the defaults above
+# The home folder and the folders in it keep any view saved for them over the defaults above
 uv run "${root}/scripts/finder_views.py"
 
 ###############################################################################

@@ -3,19 +3,23 @@
 # /// script
 # requires-python = ">=3.13,<3.14"
 # dependencies = [
-#     "ds-store>=1.3.3,<2.0.0",
+#     "ds-store>=1.3.2,<2.0.0",
 # ]
 # [tool.uv]
 # exclude-newer = "2026-02-12T00:00:00Z"
 # ///
 
-"""Make every folder under the home folder use Finder's default views.
+"""Make the home folder and the folders in it use Finder's default views.
 
 Finder saves a folder's view in its parent's .DS_Store as soon as the view
-is changed, and that overrides the defaults macos.sh sets. Strip those
-records so every folder falls back to the defaults, except Downloads, which
-gets the Trash's view (the default list view sorted by date added). Other
-records, such as icon positions and window sizes, are left alone.
+is changed, and that overrides the defaults macos.sh sets. The views of the
+home folder (stored as ".") and of every folder in it live in ~/.DS_Store, so
+whenever it holds a saved view, replace it with one that only pins Downloads
+to the Trash's view (the default list view sorted by date added).
+
+The rest of ~/.DS_Store is a cache Finder rebuilds (icon positions, window
+sizes, expanded rows), so it isn't kept: ds_store can't reliably rewrite a
+store that size, but it can write a small one from scratch.
 """
 
 from __future__ import annotations
@@ -23,14 +27,12 @@ from __future__ import annotations
 import os
 import plistlib
 import subprocess  # noqa: S404
+import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from ds_store import DSStore, DSStoreEntry
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
+from ds_store import store as ds_store_module
 
 # Records holding a folder's view style and the options of each view
 VIEW_CODES = frozenset({
@@ -45,11 +47,14 @@ VIEW_CODES = frozenset({
     b"icvt",
     b"glvp",
 })
-# Finder doesn't browse these, and walking them is slow
-SKIPPED_DIRS = frozenset({"Library", "node_modules"})
 # Finder rewrites these as you scroll, so they aren't part of the view
 SCROLL_KEYS = frozenset({"scrollPositionX", "scrollPositionY"})
 LIST_VIEW = b"Nlsv"
+FINDER_QUIT_TIMEOUT_SECONDS = 10
+
+# Read every record as raw bytes, so views are compared as the plists Finder
+# wrote rather than through ds_store's decoders
+ds_store_module.codecs.clear()
 
 
 @dataclass(frozen=True)
@@ -57,10 +62,30 @@ class PinnedView:
     """The view records a folder must have in its parent's .DS_Store."""
 
     folder: str
-    # ListViewSettings, decoded by ds_store's plist codec
+    # ListViewSettings and ExtendedListViewSettingsV2, without scroll positions
     list_view: dict[str, object]
-    # ExtendedListViewSettingsV2, which ds_store keeps as a raw binary plist
     extended_list_view: dict[str, object]
+
+    def entries(self) -> list[DSStoreEntry]:
+        def plist(view: dict[str, object]) -> bytes:
+            return plistlib.dumps(view, fmt=plistlib.FMT_BINARY)
+
+        return [
+            DSStoreEntry(self.folder, b"vstl", b"type", LIST_VIEW),
+            DSStoreEntry(self.folder, b"lsvp", b"blob", plist(self.list_view)),
+            DSStoreEntry(self.folder, b"lsvC", b"blob", plist(self.extended_list_view)),
+        ]
+
+    def matches(self, entry: DSStoreEntry) -> bool:
+        if entry.filename != self.folder:
+            return False
+        if entry.code == b"vstl":
+            return entry.value == LIST_VIEW
+        view = {b"lsvp": self.list_view, b"lsvC": self.extended_list_view}.get(entry.code)
+        value = entry.value
+        if view is None or not isinstance(value, (bytes, bytearray)):
+            return False
+        return without_scroll(plistlib.loads(bytes(value))) == view
 
 
 def without_scroll(view: dict[str, object]) -> dict[str, object]:
@@ -85,96 +110,58 @@ def downloads_view(preferences: dict[str, object]) -> PinnedView:
     )
 
 
-def ds_stores(home: Path) -> Iterator[Path]:
-    for directory, subdirectories, files in os.walk(home):
-        # Skip hidden folders (including the Trash) and app bundles, which
-        # Finder doesn't browse
-        subdirectories[:] = [
-            name
-            for name in subdirectories
-            if not name.startswith(".") and not name.endswith(".app") and name not in SKIPPED_DIRS
-        ]
-        if ".DS_Store" in files:
-            yield Path(directory) / ".DS_Store"
-
-
-def stale_records(path: Path, pinned: PinnedView | None) -> list[tuple[str, bytes]]:
-    """Returns a .DS_Store's view records to delete, keeping pinned ones."""
-    with DSStore.open(str(path), "r") as store:
-        return [
-            (entry.filename, entry.code)
-            for entry in store
-            if entry.code in VIEW_CODES
-            and not (pinned and entry.filename == pinned.folder and is_pinned(entry, pinned))
-        ]
-
-
-def is_pinned(entry: DSStoreEntry, pinned: PinnedView) -> bool:
-    value: object = entry.value
-    if entry.code == b"vstl":
-        return value == LIST_VIEW
-    if entry.code == b"lsvp" and isinstance(value, dict):
-        return without_scroll(value) == pinned.list_view
-    if entry.code == b"lsvC" and isinstance(value, (bytes, bytearray)):
-        return without_scroll(plistlib.loads(bytes(value))) == pinned.extended_list_view
-    return False
-
-
-def missing_pinned_records(path: Path, pinned: PinnedView) -> bool:
+def is_enforced(path: Path, pinned: PinnedView) -> bool:
+    # Whether the store's only saved views are the pinned ones
     if not path.exists():
-        return True
-    with DSStore.open(str(path), "r") as store:
-        codes = {entry.code for entry in store[pinned.folder] if is_pinned(entry, pinned)}
-    return codes != {b"vstl", b"lsvp", b"lsvC"}
+        return False
+    try:
+        with DSStore.open(str(path), "r") as store:
+            views = [entry for entry in store if entry.code in VIEW_CODES]
+    except Exception as error:  # noqa: BLE001 - a corrupt store is replaced like a stale one
+        print(f"⚠️  \033[1;33mReplacing unreadable {path}: {error}\033[0m")
+        return False
+    # Each code appears once per folder, so this is exactly the pinned records
+    return len(views) == len(pinned.entries()) and all(map(pinned.matches, views))
 
 
-def write_pinned(path: Path, pinned: PinnedView) -> None:
-    with DSStore.open(str(path), "r+" if path.exists() else "w+") as store:
-        records = store[pinned.folder]
-        records["vstl"] = (b"type", LIST_VIEW)
-        records["lsvp"] = pinned.list_view
-        records["lsvC"] = (
-            b"blob",
-            plistlib.dumps(pinned.extended_list_view, fmt=plistlib.FMT_BINARY),
-        )
+def write_store(path: Path, entries: list[DSStoreEntry]) -> None:
+    # Build the new file next to the old one and swap it in, so a failed
+    # write never leaves a half-written .DS_Store behind
+    staging = path.with_name(".DS_Store.finder_views")
+    with DSStore.open(str(staging), "w+") as store:
+        for entry in entries:
+            store.insert(entry)
+    staging.replace(path)
 
 
-def delete_records(path: Path, records: list[tuple[str, bytes]]) -> None:
-    with DSStore.open(str(path), "r+") as store:
-        for filename, code in records:
-            store.delete(filename, code)
+def quit_finder() -> None:
+    """Quits Finder and waits for it to exit; launchd relaunches it."""
+    pids = subprocess.run(
+        ["/usr/bin/pgrep", "-x", "Finder"], check=False, capture_output=True, text=True
+    ).stdout.split()
+    subprocess.run(["/usr/bin/killall", "Finder"], check=False, capture_output=True)
+    deadline = time.monotonic() + FINDER_QUIT_TIMEOUT_SECONDS
+    for pid in map(int, pids):
+        while time.monotonic() < deadline:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.1)
 
 
 def main() -> None:
-    home = Path.home()
     pinned = downloads_view(finder_preferences())
-    pinned_store = home / ".DS_Store"
-
-    stale: dict[Path, list[tuple[str, bytes]]] = {}
-    for path in ds_stores(home):
-        try:
-            records = stale_records(path, pinned if path == pinned_store else None)
-        except Exception as error:  # noqa: BLE001 - a corrupt .DS_Store shouldn't stop the rest
-            print(f"⚠️  \033[1;33mSkipping unreadable {path}: {error}\033[0m")
-            continue
-        if records:
-            stale[path] = records
-    repin = missing_pinned_records(pinned_store, pinned)
-
-    if not stale and not repin:
-        print("✅ \033[1;32mAlready set: every folder uses the default Finder views\033[0m")
+    path = Path.home() / ".DS_Store"
+    if is_enforced(path, pinned):
+        print("✅ \033[1;32mAlready set: home folders use the default Finder views\033[0m")
         return
     # Finder writes the views of open windows back to their .DS_Store when it
-    # quits, so quit it before editing; it relaunches on its own
-    subprocess.run(["/usr/bin/killall", "Finder"], check=False, capture_output=True)
-    for path, records in stale.items():
-        delete_records(path, records)
-    if repin:
-        write_pinned(pinned_store, pinned)
-        print("🔧 \033[1;33mUpdated: Downloads uses the Trash's view\033[0m")
-    if stale:
-        folders = sum(len({filename for filename, _ in records}) for records in stale.values())
-        print(f"🔧 \033[1;33mUpdated: reset {folders} folders to the default Finder views\033[0m")
+    # quits, so let it finish quitting before replacing the file
+    quit_finder()
+    write_store(path, pinned.entries())
+    print("🔧 \033[1;33mUpdated: home folders use the default Finder views\033[0m")
+    print("🔧 \033[1;33mUpdated: Downloads uses the Trash's view\033[0m")
 
 
 if __name__ == "__main__":
