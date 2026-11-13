@@ -106,7 +106,8 @@ source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zs
 
 # 1Password completion and plugins
 eval "$(op completion zsh)"; compdef _op op
-source "$HOME/.config/op/plugins.sh"
+# Agents can't answer 1Password prompts, so they use gh's own keychain login instead.
+[[ -n ${CLAUDECODE-}${CODEX_THREAD_ID-} ]] || source "$HOME/.config/op/plugins.sh"
 
 # Starship completion
 eval "$(starship init zsh)"
