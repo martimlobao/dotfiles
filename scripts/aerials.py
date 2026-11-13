@@ -41,6 +41,7 @@ import json
 import locale
 import pathlib
 import plistlib
+import subprocess  # noqa: S404
 import sys
 import textwrap
 import time
@@ -52,6 +53,7 @@ from contextlib import contextmanager
 from multiprocessing.pool import ApplyResult, ThreadPool
 from pathlib import Path
 from typing import Any, Literal, TypedDict, cast
+from xml.parsers.expat import ExpatError
 
 import requests
 import tqdm
@@ -83,6 +85,9 @@ HTTP_STATUS_RANGE_NOT_SATISFIABLE: int = 416
 DEFAULT_NAME_LENGTH: int = 30  # default length for formatted names
 CACHE_EXPIRY_DAYS: int = 90  # Cache expiry in days
 CACHE_FILE: Path = AERIALS_PATH / "cache.json"
+WALLPAPER_SETTINGS_URL: str = "x-apple.systempreferences:com.apple.Wallpaper-Settings.extension"
+MANIFEST_WAIT_SECONDS: int = 60
+MANIFEST_POLL_SECONDS: int = 2
 
 
 # Type aliases for better readability
@@ -233,8 +238,58 @@ def print_summary(
     print("=" * 50)
 
 
+def manifest_ready(aerials_path: Path = AERIALS_PATH) -> bool:
+    """Returns whether macOS has finished downloading the aerials manifest."""
+    entries_path = aerials_path / ENTRIES_PATH.relative_to(AERIALS_PATH)
+    # Parse rather than just check the files exist: they're written while
+    # the download is still being unpacked.
+    try:
+        json.loads(entries_path.read_text())
+        load_strings(resolve_strings_path(aerials_path))
+    except (OSError, ValueError, ExpatError):
+        return False
+    return True
+
+
+def ensure_manifest() -> None:
+    """Gets macOS to download the aerials manifest if it's missing.
+
+    A fresh Mac only downloads it once the Wallpaper settings are opened,
+    so open them, wait for the download, and close them again.
+    """
+    if manifest_ready():
+        return
+    pgrep = subprocess.run(["/usr/bin/pgrep", "-xq", "System Settings"], check=False)
+    already_open = pgrep.returncode == 0
+    print(
+        "🖼️  macOS hasn't downloaded the aerials catalog yet. Opening Wallpaper settings to"
+        " start the download" + ("..." if already_open else "; they'll close by themselves...")
+    )
+    opened = subprocess.run(["/usr/bin/open", WALLPAPER_SETTINGS_URL], check=False)  # noqa: S603
+    if opened.returncode != 0:
+        print("❌ Couldn't open Wallpaper settings. Open them yourself, then rerun aerials.")
+        sys.exit(1)
+    try:
+        deadline = time.monotonic() + MANIFEST_WAIT_SECONDS
+        while not manifest_ready() and time.monotonic() < deadline:
+            time.sleep(MANIFEST_POLL_SECONDS)
+    finally:
+        if not already_open:
+            # A signal rather than AppleScript, which would first ask for
+            # permission to control System Settings.
+            subprocess.run(["/usr/bin/pkill", "-x", "System Settings"], check=False)
+    if not manifest_ready():
+        print(
+            "❌ macOS didn't download the aerials catalog. Check your connection, open"
+            " System Settings > Wallpaper, then rerun aerials."
+        )
+        sys.exit(1)
+    print("✅ Downloaded the aerials catalog.")
+
+
 def validate_environment() -> None:
     """Validates that all required paths and files exist."""
+    ensure_manifest()
     if not pathlib.Path(AERIALS_PATH).is_dir():
         print("❌ Unable to find aerials path.")
         sys.exit(1)

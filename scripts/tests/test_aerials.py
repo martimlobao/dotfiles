@@ -16,6 +16,7 @@ import plistlib
 import sys
 import warnings
 from pathlib import Path
+from types import SimpleNamespace
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -358,3 +359,80 @@ def test_clear_cache_reports_missing_file(
         aerials_module.clear_cache()
 
     assert "Cache file not found" in capsys.readouterr().out
+
+
+def test_ensure_manifest_skips_settings_when_manifest_exists() -> None:
+    with (
+        patch.object(aerials_module, "manifest_ready", return_value=True),
+        patch.object(aerials_module.subprocess, "run") as run,
+    ):
+        aerials_module.ensure_manifest()
+    run.assert_not_called()
+
+
+@pytest.mark.parametrize("already_open", [True, False])
+def test_ensure_manifest_opens_settings_until_downloaded(*, already_open: bool) -> None:
+    pgrep = SimpleNamespace(returncode=0 if already_open else 1)
+    ok = SimpleNamespace(returncode=0)
+    with (
+        patch.object(aerials_module, "manifest_ready", side_effect=[False, False, True, True]),
+        patch.object(aerials_module.subprocess, "run", side_effect=[pgrep, ok, ok]) as run,
+        patch.object(aerials_module, "MANIFEST_POLL_SECONDS", 0),
+    ):
+        aerials_module.ensure_manifest()
+
+    commands = [c.args[0] for c in run.call_args_list]
+    quit_settings = ["/usr/bin/pkill", "-x", "System Settings"]
+    assert commands[1] == ["/usr/bin/open", aerials_module.WALLPAPER_SETTINGS_URL]
+    # Leave System Settings alone if it was already open before we came.
+    assert (quit_settings in commands) is not already_open
+
+
+def test_ensure_manifest_exits_when_download_never_arrives() -> None:
+    with (
+        patch.object(aerials_module, "manifest_ready", return_value=False),
+        patch.object(
+            aerials_module.subprocess,
+            "run",
+            side_effect=[SimpleNamespace(returncode=1), SimpleNamespace(returncode=0), None],
+        ) as run,
+        patch.object(aerials_module, "MANIFEST_WAIT_SECONDS", 0),
+        pytest.raises(SystemExit),
+    ):
+        aerials_module.ensure_manifest()
+    assert run.call_count == 3
+
+
+def test_manifest_ready_needs_complete_strings_and_entries(tmp_path: Path) -> None:
+    entries = tmp_path / "manifest/entries.json"
+    entries.parent.mkdir()
+    entries.write_text("{}")
+    assert not aerials_module.manifest_ready(tmp_path)
+    strings = aerials_module.resolve_strings_path(tmp_path)
+    strings.parent.mkdir(parents=True)
+    strings.write_text("<plist")
+    assert not aerials_module.manifest_ready(tmp_path)
+    strings.write_bytes(plistlib.dumps({"A007_C0001_NAME": "Sequoia Sunrise"}))
+    assert aerials_module.manifest_ready(tmp_path)
+
+
+def test_ensure_manifest_exits_when_settings_fail_to_open() -> None:
+    results = [SimpleNamespace(returncode=1), SimpleNamespace(returncode=1)]
+    with (
+        patch.object(aerials_module, "manifest_ready", return_value=False),
+        patch.object(aerials_module.subprocess, "run", side_effect=results) as run,
+        pytest.raises(SystemExit),
+    ):
+        aerials_module.ensure_manifest()
+    assert run.call_count == 2
+
+
+def test_ensure_manifest_closes_settings_when_interrupted() -> None:
+    not_open, ok = SimpleNamespace(returncode=1), SimpleNamespace(returncode=0)
+    with (
+        patch.object(aerials_module, "manifest_ready", side_effect=[False, KeyboardInterrupt]),
+        patch.object(aerials_module.subprocess, "run", side_effect=[not_open, ok, ok]) as run,
+        pytest.raises(KeyboardInterrupt),
+    ):
+        aerials_module.ensure_manifest()
+    assert run.call_args_list[-1].args[0] == ["/usr/bin/pkill", "-x", "System Settings"]
