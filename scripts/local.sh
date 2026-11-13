@@ -20,16 +20,21 @@ echo -e "\n🔐 \033[1;35mSigning in to 1Password...\033[0m"
 op_has_account() {
 	[[ $(op account list --format=json </dev/null 2>/dev/null) == *my.1password.com* ]]
 }
+# ~/.ssh/config points at this socket, so the SSH agent must be on too, not just the CLI.
+op_agent_sock="${HOME}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+op_app_ready() {
+	op_has_account && [[ -S ${op_agent_sock} ]]
+}
 # An account added with a typed password (kept in op's own config, unlike the app's) asks for
 # that password on every run, so swap it for the app's.
 if grep -qs "my.1password.com" "${HOME}/.config/op/config"; then
 	op account forget my.1password.com
 fi
-if ! op_has_account; then
+if ! op_app_ready; then
 	open -a 1Password
 	echo -e "ℹ️  \033[1;33mIn the 1Password app that just opened, sign in to my.1password.com, then turn on" \
-		"Settings > Developer > Integrate with 1Password CLI (and the SSH agent). Waiting...\033[0m"
-	until op_has_account; do
+		"Settings > Developer > Integrate with 1Password CLI and Use the SSH agent. Waiting...\033[0m"
+	until op_app_ready; do
 		sleep 2
 	done
 	echo -e "✅ \033[1;32m1Password CLI connected to the app\033[0m"
