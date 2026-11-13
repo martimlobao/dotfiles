@@ -53,7 +53,7 @@ function set_default {
 }
 
 function set_collection {
-	# writes an array/dict preference only if its whitespace-stripped `defaults read` output differs
+	# writes an array preference only if its whitespace-stripped `defaults read` output differs
 	# usage: set_collection <domain> <key> <expected output> <defaults write args...>
 	# example: set_collection NSGlobalDomain AppleLanguages '("en-US")' -array en-US
 	local domain="${1}" key="${2}" expected="${3}"
@@ -70,9 +70,10 @@ function set_collection {
 
 function set_finder_calculate_all_sizes {
 	# enables "Calculate all sizes" in Finder's default list view settings
-	# These are nested dicts, so edit an exported copy and import it back: writing the plist file
-	# directly can be clobbered by the copy cached in cfprefsd
-	local plist path changed_plist=false
+	# These are nested dicts, so edit an exported copy and write the edited top-level dicts back:
+	# writing the plist file directly can be clobbered by the copy cached in cfprefsd, and importing
+	# the whole domain would revert anything Finder saved in the meantime
+	local plist path top changed_tops=""
 	plist=$(mktemp)
 	defaults export com.apple.finder - >"${plist}"
 	# StandardViewSettings are Finder's default views and FK_StandardViewSettings the open/save panels'
@@ -87,13 +88,15 @@ function set_finder_calculate_all_sizes {
 			/usr/libexec/PlistBuddy -c "Add :${path} dict" "${plist}" >/dev/null 2>&1 || true
 			/usr/libexec/PlistBuddy -c "Delete :${path}:calculateAllSizes" "${plist}" >/dev/null 2>&1 || true
 			/usr/libexec/PlistBuddy -c "Add :${path}:calculateAllSizes bool true" "${plist}"
-			changed_plist=true
+			changed_tops="${changed_tops} ${path%%:*}"
 			updated "${label}"
 		fi
 	done
-	if [[ ${changed_plist} == true ]]; then
-		defaults import com.apple.finder "${plist}"
-	fi
+	for top in StandardViewSettings FK_StandardViewSettings; do
+		if [[ " ${changed_tops} " == *" ${top} "* ]]; then
+			defaults write com.apple.finder "${top}" "$(plutil -extract "${top}" xml1 -o - "${plist}")"
+		fi
+	done
 	rm -f "${plist}"
 }
 
@@ -119,6 +122,28 @@ function set_pmset {
 		updated "${label}"
 	fi
 }
+
+function apply_changes {
+	# The processes may not be running (e.g. in CI), so never fail on killall
+	if [[ " ${changed} " == *" Finder "* ]]; then
+		echo -e "\n🔄 \033[1;34mRestarting Finder...\033[0m"
+		killall Finder >/dev/null 2>&1 || true
+	fi
+	if [[ " ${changed} " == *" Dock "* ]]; then
+		echo -e "\n🔄 \033[1;34mRestarting Dock...\033[0m"
+		killall Dock >/dev/null 2>&1 || true
+	fi
+	if [[ " ${changed} " == *" menubar "* ]]; then
+		echo -e "\n🔄 \033[1;34mRestarting the menu bar...\033[0m"
+		killall ControlCenter SystemUIServer >/dev/null 2>&1 || true
+	fi
+	if [[ " ${changed} " == *" logout "* ]]; then
+		echo -e "\nℹ️  \033[1;33mSome of these changes may need a logout to take effect.\033[0m"
+	fi
+}
+# Run on exit rather than at the end: if a later step fails, a rerun would see the settings written
+# so far as already set and never restart the apps that need to pick them up
+trap apply_changes EXIT
 
 ###############################################################################
 # macOS preferences                                                           #
@@ -202,8 +227,14 @@ set_default NSGlobalDomain AppleMetricUnits bool true
 set_default NSGlobalDomain AppleMeasurementUnits string Centimeters
 set_default NSGlobalDomain AppleTemperatureUnit string Celsius
 set_default NSGlobalDomain AppleICUForce24HourTime bool true
-# Short date format (key 1)
-set_collection NSGlobalDomain AppleICUDateFormatStrings '{1="y-MM-dd";}' -dict 1 y-MM-dd
+# Short date format (key 1); the other keys hold the medium/long/full formats, so leave them alone
+label="NSGlobalDomain AppleICUDateFormatStrings 1 = y-MM-dd"
+if [[ $(defaults export NSGlobalDomain - | plutil -extract AppleICUDateFormatStrings.1 raw -o - - 2>/dev/null || true) == "y-MM-dd" ]]; then
+	already_set "${label}"
+else
+	defaults write NSGlobalDomain AppleICUDateFormatStrings -dict-add 1 y-MM-dd
+	updated "${label}"
+fi
 
 ###############################################################################
 # Keyboard & text                                                             #
@@ -337,25 +368,4 @@ if [[ $(${socketfilterfw} --getglobalstate) == *"enabled"* ]]; then
 else
 	sudo "${socketfilterfw}" --setglobalstate on >/dev/null
 	updated "firewall enabled"
-fi
-
-###############################################################################
-# Apply changes                                                               #
-###############################################################################
-
-# The processes may not be running (e.g. in CI), so never fail on killall
-if [[ " ${changed} " == *" Finder "* ]]; then
-	echo -e "\n🔄 \033[1;34mRestarting Finder...\033[0m"
-	killall Finder >/dev/null 2>&1 || true
-fi
-if [[ " ${changed} " == *" Dock "* ]]; then
-	echo -e "\n🔄 \033[1;34mRestarting Dock...\033[0m"
-	killall Dock >/dev/null 2>&1 || true
-fi
-if [[ " ${changed} " == *" menubar "* ]]; then
-	echo -e "\n🔄 \033[1;34mRestarting the menu bar...\033[0m"
-	killall ControlCenter SystemUIServer >/dev/null 2>&1 || true
-fi
-if [[ " ${changed} " == *" logout "* ]]; then
-	echo -e "\nℹ️  \033[1;33mSome of these changes may need a logout to take effect.\033[0m"
 fi
