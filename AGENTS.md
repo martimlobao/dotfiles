@@ -40,14 +40,15 @@ make lint-checkov       # Infrastructure security
 make test               # Run all Python test suites
 make test-app           # Run scripts/app.py unit tests
 make test-aerials       # Run scripts/aerials.py unit tests
+make test-finder-views  # Run scripts/finder_views.py unit tests
 ```
 
 Always run `make check` before committing to ensure CI will pass. A failure remains a blocker
 unless evidence shows it is caused exclusively by unrelated unstaged or untracked work that will
 not be in the commit; document the failing path and error, preserve that work untouched, and run
 the relevant scoped checks for the staged change before proceeding. Treat ambiguous failures as
-blockers. `make check` includes `make test`, which runs the `scripts/app.py` and
-`scripts/aerials.py` unit tests.
+blockers. `make check` includes `make test`, which runs the `scripts/app.py`, `scripts/aerials.py`
+and `scripts/finder_views.py` unit tests.
 
 ### App Management
 

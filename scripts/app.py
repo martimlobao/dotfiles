@@ -1492,7 +1492,7 @@ class AppManagerFacade:
         grouped_records: list[tuple[str, list[AppRecord]]] = self.repository.list_grouped_records(
             document
         )
-        # Validate first, so a broken apps.toml fails before asking for sudo.
+        # Validate first, so a broken apps.toml fails before installing.
         self._validate_declared(grouped_records, options.enabled_sources)
         with self._sudo_kept_alive(options):
             self._prime_source_caches(grouped_records, options)
@@ -1514,23 +1514,24 @@ class AppManagerFacade:
     @contextmanager
     def _sudo_kept_alive(self, options: SyncOptions) -> Generator[None]:
         # Homebrew runs sudo for some casks, and sudo forgets the approval
-        # after 5 minutes, so a long sync would keep asking. Ask once up
-        # front and refresh in the background until the sync ends. Off
-        # macOS, Homebrew doesn't need sudo.
+        # after 5 minutes, so a long sync would keep asking. Keep whatever the
+        # first cask that needs sudo authenticates alive until the sync ends,
+        # so a sync that needs no sudo never asks. Off macOS, Homebrew doesn't
+        # need sudo.
         if platform.system() != "Darwin" or not options.enabled_sources & {"cask", "formula"}:
             yield
             return
-        self.console.paint("Authenticating sudo once for the whole sync...", Ansi.BLUE, icon="🔑")
-        if self.runner.run(["sudo", "-v"], check=False, capture_output=False).returncode != 0:
-            # Without it, each sudo just asks for itself, as it would anyway.
-            yield
-            return
 
+        # Each brew process resets sudo's timestamp the first time it needs
+        # sudo, which would make every cask ask again. Homebrew skips that
+        # check (and the reset) once this is set.
+        previous: str | None = os.environ.get("HOMEBREW_SUDO_CHECKED")
+        os.environ["HOMEBREW_SUDO_CHECKED"] = "1"
         stop = threading.Event()
 
         def refresh() -> None:
-            # -n: never prompt from the background; a failed refresh just
-            # means the next sudo asks.
+            # -n: never prompt from the background; until a cask authenticates
+            # this just fails quietly.
             while not stop.wait(SUDO_REFRESH_SECONDS):
                 self.runner.run(["sudo", "-n", "-v"], check=False)
 
@@ -1541,6 +1542,10 @@ class AppManagerFacade:
         finally:
             stop.set()
             thread.join()
+            if previous is None:
+                os.environ.pop("HOMEBREW_SUDO_CHECKED", None)
+            else:
+                os.environ["HOMEBREW_SUDO_CHECKED"] = previous
 
     def validate_apps(self) -> None:
         document = self.repository.load()

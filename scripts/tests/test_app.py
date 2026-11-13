@@ -14,6 +14,7 @@ import argparse
 import builtins
 import importlib.util
 import json
+import os
 import sys
 import threading
 import time
@@ -1077,48 +1078,42 @@ def test_sudo_kept_alive_skipped_when_brew_needs_no_sudo(
     facade, _, runner = build_facade(tmp_path)
     with (
         patch("app_module.platform.system", return_value=system),
+        patch.object(app_module.threading, "Thread") as thread,
         facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources=sources)),
     ):
-        pass
+        assert "HOMEBREW_SUDO_CHECKED" not in os.environ
     runner.run.assert_not_called()
-
-
-def test_sudo_kept_alive_skips_refresh_when_sudo_fails(tmp_path: Path) -> None:
-    facade, _, runner = build_facade(tmp_path)
-    runner.run.return_value = make_result(returncode=1)
-    with (
-        patch("app_module.platform.system", return_value="Darwin"),
-        patch.object(app_module.threading, "Thread") as thread,
-        facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources={"cask"})),
-    ):
-        pass
-    runner.run.assert_called_once_with(["sudo", "-v"], check=False, capture_output=False)
     thread.assert_not_called()
 
 
-def test_sudo_kept_alive_refreshes_until_sync_ends(tmp_path: Path) -> None:
+def test_sudo_kept_alive_refreshes_without_prompting_until_sync_ends(tmp_path: Path) -> None:
     facade, _, runner = build_facade(tmp_path)
-    refreshes: list[None] = []
     refreshed_twice = threading.Event()
 
-    def run(command: list[str], **_: object) -> SimpleNamespace:
-        if command == ["sudo", "-n", "-v"]:
-            refreshes.append(None)
-            if len(refreshes) >= 2:
-                refreshed_twice.set()
+    def run(*_: object, **__: object) -> SimpleNamespace:
+        if runner.run.call_count >= 2:
+            refreshed_twice.set()
         return make_result()
 
     runner.run.side_effect = run
     with (
         patch("app_module.platform.system", return_value="Darwin"),
+        patch.dict(os.environ, clear=False),
         patch.object(app_module, "SUDO_REFRESH_SECONDS", 0.01),
-        facade._sudo_kept_alive(app_module.SyncOptions(yes=True, enabled_sources={"formula"})),
     ):
-        assert refreshed_twice.wait(5)
+        os.environ.pop("HOMEBREW_SUDO_CHECKED", None)
+        with facade._sudo_kept_alive(
+            app_module.SyncOptions(yes=True, enabled_sources={"formula"})
+        ):
+            # Homebrew must not reset the timestamp a cask's sudo prompt sets
+            assert os.environ["HOMEBREW_SUDO_CHECKED"] == "1"
+            assert refreshed_twice.wait(5)
+        assert "HOMEBREW_SUDO_CHECKED" not in os.environ
     calls_at_exit = runner.run.call_count
     time.sleep(0.05)
     assert runner.run.call_count == calls_at_exit
-    assert runner.run.call_args_list[0] == call(["sudo", "-v"], check=False, capture_output=False)
+    # Only non-interactive refreshes: nothing asks for sudo up front
+    assert all(c == call(["sudo", "-n", "-v"], check=False) for c in runner.run.call_args_list)
 
 
 def test_facade_validate_apps_checks_each_source(tmp_path: Path) -> None:
