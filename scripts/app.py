@@ -715,6 +715,11 @@ class BaseSourceService(ABC):
         _ = self
         del app, auto_yes
 
+    def validate_declared(self, apps: list[str]) -> None:
+        """Raise if any declared app doesn't exist under this source."""
+        _ = self
+        del apps
+
     def ensure_installed(self, app: str, *, auto_yes: bool = False) -> OperationResult:
         self.prepare_install(app, auto_yes=auto_yes)
         if self.is_installed(app):
@@ -865,6 +870,24 @@ class BrewSourceService(BaseSourceService, ABC):
         if config_home:
             return Path(config_home) / "trust.json"
         return Path.home() / ".homebrew" / "trust.json"
+
+    def validate_declared(self, apps: list[str]) -> None:
+        # Homebrew migrates packages between formula and cask, and an
+        # existing install follows silently, so only a fresh machine would
+        # notice. Check every entry up front, installed here or not.
+        # Third-party tap apps are left to install: looking them up would tap
+        # them before prepare_install asks whether to trust the tap.
+        official: list[str] = [app for app in apps if self._third_party_tap(app) is None]
+        if not official:
+            return
+        brew: str = self._brew()
+        command: list[str] = [brew, "info", "--json=v2", self.list_flag, *official]
+        result = self.runner.run(command, check=False)
+        if result.returncode != 0:
+            details: str = (result.stderr or result.stdout or "").strip()
+            raise AppManagerError(
+                f"Couldn't verify the {self.source_name} entries in apps.toml:\n{details}"
+            )
 
     def install(self, app: str) -> None:
         brew: str = self._brew()
@@ -1404,6 +1427,7 @@ class AppManagerFacade:
         grouped_records: list[tuple[str, list[AppRecord]]] = self.repository.list_grouped_records(
             document
         )
+        self._validate_declared(grouped_records, options.enabled_sources)
         self._prime_source_caches(grouped_records, options)
         self._install_declared(grouped_records, options)
 
@@ -1419,6 +1443,36 @@ class AppManagerFacade:
             "Updating existing apps and packages...", Ansi.MAGENTA, icon="🔼", newline=True
         )
         self._upgrade_sources(options)
+
+    def validate_apps(self) -> None:
+        document = self.repository.load()
+        self._validate_declared(
+            self.repository.list_grouped_records(document),
+            set(SourceRegistry.source_names()),
+        )
+        self.console.paint("Every app in apps.toml matches its source.", Ansi.GREEN, icon="✅")
+
+    def _validate_declared(
+        self,
+        grouped_records: list[tuple[str, list[AppRecord]]],
+        sources: set[str],
+    ) -> None:
+        known: set[str] = set(SourceRegistry.source_names())
+        unknown: list[str] = [
+            f"{record.key} = {record.source!r}"
+            for _, records in grouped_records
+            for record in records
+            if record.source not in known
+        ]
+        if unknown:
+            raise AppManagerError(f"apps.toml uses unknown sources: {', '.join(unknown)}")
+        for source in sorted(sources):
+            self.get_service(source).validate_declared([
+                record.key
+                for _, records in grouped_records
+                for record in records
+                if record.source == source
+            ])
 
     def _resolve_or_pick_group(
         self,
@@ -1708,6 +1762,14 @@ class InfoAppCommand(BaseCommand):
         self.facade.print_info(app=args.app, source=args.source)
 
 
+class ValidateAppsCommand(BaseCommand):
+    command_name = "validate"
+
+    def execute(self, args: argparse.Namespace) -> None:
+        del args
+        self.facade.validate_apps()
+
+
 class SyncAppsCommand(BaseCommand):
     command_name = "sync"
 
@@ -1731,6 +1793,7 @@ class CommandDispatcher:
             ListAppsCommand.command_name: ListAppsCommand(facade=facade),
             InfoAppCommand.command_name: InfoAppCommand(facade=facade),
             SyncAppsCommand.command_name: SyncAppsCommand(facade=facade),
+            ValidateAppsCommand.command_name: ValidateAppsCommand(facade=facade),
         }
 
     def dispatch(self, args: argparse.Namespace) -> None:
@@ -1808,6 +1871,7 @@ def parse_args() -> argparse.Namespace:
     )
 
     subparsers.add_parser("list", help="List apps in apps.toml")
+    subparsers.add_parser("validate", help="Check every app in apps.toml exists under its source")
 
     sync_parser = subparsers.add_parser(
         "sync",

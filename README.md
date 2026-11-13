@@ -91,6 +91,7 @@ up to date:
 ```bash
 app add <app> <source> [--group <group>] [--description <text>]
 app remove <app>
+app validate
 app sync [--yes] [--no-cask] [--no-formula] [--no-uv] [--no-mas]
 ```
 

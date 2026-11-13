@@ -371,6 +371,28 @@ def test_brew_skips_xcode_license_check_off_macos() -> None:
     runner.run.assert_called_once_with(["brew", "install", "--formula", "jq"])
 
 
+def test_brew_validate_declared_checks_all_apps_in_one_call() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    service.validate_declared(["gh", "owner/tap/tool", "homebrew/core/jq"])
+    runner.run.assert_called_once_with(
+        ["brew", "info", "--json=v2", "--formula", "gh", "homebrew/core/jq"], check=False
+    )
+
+
+def test_brew_validate_declared_rejects_wrong_source() -> None:
+    runner = Mock(spec=app_module.CommandRunner)
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result(
+        returncode=1, stderr='Error: No available formula with the name "azure-cli".'
+    )
+    service = app_module.BrewFormulaSourceService(runner=runner, console=app_module.Console())
+    with pytest.raises(app_module.AppManagerError, match="Couldn't verify the formula entries"):
+        service.validate_declared(["azure-cli"])
+
+
 def test_brew_cask_fetch_info() -> None:
     runner = Mock(spec=app_module.CommandRunner)
     runner.get_executable.return_value = "brew"
@@ -981,17 +1003,39 @@ def test_facade_upgrade_sources_deduplicates_provider(tmp_path: Path) -> None:
 
 def test_facade_sync_apps_orchestrates(tmp_path: Path) -> None:
     facade, _, _ = build_facade(tmp_path, content='[dev]\nfoo = "uv"\n')
+    calls = Mock()
     with (
+        patch.object(facade, "_validate_declared", calls.validate),
         patch.object(facade, "_prime_source_caches") as prime,
-        patch.object(facade, "_install_declared") as install_declared,
+        patch.object(facade, "_install_declared", calls.install),
         patch.object(facade, "_sync_unmanaged") as sync_unmanaged,
         patch.object(facade, "_upgrade_sources") as upgrade,
     ):
         facade.sync_apps(app_module.SyncOptions(yes=True, enabled_sources={"uv"}))
+    assert [name for name, _, _ in calls.mock_calls] == ["validate", "install"]
     prime.assert_called_once()
-    install_declared.assert_called_once()
     sync_unmanaged.assert_called_once()
     upgrade.assert_called_once()
+
+
+def test_facade_validate_apps_checks_each_source(tmp_path: Path) -> None:
+    facade, _, runner = build_facade(
+        tmp_path, content='[dev]\ngh = "formula"\nzed = "cask"\nfoo = "uv"\n'
+    )
+    runner.get_executable.return_value = "brew"
+    runner.run.return_value = make_result()
+    facade.validate_apps()
+    commands = [call.args[0] for call in runner.run.call_args_list]
+    assert commands == [
+        ["brew", "info", "--json=v2", "--cask", "zed"],
+        ["brew", "info", "--json=v2", "--formula", "gh"],
+    ]
+
+
+def test_facade_validate_apps_rejects_unknown_source(tmp_path: Path) -> None:
+    facade, _, _ = build_facade(tmp_path, content='[dev]\ngh = "fromula"\n')
+    with pytest.raises(app_module.AppManagerError, match="unknown sources: gh = 'fromula'"):
+        facade.validate_apps()
 
 
 def test_provider_sync_messages() -> None:

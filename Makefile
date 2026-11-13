@@ -5,19 +5,24 @@ JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 MAKEFLAGS += -j$(JOBS) --output-sync=target
 
 .PHONY: check test test-app test-aerials \
-        lint-checkov lint-jsort lint-oxipng lint-ruff lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
+        lint-apps lint-checkov lint-jsort lint-oxipng lint-ruff lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint
 
 # All tracked shell scripts (recursive, includes repo root).
 SH_FILES := $(shell git ls-files '*.sh')
 
 # High-level aggregate
-check: lint-checkov lint-jsort lint-oxipng lint-ruff lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint test
+check: lint-apps lint-checkov lint-jsort lint-oxipng lint-ruff lint-rumdl lint-shellcheck lint-shfmt lint-tombi lint-trufflehog lint-ty lint-yamllint test
 
 #################
 # Lint (parallel)
 #################
 lint-actionlint:
 	uvx --from actionlint-py actionlint
+
+# Needs Homebrew; skipped where it isn't installed (e.g. CI).
+lint-apps:
+	@if command -v brew >/dev/null 2>&1; then uv run scripts/app.py validate; \
+	else echo "brew not found; skipping apps.toml validation"; fi
 
 lint-checkov:
 	uvx checkov --quiet -d .

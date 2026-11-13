@@ -26,7 +26,7 @@ xcodegen = "formula"  # Generate your Xcode project from a spec file and your fo
 [work]
 aws-sso-cli = "formula"  # Securely manage AWS API credentials using AWS SSO
 awscli = "formula"  # Official Amazon AWS command-line interface
-azure-cli = "formula"  # Microsoft Azure CLI 2.0
+azure-cli = "cask"  # Microsoft Azure CLI 2.0
 citrix-workspace = "cask"  # Managed desktop virtualization solution
 gloom = "cask"  # Finance terminal
 microsoft-excel = "cask"  # Spreadsheet software
