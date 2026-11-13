@@ -875,14 +875,18 @@ class BrewSourceService(BaseSourceService, ABC):
         # Homebrew migrates packages between formula and cask, and an
         # existing install follows silently, so only a fresh machine would
         # notice. Check every entry up front, installed here or not.
-        if not apps:
+        # Third-party tap apps are left to install: looking them up would tap
+        # them before prepare_install asks whether to trust the tap.
+        official: list[str] = [app for app in apps if self._third_party_tap(app) is None]
+        if not official:
             return
         brew: str = self._brew()
-        result = self.runner.run([brew, "info", "--json=v2", self.list_flag, *apps], check=False)
+        command: list[str] = [brew, "info", "--json=v2", self.list_flag, *official]
+        result = self.runner.run(command, check=False)
         if result.returncode != 0:
             details: str = (result.stderr or result.stdout or "").strip()
             raise AppManagerError(
-                f"apps.toml lists apps that aren't Homebrew {self.source_name}s:\n{details}"
+                f"Couldn't verify the {self.source_name} entries in apps.toml:\n{details}"
             )
 
     def install(self, app: str) -> None:
@@ -1453,6 +1457,15 @@ class AppManagerFacade:
         grouped_records: list[tuple[str, list[AppRecord]]],
         sources: set[str],
     ) -> None:
+        known: set[str] = set(SourceRegistry.source_names())
+        unknown: list[str] = [
+            f"{record.key} = {record.source!r}"
+            for _, records in grouped_records
+            for record in records
+            if record.source not in known
+        ]
+        if unknown:
+            raise AppManagerError(f"apps.toml uses unknown sources: {', '.join(unknown)}")
         for source in sorted(sources):
             self.get_service(source).validate_declared([
                 record.key
