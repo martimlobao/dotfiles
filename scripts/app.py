@@ -34,8 +34,10 @@ import re
 import shutil
 import subprocess  # noqa: S404
 import sys
+import threading
 from abc import ABC, abstractmethod
 from collections import OrderedDict
+from contextlib import contextmanager
 from dataclasses import dataclass
 from operator import itemgetter
 from pathlib import Path
@@ -45,7 +47,7 @@ import tomlkit
 from tomlkit.items import Item, Table
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Generator, Iterable, Iterator
 
 
 type JSON = dict[str, JSON] | list[JSON] | str | int | float | bool | None
@@ -53,6 +55,8 @@ type JSON = dict[str, JSON] | list[JSON] | str | int | float | bool | None
 DOTPATH: Path = Path(os.environ.get("DOTPATH", Path(__file__).resolve().parent.parent))
 APPS_TOML: Path = DOTPATH / "apps.toml"
 FULLY_QUALIFIED_HOMEBREW_APP_SLASHES = 2
+# Well inside sudo's default 5-minute credential cache.
+SUDO_REFRESH_SECONDS = 60
 
 
 class AppManagerError(Exception):
@@ -1459,22 +1463,55 @@ class AppManagerFacade:
         grouped_records: list[tuple[str, list[AppRecord]]] = self.repository.list_grouped_records(
             document
         )
+        # Validate first, so a broken apps.toml fails before asking for sudo.
         self._validate_declared(grouped_records, options.enabled_sources)
-        self._prime_source_caches(grouped_records, options)
-        self._install_declared(grouped_records, options)
+        with self._sudo_kept_alive(options):
+            self._prime_source_caches(grouped_records, options)
+            self._install_declared(grouped_records, options)
 
-        self.console.paint(
-            "Syncing installed apps to apps.toml...",
-            Ansi.MAGENTA,
-            icon="🔄",
-            newline=True,
-        )
-        self._sync_unmanaged(grouped_records, options)
+            self.console.paint(
+                "Syncing installed apps to apps.toml...",
+                Ansi.MAGENTA,
+                icon="🔄",
+                newline=True,
+            )
+            self._sync_unmanaged(grouped_records, options)
 
-        self.console.paint(
-            "Updating existing apps and packages...", Ansi.MAGENTA, icon="🔼", newline=True
-        )
-        self._upgrade_sources(options)
+            self.console.paint(
+                "Updating existing apps and packages...", Ansi.MAGENTA, icon="🔼", newline=True
+            )
+            self._upgrade_sources(options)
+
+    @contextmanager
+    def _sudo_kept_alive(self, options: SyncOptions) -> Generator[None]:
+        # Homebrew runs sudo for some casks, and sudo forgets the approval
+        # after 5 minutes, so a long sync would keep asking. Ask once up
+        # front and refresh in the background until the sync ends. Off
+        # macOS, Homebrew doesn't need sudo.
+        if platform.system() != "Darwin" or not options.enabled_sources & {"cask", "formula"}:
+            yield
+            return
+        self.console.paint("Authenticating sudo once for the whole sync...", Ansi.BLUE, icon="🔑")
+        if self.runner.run(["sudo", "-v"], check=False, capture_output=False).returncode != 0:
+            # Without it, each sudo just asks for itself, as it would anyway.
+            yield
+            return
+
+        stop = threading.Event()
+
+        def refresh() -> None:
+            # -n: never prompt from the background; a failed refresh just
+            # means the next sudo asks.
+            while not stop.wait(SUDO_REFRESH_SECONDS):
+                self.runner.run(["sudo", "-n", "-v"], check=False)
+
+        thread = threading.Thread(target=refresh, daemon=True)
+        thread.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            thread.join()
 
     def validate_apps(self) -> None:
         document = self.repository.load()
