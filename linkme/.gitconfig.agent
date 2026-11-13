@@ -1,0 +1,19 @@
+# Global git config for coding agents, selected in ~/.zshenv. Agents sign and authenticate with
+# their own passphrase-less key instead of 1Password. local.sh injects the key from the
+# "Agent SSH Key" item in 1Password; register its public key on GitHub for both
+# authentication and signing.
+[include]
+	path = ~/.gitconfig
+
+[user]
+	signingKey = ~/.config/git/agent_ed25519
+
+[gpg "ssh"]
+	program = ssh-keygen
+
+[core]
+	# -F /dev/null skips ~/.ssh/config, which sends every host to the 1Password agent.
+	sshCommand = ssh -F /dev/null -i ~/.config/git/agent_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=none -o BatchMode=yes
+
+[url "git@github.com:"]
+	insteadOf = https://github.com/
