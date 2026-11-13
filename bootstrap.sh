@@ -47,6 +47,14 @@
 		echo -e "✅ \033[1;32mXcode Command Line Tools installed\033[0m"
 	fi
 
+	# Once a full Xcode is installed, git refuses to run until its license is accepted, and would
+	# otherwise prompt for it interactively and then fail without root. stdin is closed so the probe
+	# can't start that prompt itself.
+	if [[ $(uname) == "Darwin" ]] && [[ $(/usr/bin/xcrun --find clang 2>&1 </dev/null) == *license* ]]; then
+		echo -e "🔑 \033[1;33mAccepting the Xcode license...\033[0m"
+		sudo xcodebuild -license accept
+	fi
+
 	if [[ ! -d ${DOTPATH} ]]; then
 		echo -e "📑 \033[1;33mCloning dotfiles on branch ${BRANCH}...\033[0m"
 		git clone https://github.com/martimlobao/dotfiles.git --branch "${BRANCH}" "${DOTPATH}"
