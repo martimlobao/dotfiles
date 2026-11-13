@@ -481,8 +481,12 @@ label="wallpaper and screen saver = shuffle all aerials every 12 hours"
 wallpaper_type=$(plutil -extract AllSpacesAndDisplays.Type raw -o - "${wallpaper_store}" 2>/dev/null || true)
 current_config=$(wallpaper_store_json "${wallpaper_content}.Choices.0.Configuration")
 current_options=$(wallpaper_store_json "${wallpaper_content}.EncodedOptionValues")
+# Any per-display or per-space choice would override the one for all spaces and displays
+display_overrides=$(plutil -extract Displays json -o - "${wallpaper_store}" 2>/dev/null || true)
+space_overrides=$(plutil -extract Spaces json -o - "${wallpaper_store}" 2>/dev/null || true)
 if [[ ${wallpaper_type} == linked && ${current_config} == "${wallpaper_config}" &&
-	${current_options} == "${wallpaper_options}" ]]; then
+	${current_options} == "${wallpaper_options}" && ${display_overrides} == "{}" &&
+	${space_overrides} == "{}" ]]; then
 	already_set "${label}"
 else
 	wallpaper_linked="<dict><key>Content</key><dict>
@@ -495,7 +499,8 @@ else
 		<key>Shuffle</key><string>\$null</string>
 	</dict></dict>"
 	mkdir -p "$(dirname "${wallpaper_store}")"
-	plutil -convert binary1 -o "${wallpaper_store}" - <<-EOF
+	# Write a sibling file and rename it over the store, so an interrupted write can't corrupt it
+	plutil -convert binary1 -o "${wallpaper_store}.new" - <<-EOF
 		<?xml version="1.0" encoding="UTF-8"?>
 		<plist version="1.0"><dict>
 			<key>AllSpacesAndDisplays</key><dict>
@@ -508,6 +513,7 @@ else
 			</dict>
 		</dict></plist>
 	EOF
+	mv "${wallpaper_store}.new" "${wallpaper_store}"
 	# WallpaperAgent caches the store and only rereads it on launch
 	killall WallpaperAgent 2>/dev/null || true
 	updated "${label}"
