@@ -12,6 +12,8 @@ I wanted to share some of my preferences here so we can be more aligned as we wo
 
 - Keep things simple. Channel "yagni" energy unless told otherwise.
 - Typesafety is useful, take advantage of it.
+- In the same vein, choose strictness over flexibility: prefer picking and enforcing a specific
+  format or convention over accepting and supporting multiple ways to express the same thing.
 - Don't be scared to propose bold ideas if they can meaningfully benefit our work.
 - Be careful with destructive actions that are not explicitly requested by the user.
 - Tests are good! Endless smoke tests, "regression tests" for feature deletions, etc, much less
@@ -67,13 +69,13 @@ Taste covers UI/UX, code quality, API design, and copy.
 
 | model         | cost | intelligence | taste |
 | ------------- | ---- | ------------ | ----- |
-| gpt-5.6-luna  | 10   | 2            | 2     |
-| gpt-5.6-terra | 8    | 5            | 5     |
-| gpt-5.6-sol   | 4    | 7            | 7     |
+| gpt-6-luna    | 10   | 3            | 2     |
+| gpt-6.1-terra | 7    | 5            | 5     |
+| gpt-6.1-sol   | 8    | 7            | 7     |
 | gpt-6-astra   | 2    | 9            | 8     |
-| sonnet-5      | 5    | 4            | 7     |
-| opus-5        | 4    | 6            | 8     |
-| fable-5.1     | 1    | 8            | 9     |
+| sonnet-5.5    | 5    | 4            | 7     |
+| opus-5.5      | 4    | 8            | 8     |
+| fable-5.2     | 1    | 9            | 9     |
 
 How to apply:
 
@@ -83,7 +85,7 @@ How to apply:
 - Don't let cost prevent you from using the right model for the job. Instead, take advantage of
   cheaper options to get more information and try things before moving the work to a more expensive
   option.
-- Bulk/mechanical work (clear-spec implementation, data analysis, migrations): gpt-5.5 - it's
+- Bulk/mechanical work (clear-spec implementation, data analysis, migrations): gpt-6-luna - it's
   effectively free.
 
 ## Blast radius
