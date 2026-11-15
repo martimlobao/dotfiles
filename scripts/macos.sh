@@ -285,6 +285,7 @@ set_default com.apple.finder SidebariCloudDriveSectionDisclosedState bool false
 # The list view every location uses: the default for Finder windows (StandardViewSettings) and
 # open/save panels (FK_StandardViewSettings), plus the locations Finder keeps their own view for.
 # The Trash is sorted by date added, and finder_views.py makes Downloads match it
+extended_only=(dateAdded ubiquity shareOwner shareLastEditor invitationStatus)
 for settings in StandardViewSettings FK_StandardViewSettings ComputerViewSettings ICloudViewSettings \
 	NetworkViewSettings TrashViewSettings; do
 	sort=name
@@ -308,12 +309,15 @@ for settings in StandardViewSettings FK_StandardViewSettings ComputerViewSetting
 			hidden+=(dateAdded)
 		fi
 		position=0
-		for column in "${shown[@]}"; do
-			finder_view_column "${view}" "${column}" true "${position}"
-			position=$((position + 1))
-		done
-		for column in "${hidden[@]}"; do
-			finder_view_column "${view}" "${column}" false "${position}"
+		for column in "${shown[@]}" "${hidden[@]}"; do
+			# ListViewSettings predates these columns and Finder drops them whenever it rewrites it,
+			# so setting them there would report an update on every run
+			if [[ ${view} == *:ListViewSettings && " ${extended_only[*]} " == *" ${column} "* ]]; then
+				continue
+			fi
+			visible=false
+			[[ " ${shown[*]} " == *" ${column} "* ]] && visible=true
+			finder_view_column "${view}" "${column}" "${visible}" "${position}"
 			position=$((position + 1))
 		done
 	done
