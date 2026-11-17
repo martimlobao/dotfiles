@@ -15,7 +15,8 @@ Finder saves a folder's view in its parent's .DS_Store as soon as the view
 is changed, and that overrides the defaults macos.sh sets. The views of the
 home folder (stored as ".") and of every folder in it live in ~/.DS_Store, so
 whenever it holds a saved view, replace it with one that only pins Downloads
-to the Trash's view (the default list view sorted by date added).
+to a list view sorted by date added, copied from the TrashViewSettings that
+macos.sh sets.
 
 The rest of ~/.DS_Store is a cache Finder rebuilds (icon positions, window
 sizes, expanded rows), so it isn't kept: ds_store can't reliably rewrite a
@@ -102,7 +103,7 @@ def finder_preferences() -> dict[str, object]:
 def downloads_view(preferences: dict[str, object]) -> PinnedView:
     trash = preferences.get("TrashViewSettings")
     if not isinstance(trash, dict):
-        raise SystemExit("❌ TrashViewSettings is missing; run macos.sh to set the Trash's view")
+        raise SystemExit("❌ TrashViewSettings is missing; run macos.sh first")
     return PinnedView(
         folder="Downloads",
         list_view=without_scroll(trash["ListViewSettings"]),
@@ -161,7 +162,7 @@ def main() -> None:
     quit_finder()
     write_store(path, pinned.entries())
     print("🔧 \033[1;33mUpdated: home folders use the default Finder views\033[0m")
-    print("🔧 \033[1;33mUpdated: Downloads uses the Trash's view\033[0m")
+    print("🔧 \033[1;33mUpdated: Downloads is sorted by date added\033[0m")
 
 
 if __name__ == "__main__":
