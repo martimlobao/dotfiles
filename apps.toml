@@ -10,7 +10,6 @@ charles = "cask"  # Web debugging Proxy application
 chatgpt = "cask"  # OpenAI's official ChatGPT desktop app
 "claude-code@latest" = "cask"  # Terminal-based AI coding assistant
 codex = "cask"  # OpenAI's coding agent that runs in your terminal
-cursor-cli = "cask"  # Command-line agent for Cursor
 docker-desktop = "cask"  # App to build and share containerised applications and microservices
 gcloud-cli = "cask"  # Set of tools to manage resources and applications hosted on Google Cloud
 ghostty = "cask"  # Terminal emulator that uses platform-native UI and GPU acceleration
@@ -86,8 +85,9 @@ claude = "cask"  # Anthropic's official Claude AI desktop app
 dropbox = "cask"  # Client for the Dropbox cloud storage service
 google-drive = "cask"  # Client for the Google Drive storage service
 iina = "cask"  # Free and open-source media player [modern vlc alternative]
-istat-menus = "cask"  # System monitoring app
+"istat-menus@6" = "cask"  # System monitoring app
 localsend = "cask"  # Open-source cross-platform alternative to AirDrop
+"martimlobao/private/intray" = "cask"  # Menu bar app that automagically sorts files dropped into a tracked folder
 nordvpn = "cask"  # VPN client for secure internet access and private browsing
 openvpn-connect = "cask"  # Client program for the OpenVPN Access Server
 rocket = "cask"  # Emoji picker optimised for blind people
@@ -98,7 +98,6 @@ transmission = "cask"  # Open-source BitTorrent client
 whatcable = "cask"  # Menu bar app for USB-C cable diagnostics
 wispr-flow = "cask"  # Voice-to-text dictation with AI-powered auto-editing
 yubico-authenticator = "cask"  # Application for generating TOTP and HOTP codes
-"martimlobao/private/intray" = "cask"  # Menu bar app that automagically sorts files dropped into a tracked folder
 
 [cli-tools]
 ack = "formula"  # Search tool like grep, but optimized for programmers
