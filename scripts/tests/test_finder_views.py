@@ -32,16 +32,28 @@ sys.modules["finder_views_module"] = finder_views
 SPEC.loader.exec_module(finder_views)
 finder_views_module: ModuleType = finder_views
 
-TRASH_LIST_VIEW = {"sortColumn": "dateAdded", "columns": {"dateAdded": {"visible": True}}}
-TRASH_EXTENDED_LIST_VIEW = {
-    "sortColumn": "dateAdded",
-    "columns": [{"identifier": "dateAdded", "visible": True}],
-}
 PREFERENCES = {
-    "TrashViewSettings": {
-        "ListViewSettings": TRASH_LIST_VIEW,
-        "ExtendedListViewSettingsV2": TRASH_EXTENDED_LIST_VIEW,
+    "StandardViewSettings": {
+        "ListViewSettings": {"sortColumn": "name", "columns": {"name": {"index": 0}}},
+        "ExtendedListViewSettingsV2": {
+            "sortColumn": "name",
+            "scrollPositionY": 40.0,
+            "columns": [
+                {"identifier": "name", "visible": True},
+                {"identifier": "size", "visible": True},
+                {"identifier": "dateAdded", "visible": False, "width": 181},
+            ],
+        },
     }
+}
+DOWNLOADS_LIST_VIEW = {"sortColumn": "dateAdded", "columns": {"name": {"index": 0}}}
+DOWNLOADS_EXTENDED_LIST_VIEW = {
+    "sortColumn": "dateAdded",
+    "columns": [
+        {"identifier": "name", "visible": True},
+        {"identifier": "dateAdded", "visible": True, "width": 181},
+        {"identifier": "size", "visible": True},
+    ],
 }
 
 
@@ -83,7 +95,7 @@ def killed_finder(run: MagicMock) -> bool:
     return any(call.args[0][0] == "/usr/bin/killall" for call in run.call_args_list)
 
 
-def test_resets_home_views_and_pins_downloads_to_the_trash_view(tmp_path: Path) -> None:
+def test_resets_home_views_and_sorts_downloads_by_date_added(tmp_path: Path) -> None:
     write_store(
         tmp_path / ".DS_Store",
         [
@@ -101,8 +113,8 @@ def test_resets_home_views_and_pins_downloads_to_the_trash_view(tmp_path: Path) 
     home = read_store(tmp_path / ".DS_Store")
     assert home.keys() == {("Downloads", b"vstl"), ("Downloads", b"lsvp"), ("Downloads", b"lsvC")}
     assert home["Downloads", b"vstl"] == b"Nlsv"
-    assert plistlib.loads(home["Downloads", b"lsvp"]) == TRASH_LIST_VIEW
-    assert plistlib.loads(home["Downloads", b"lsvC"]) == TRASH_EXTENDED_LIST_VIEW
+    assert plistlib.loads(home["Downloads", b"lsvp"]) == DOWNLOADS_LIST_VIEW
+    assert plistlib.loads(home["Downloads", b"lsvC"]) == DOWNLOADS_EXTENDED_LIST_VIEW
     assert read_store(nested) == {("Projects", b"vstl"): b"icnv"}
 
 
@@ -112,13 +124,13 @@ def test_replaces_a_store_with_a_malformed_view(tmp_path: Path) -> None:
         [
             entry("Downloads", b"vstl", b"Nlsv"),
             entry("Downloads", b"lsvp", b"not a plist"),
-            entry("Downloads", b"lsvC", plist(TRASH_EXTENDED_LIST_VIEW)),
+            entry("Downloads", b"lsvC", plist(DOWNLOADS_EXTENDED_LIST_VIEW)),
         ],
     )
 
     assert killed_finder(run(tmp_path))
     home = read_store(tmp_path / ".DS_Store")
-    assert plistlib.loads(home["Downloads", b"lsvp"]) == TRASH_LIST_VIEW
+    assert plistlib.loads(home["Downloads", b"lsvp"]) == DOWNLOADS_LIST_VIEW
 
 
 def test_leaves_finder_alone_when_only_downloads_is_pinned(tmp_path: Path) -> None:
@@ -127,8 +139,8 @@ def test_leaves_finder_alone_when_only_downloads_is_pinned(tmp_path: Path) -> No
         tmp_path / ".DS_Store",
         [
             entry("Downloads", b"vstl", b"Nlsv"),
-            entry("Downloads", b"lsvp", plist({**TRASH_LIST_VIEW, "scrollPositionY": 120.0})),
-            entry("Downloads", b"lsvC", plist(TRASH_EXTENDED_LIST_VIEW)),
+            entry("Downloads", b"lsvp", plist({**DOWNLOADS_LIST_VIEW, "scrollPositionY": 120.0})),
+            entry("Downloads", b"lsvC", plist(DOWNLOADS_EXTENDED_LIST_VIEW)),
             entry("Documents", b"bwsp", plist({"ShowSidebar": True})),
         ],
     )

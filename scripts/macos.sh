@@ -284,7 +284,7 @@ set_default com.apple.finder SidebariCloudDriveSectionDisclosedState bool false
 
 # The list view every location uses: the default for Finder windows (StandardViewSettings) and
 # open/save panels (FK_StandardViewSettings), plus the locations Finder keeps their own view for.
-# The Trash is sorted by date added, and finder_views.py makes Downloads match it
+# The Trash is sorted by date added
 extended_only=(dateAdded ubiquity shareOwner shareLastEditor invitationStatus)
 for settings in StandardViewSettings FK_StandardViewSettings ComputerViewSettings ICloudViewSettings \
 	NetworkViewSettings TrashViewSettings; do

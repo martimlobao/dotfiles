@@ -15,7 +15,8 @@ Finder saves a folder's view in its parent's .DS_Store as soon as the view
 is changed, and that overrides the defaults macos.sh sets. The views of the
 home folder (stored as ".") and of every folder in it live in ~/.DS_Store, so
 whenever it holds a saved view, replace it with one that only pins Downloads
-to the Trash's view (the default list view sorted by date added).
+to the default list view sorted by date added, with the Date Added column
+shown after Name.
 
 The rest of ~/.DS_Store is a cache Finder rebuilds (icon positions, window
 sizes, expanded rows), so it isn't kept: ds_store can't reliably rewrite a
@@ -51,6 +52,7 @@ VIEW_CODES = frozenset({
 SCROLL_KEYS = frozenset({"scrollPositionX", "scrollPositionY"})
 LIST_VIEW = b"Nlsv"
 FINDER_QUIT_TIMEOUT_SECONDS = 10
+DATE_ADDED = "dateAdded"
 
 # Read every record as raw bytes, so views are compared as the plists Finder
 # wrote rather than through ds_store's decoders
@@ -100,13 +102,23 @@ def finder_preferences() -> dict[str, object]:
 
 
 def downloads_view(preferences: dict[str, object]) -> PinnedView:
-    trash = preferences.get("TrashViewSettings")
-    if not isinstance(trash, dict):
-        raise SystemExit("❌ TrashViewSettings is missing; run macos.sh to set the Trash's view")
+    standard = preferences.get("StandardViewSettings")
+    if not isinstance(standard, dict):
+        raise SystemExit("❌ StandardViewSettings is missing; run macos.sh first")
+    # ListViewSettings predates the Date Added column, so only its sort changes
+    list_view = {**without_scroll(standard["ListViewSettings"]), "sortColumn": DATE_ADDED}
+    extended = without_scroll(standard["ExtendedListViewSettingsV2"])
+    all_columns = extended["columns"]
+    if not isinstance(all_columns, list):
+        raise SystemExit("❌ StandardViewSettings has no list view columns; run macos.sh first")
+    # Move Date Added right after Name and show it
+    columns = [column for column in all_columns if column["identifier"] != DATE_ADDED]
+    date_added = next(column for column in all_columns if column["identifier"] == DATE_ADDED)
+    columns.insert(1, {**date_added, "visible": True})
     return PinnedView(
         folder="Downloads",
-        list_view=without_scroll(trash["ListViewSettings"]),
-        extended_list_view=without_scroll(trash["ExtendedListViewSettingsV2"]),
+        list_view=list_view,
+        extended_list_view={**extended, "sortColumn": DATE_ADDED, "columns": columns},
     )
 
 
@@ -161,7 +173,7 @@ def main() -> None:
     quit_finder()
     write_store(path, pinned.entries())
     print("🔧 \033[1;33mUpdated: home folders use the default Finder views\033[0m")
-    print("🔧 \033[1;33mUpdated: Downloads uses the Trash's view\033[0m")
+    print("🔧 \033[1;33mUpdated: Downloads is sorted by date added\033[0m")
 
 
 if __name__ == "__main__":
