@@ -156,7 +156,7 @@ reset_launchpad # not needed on macOS 26 and above because Launchpad no longer e
 clear_dock
 
 add_app_to_dock "Dia"
-add_app_to_dock "ChatGPT"
+add_app_to_dock "T3 Code (Beta)"
 add_app_to_dock "Obsidian"
 add_app_to_dock "Ghostty"
 add_app_to_dock "System Settings"
