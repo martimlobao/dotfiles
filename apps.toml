@@ -91,6 +91,7 @@ localsend = "cask"  # Open-source cross-platform alternative to AirDrop
 nordvpn = "cask"  # VPN client for secure internet access and private browsing
 openvpn-connect = "cask"  # Client program for the OpenVPN Access Server
 rocket = "cask"  # Emoji picker optimised for blind people
+setshot = "cask"  # Snapshot and diff system settings changes
 tailscale-app = "cask"  # Mesh VPN based on WireGuard
 the-unarchiver = "cask"  # Unpacks archive files
 thebrowsercompany-dia = "cask"  # Web browser
