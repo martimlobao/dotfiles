@@ -257,8 +257,11 @@ set_default NSGlobalDomain AppleShowAllExtensions bool true
 set_default NSGlobalDomain NSDocumentSaveNewDocumentsToCloud bool false
 set_default com.apple.finder ShowPathbar bool true
 set_default com.apple.finder ShowStatusBar bool true
-# List view
+# List view, also for search results and open/save panels
 set_default com.apple.finder FXPreferredViewStyle string Nlsv
+set_default com.apple.finder FXPreferredSearchViewStyle string Nlsv
+set_default NSGlobalDomain NavPanelFileListModeForOpenMode int 2
+set_default NSGlobalDomain NavPanelFileListModeForSaveMode int 2
 # New windows open the home folder
 set_default com.apple.finder NewWindowTarget string PfHm
 set_default com.apple.finder ShowHardDrivesOnDesktop bool true
@@ -351,6 +354,10 @@ for domain in com.apple.AppleMultitouchTrackpad com.apple.driver.AppleBluetoothM
 	# Mission Control with three or four fingers swiping up
 	set_default "${domain}" TrackpadThreeFingerVertSwipeGesture int 2
 	set_default "${domain}" TrackpadFourFingerVertSwipeGesture int 2
+	# No three-finger tap to look up words
+	set_default "${domain}" TrackpadThreeFingerTapGesture int 0
+	# Control is the modifier for scroll-to-zoom
+	set_default "${domain}" HIDScrollZoomModifierMask int 262144
 done
 set_default NSGlobalDomain com.apple.mouse.tapBehavior int 1
 set_default -currentHost NSGlobalDomain com.apple.mouse.tapBehavior int 1
@@ -361,6 +368,17 @@ set_default -currentHost NSGlobalDomain com.apple.trackpad.fourFingerVertSwipeGe
 set_default NSGlobalDomain com.apple.trackpad.scaling float 2.5
 # Swipe between pages with two fingers
 set_default NSGlobalDomain AppleEnableSwipeNavigateWithScrolls bool true
+
+# Zoom the screen with Control + scroll
+label="com.apple.universalaccess closeViewScrollWheelToggle = true"
+if [[ $(defaults read com.apple.universalaccess closeViewScrollWheelToggle 2>/dev/null || true) == 1 ]]; then
+	already_set "${label}"
+# com.apple.universalaccess is protected: writing it needs Full Disk Access for the terminal
+elif defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true 2>/dev/null; then
+	updated "${label}"
+else
+	echo -e "⏭️  \033[1;33mCouldn't set ${label}: give your terminal Full Disk Access, or set it in System Settings > Accessibility > Zoom.\033[0m"
+fi
 
 ###############################################################################
 # Language & region                                                           #
@@ -403,6 +421,9 @@ set_default NSGlobalDomain NSAutomaticCapitalizationEnabled bool false
 set_default NSGlobalDomain NSAutomaticDashSubstitutionEnabled bool false
 set_default NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled bool false
 set_default NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled bool false
+# Underline misspellings without correcting them
+set_default NSGlobalDomain NSAllowContinuousSpellChecking bool true
+set_default com.apple.assistant.support "Dictation Enabled" bool false
 
 ###############################################################################
 # Appearance & windows                                                        #
@@ -412,6 +433,8 @@ echo -e "\n🌙 \033[1;35mAppearance & windows...\033[0m"
 on_change="logout"
 
 set_default NSGlobalDomain AppleInterfaceStyle string Dark
+# Liquid Glass tint, from clear (0) to fully tinted (1)
+set_default NSGlobalDomain NSGlassTintAmount float 0.5
 # Reopen windows when relaunching apps ("Close windows when quitting an application" off)
 set_default NSGlobalDomain NSQuitAlwaysKeepsWindows bool true
 set_default com.apple.WindowManager EnableTiledWindowMargins bool false
@@ -431,6 +454,8 @@ set_default com.apple.dock show-recents bool false
 set_default com.apple.dock tilesize int 64
 # Don't rearrange Spaces based on most recent use
 set_default com.apple.dock mru-spaces bool false
+# No App Exposé when swiping down with three or four fingers
+set_default com.apple.dock showAppExposeGestureEnabled bool false
 # Hot corners: 1 = no action, 2 = Mission Control, 5 = start screen saver, 6 = disable screen saver
 set_default com.apple.dock wvous-tl-corner int 5
 set_default com.apple.dock wvous-tr-corner int 2
@@ -453,6 +478,39 @@ set_default NSGlobalDomain AppleMenuBarVisibleInFullscreen bool true
 set_default -currentHost com.apple.Spotlight MenuItemHidden bool true
 set_default com.apple.Siri StatusMenuVisible bool false
 set_default -currentHost com.apple.controlcenter BatteryShowPercentage bool true
+# Where each control shows: 2 = in the menu bar, 18 = always in the menu bar, 6 = menu bar only
+set_default -currentHost com.apple.controlcenter Bluetooth int 2
+set_default -currentHost com.apple.controlcenter ScreenMirroring int 2
+set_default -currentHost com.apple.controlcenter Sound int 18
+set_default -currentHost com.apple.controlcenter Battery int 6
+# Always show the date next to the clock
+set_default com.apple.menuextra.clock ShowDate int 1
+
+###############################################################################
+# Notifications & sound                                                       #
+###############################################################################
+
+echo -e "\n🔔 \033[1;35mNotifications & sound...\033[0m"
+on_change="logout"
+
+# Show notification previews: 2 = never
+set_default com.apple.ncprefs content_visibility int 2
+set_default com.apple.ncprefs summarize_previews bool true
+# No feedback sound when changing the volume
+set_default NSGlobalDomain com.apple.sound.beep.feedback int 0
+
+###############################################################################
+# Spotlight & Activity Monitor                                                #
+###############################################################################
+
+echo -e "\n🔎 \033[1;35mSpotlight & Activity Monitor...\033[0m"
+on_change=""
+
+# Keep clipboard history in Spotlight for 7 days
+set_default com.apple.Spotlight PasteboardHistoryEnabled bool true
+set_default com.apple.Spotlight PasteboardHistoryTimeout int 604800
+# Show all processes
+set_default com.apple.ActivityMonitor ShowCategory int 100
 
 ###############################################################################
 # Wallpaper & screen saver                                                    #
@@ -531,7 +589,11 @@ echo -e "\n📸 \033[1;35mScreenshots...\033[0m"
 on_change=""
 
 set_default com.apple.screencapture location string "${HOME}/Downloads"
+# The Screenshot app keeps its own locations for screenshots and screen recordings
+set_default com.apple.screencapture location-screenshot string "${HOME}/Downloads"
+set_default com.apple.screencapture location-screenrecording string "${HOME}/Downloads"
 set_default com.apple.screencapture show-thumbnail bool false
+set_default com.apple.screencapture showsClicks bool true
 
 ###############################################################################
 # Lock screen                                                                 #
@@ -583,6 +645,24 @@ fi
 set_pmset -c displaysleep 20
 set_pmset -c sleep 0
 set_pmset -c womp 1
+
+###############################################################################
+# Network                                                                     #
+###############################################################################
+
+echo -e "\n🌐 \033[1;35mNetwork...\033[0m"
+on_change=""
+
+label="Wi-Fi DNS = 1.1.1.1"
+# Disabled services are listed with a leading asterisk, and CI VMs have no Wi-Fi at all
+if ! networksetup -listallnetworkservices | grep -Fxq "Wi-Fi"; then
+	echo -e "⏭️  \033[1;33mNo Wi-Fi found, skipping ${label}.\033[0m"
+elif [[ $(networksetup -getdnsservers Wi-Fi) == "1.1.1.1" ]]; then
+	already_set "${label}"
+else
+	sudo networksetup -setdnsservers Wi-Fi 1.1.1.1
+	updated "${label}"
+fi
 
 ###############################################################################
 # Firewall                                                                    #
