@@ -121,15 +121,20 @@ How to apply:
 
   Do not mention files not included in the PR itself, e.g. "`make check` succeeded with only
   unrelated unstaged settings file need linting".
+
 - Add a blurb to the end of the PR description about what model and harness is making the changes,
   e.g. "Model: GPT-5.6-Sol // Harness: Codex". Do not include this blurb as another bullet in the
   PR description itself.
+
 - **Open a real PR, not a draft.** Drafts do not get review-bot coverage.
+
 - **Rebase onto latest `main` before opening.** Stale branches conflict and waste a review round.
+
 - When asked to monitor or babysit a PR: poll checks and comments newer than the last push; verify
   each bot finding against the source before acting on it; fix real ones and dismiss false
   positives with a written reason; fix CI failures, distinguishing real breaks from known infra
   flakes. If nothing is new, stay quiet — do not post filler comments. Stop when the repo's review
   bots are green on the latest commit.
+
 - Merge only per the disposition given in the request (merge when green, or stop and report). If
   none was given, report and ask.
