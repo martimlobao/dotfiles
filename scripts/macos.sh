@@ -364,6 +364,7 @@ set_default -currentHost NSGlobalDomain com.apple.mouse.tapBehavior int 1
 set_default -currentHost NSGlobalDomain com.apple.trackpad.threeFingerHorizSwipeGesture int 1
 set_default -currentHost NSGlobalDomain com.apple.trackpad.fourFingerHorizSwipeGesture int 2
 set_default -currentHost NSGlobalDomain com.apple.trackpad.threeFingerVertSwipeGesture int 2
+set_default -currentHost NSGlobalDomain com.apple.trackpad.threeFingerTapGesture int 0
 set_default -currentHost NSGlobalDomain com.apple.trackpad.fourFingerVertSwipeGesture int 2
 set_default NSGlobalDomain com.apple.trackpad.scaling float 2.5
 # Swipe between pages with two fingers
@@ -493,7 +494,7 @@ set_default com.apple.menuextra.clock ShowDate int 1
 echo -e "\n🔔 \033[1;35mNotifications & sound...\033[0m"
 on_change="logout"
 
-# Show notification previews: 2 = never
+# The "Show previews" option picked in System Settings > Notifications, which stores it as 2
 set_default com.apple.ncprefs content_visibility int 2
 set_default com.apple.ncprefs summarize_previews bool true
 # No feedback sound when changing the volume
