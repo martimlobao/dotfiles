@@ -98,6 +98,42 @@ if [[ ${os} == "Darwin" ]]; then
 fi
 
 ###############################################################################
+# Linux preferences                                                           #
+###############################################################################
+if [[ ${os} == "Linux" ]]; then
+	echo
+	# macOS's ssh client sends LANG and LC_* (SendEnv), and Raspberry Pi OS only generates
+	# en_GB.UTF-8, so every ssh login warns that it can't set the locale. locale -a spells it
+	# en_US.utf8.
+	if locale -a 2>/dev/null | grep -qx 'en_US.utf8'; then
+		echo -e "✅ \033[1;32mThe en_US.UTF-8 locale is already generated.\033[0m"
+	else
+		echo -e "🌐 \033[1;33mGenerating the en_US.UTF-8 locale...\033[0m"
+		if grep -qE '^# *en_US.UTF-8 UTF-8' /etc/locale.gen; then
+			sudo sed -i -E 's/^# *(en_US.UTF-8 UTF-8)/\1/' /etc/locale.gen
+		elif ! grep -qx 'en_US.UTF-8 UTF-8' /etc/locale.gen; then
+			echo 'en_US.UTF-8 UTF-8' | sudo tee -a /etc/locale.gen >/dev/null
+		fi
+		sudo locale-gen
+		echo -e "✅ \033[1;32mGenerated the en_US.UTF-8 locale.\033[0m"
+	fi
+
+	# Commits are signed through 1Password, whose op-ssh-sign only exists on macOS. Here git's own
+	# ssh-keygen signs instead, through the 1Password agent forwarded from the Mac (ssh -A).
+	# ~/.gitconfig.private comes last in ~/.gitconfig, so this wins.
+	if [[ $(git config --file "${HOME}/.gitconfig.private" gpg.ssh.program || true) == "ssh-keygen" ]]; then
+		echo -e "✅ \033[1;32mGit already signs commits with ssh-keygen.\033[0m"
+	else
+		git config --file "${HOME}/.gitconfig.private" gpg.ssh.program ssh-keygen
+		echo -e "🔏 \033[1;32mGit now signs commits with ssh-keygen.\033[0m"
+	fi
+	if [[ -z $(git config --file "${HOME}/.gitconfig.private" user.signingKey || true) ]]; then
+		echo -e "💡 \033[1;33mAdd [user] name, email and signingKey to ~/.gitconfig.private to commit" \
+			"from this machine.\033[0m"
+	fi
+fi
+
+###############################################################################
 # CI exit                                                                     #
 ###############################################################################
 if [[ ${CI-} == "true" ]]; then
@@ -115,7 +151,11 @@ sleep 1
 if [[ ${os} == "Darwin" ]]; then
 	"${root}/scripts/app.py" sync ${1+"$1"}
 elif [[ ${os} == "Linux" ]]; then
-	"${root}/scripts/app.py" sync --no-mas --no-cask ${1+"$1"}
+	# Only the command-line essentials: the rest of apps.toml is macOS apps or tools too heavy to
+	# be worth building on a small machine like a Raspberry Pi. core is skipped too, since uv is
+	# installed above and the rest of it is macOS only.
+	"${root}/scripts/app.py" sync --no-mas --no-cask --group system-binaries --group shell-tools \
+		--group languages --group cli-tools --group linters ${1+"$1"}
 fi
 
 ###############################################################################

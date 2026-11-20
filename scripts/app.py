@@ -100,6 +100,8 @@ class SyncOptions:
 
     yes: bool
     enabled_sources: set[str]
+    # Groups to install; None installs every group.
+    groups: frozenset[str] | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -1475,11 +1477,14 @@ class AppManagerFacade:
         grouped_records: list[tuple[str, list[AppRecord]]] = self.repository.list_grouped_records(
             document
         )
-        # Validate first, so a broken apps.toml fails before installing.
+        selected: list[tuple[str, list[AppRecord]]] = self._select_groups(grouped_records, options)
+        # Validate every group first, so a broken apps.toml fails before
+        # installing, even in groups this sync skips (a typo there would
+        # otherwise leave an installed app unmanaged).
         self._validate_declared(grouped_records, options.enabled_sources)
         with self._sudo_kept_alive(options):
-            self._prime_source_caches(grouped_records, options)
-            self._install_declared(grouped_records, options)
+            self._prime_source_caches(selected, options)
+            self._install_declared(selected, options)
 
             self.console.paint(
                 "Syncing installed apps to apps.toml...",
@@ -1487,12 +1492,26 @@ class AppManagerFacade:
                 icon="🔄",
                 newline=True,
             )
+            # Every group counts as managed, so apps in unselected
+            # groups are never uninstalled.
             self._sync_unmanaged(grouped_records, options)
 
             self.console.paint(
                 "Updating existing apps and packages...", Ansi.MAGENTA, icon="🔼", newline=True
             )
             self._upgrade_sources(options)
+
+    @staticmethod
+    def _select_groups(
+        grouped_records: list[tuple[str, list[AppRecord]]],
+        options: SyncOptions,
+    ) -> list[tuple[str, list[AppRecord]]]:
+        if options.groups is None:
+            return grouped_records
+        unknown: frozenset[str] = options.groups - {group for group, _ in grouped_records}
+        if unknown:
+            raise AppManagerError(f"apps.toml has no groups named: {', '.join(sorted(unknown))}")
+        return [(group, records) for group, records in grouped_records if group in options.groups]
 
     @contextmanager
     def _sudo_kept_alive(self, options: SyncOptions) -> Generator[None]:
@@ -1865,7 +1884,12 @@ class SyncAppsCommand(BaseCommand):
             for config in SourceRegistry.source_configs()
             if bool(getattr(args, config.install_flag, False))
         }
-        options = SyncOptions(yes=args.yes, enabled_sources=enabled)
+        groups: list[str] | None = args.group
+        options = SyncOptions(
+            yes=args.yes,
+            enabled_sources=enabled,
+            groups=frozenset(groups) if groups else None,
+        )
         self.facade.sync_apps(options)
 
 
@@ -1968,6 +1992,12 @@ def parse_args() -> argparse.Namespace:
     )
     sync_parser.add_argument(
         "-y", "--yes", action="store_true", help="Auto-confirm uninstall prompts"
+    )
+    sync_parser.add_argument(
+        "-g",
+        "--group",
+        action="append",
+        help="Only install apps from this group (repeatable; default: every group)",
     )
 
     for config in SourceRegistry.source_configs():

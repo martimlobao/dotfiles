@@ -60,7 +60,8 @@ if [[ $(uname) == "Darwin" ]]; then
 	fi
 	echo -e "✅ \033[1;32mDefault shell changed to ${zsh_path}.\033[0m"
 else
-	if chsh -s "${zsh_path}"; then
+	# As root, chsh skips its own password prompt, which fails without a terminal
+	if sudo chsh -s "${zsh_path}" "${USER}"; then
 		echo -e "🐣 \033[1;32mDefault shell changed to ${zsh_path}.\033[0m"
 	else
 		echo -e "❌ \033[1;31mError: chsh failed.\033[0m" >&2

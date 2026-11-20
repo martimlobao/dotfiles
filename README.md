@@ -3,9 +3,8 @@
 ![Screenshot of my shell prompt](static/screenshot.png)
 
 This repository contains my personal dotfiles, as well as several scripts to install applications
-and configure settings. Although the shell configuration settings should (mostly) work on any
-Unix-based system, most of these scripts were only designed to run on macOS and likely won't run at
-all on any other OS.
+and configure settings. It's built for macOS, and also sets up a leaner command-line environment on
+Linux (tested on a Raspberry Pi running 64-bit Raspberry Pi OS, and on Debian and Ubuntu).
 
 Here's a short description of each script in this repository:
 
@@ -33,8 +32,8 @@ you probably don't need. Use at your own risk!
 
 ## Installation
 
-On a fresh (or not so fresh) macOS install, run the following command to install Homebrew and run
-all scripts:
+On a fresh (or not so fresh) macOS or Linux install, run the following command to install Homebrew
+and run all scripts. The same command works on both, since the scripts detect the OS themselves:
 
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/martimlobao/dotfiles/main/bootstrap.sh)
@@ -55,6 +54,22 @@ To run the script without interactive prompts, just add `-y` to the end:
 ```bash
 bash <(curl -sL https://dot.lobao.io) -y
 ```
+
+### Linux and Raspberry Pi
+
+Linux runs the same command, and only needs `curl` and a user with `sudo` (Raspberry Pi OS has
+both). Use the 64-bit OS, since Homebrew doesn't support 32-bit ARM. Compared to macOS, Linux:
+
+- installs `git` and Homebrew's prerequisites with `apt` first
+- only installs the command-line groups of [`apps.toml`](apps.toml) (`system-binaries`,
+  `shell-tools`, `languages`, `cli-tools` and `linters`), skipping casks, the Mac App Store, and
+  anything macOS-only or too heavy to build on a small machine
+- generates the `en_US.UTF-8` locale, which macOS's ssh client asks for
+- skips the macOS settings, Dock, wallpapers, and 1Password setup in `local.sh`
+
+Without 1Password, git doesn't know who you are. Add your `[user]` `name`, `email`, and
+`signingKey` (the public key) to `~/.gitconfig.private` on the Pi, and connect with `ssh -A` so
+commits are signed by the 1Password SSH agent on your Mac.
 
 ### 1Password Requirements
 
@@ -92,11 +107,12 @@ up to date:
 app add <app> <source> [--group <group>] [--description <text>]
 app remove <app>
 app validate
-app sync [--yes] [--no-cask] [--no-formula] [--no-uv] [--no-mas]
+app sync [--yes] [--no-cask] [--no-formula] [--no-uv] [--no-mas] [--group <group>]...
 ```
 
 By default, adding an app will also install it via the chosen source, and removing an app will
-uninstall it. Pass `--no-install` to skip those steps and only update `apps.toml`.
+uninstall it. Pass `--no-install` to skip those steps and only update `apps.toml`. `sync` installs
+every group unless given one or more `--group`, which is how Linux skips the macOS-only groups.
 
 ## Aerial Live Wallpapers
 

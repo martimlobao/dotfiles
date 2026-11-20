@@ -104,21 +104,26 @@ source $ZSH/oh-my-zsh.sh
 source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
+# Each tool below is skipped when it isn't installed, since a machine may only sync some groups
+# of apps.toml (Linux skips casks like 1password-cli).
+
 # 1Password completion and plugins
-eval "$(op completion zsh)"; compdef _op op
-# Agents can't answer 1Password prompts, so they use gh's own keychain login instead.
-[[ -n ${CLAUDECODE-}${CODEX_THREAD_ID-} ]] || source "$HOME/.config/op/plugins.sh"
+if (( $+commands[op] )); then
+	eval "$(op completion zsh)"; compdef _op op
+	# Agents can't answer 1Password prompts, so they use gh's own keychain login instead.
+	[[ -n ${CLAUDECODE-}${CODEX_THREAD_ID-} ]] || source "$HOME/.config/op/plugins.sh"
+fi
 
-# Starship completion
-eval "$(starship init zsh)"
+# Starship prompt
+(( $+commands[starship] )) && eval "$(starship init zsh)"
 
-# Shell completion for uv, uvx, and ruff
-eval "$(uv generate-shell-completion zsh)"
-eval "$(uvx --generate-shell-completion zsh)"
-eval "$(ruff generate-shell-completion zsh)"
-
-# Shell completion for rumdl
-eval "$(rumdl completions zsh)"
+# Shell completion for uv, uvx, ruff, and rumdl
+if (( $+commands[uv] )); then
+	eval "$(uv generate-shell-completion zsh)"
+	eval "$(uvx --generate-shell-completion zsh)"
+fi
+(( $+commands[ruff] )) && eval "$(ruff generate-shell-completion zsh)"
+(( $+commands[rumdl] )) && eval "$(rumdl completions zsh)"
 
 # bun and bun completions
 if [ -d "$HOME/.bun" ]; then

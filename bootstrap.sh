@@ -57,6 +57,22 @@
 		sudo xcodebuild -license accept
 	fi
 
+	# git clones the dotfiles, run.sh generates a locale with locales, and Homebrew needs the rest,
+	# but minimal Debian installs like Raspberry Pi OS Lite ship without most of them
+	if [[ $(uname) == "Linux" ]] && command -v apt-get &>/dev/null; then
+		missing=()
+		for pkg in build-essential procps curl file git locales; do
+			# A removed but unpurged package still has a status, so check it's actually installed
+			[[ $(dpkg-query -W -f='${Status}' "${pkg}" 2>/dev/null) == "install ok installed" ]] ||
+				missing+=("${pkg}")
+		done
+		if ((${#missing[@]})); then
+			echo -e "📦 \033[1;33mInstalling ${missing[*]}...\033[0m"
+			sudo apt-get update
+			sudo apt-get install -y "${missing[@]}"
+		fi
+	fi
+
 	if [[ ! -d ${DOTPATH} ]]; then
 		echo -e "📑 \033[1;33mCloning dotfiles on branch ${BRANCH}...\033[0m"
 		git clone https://github.com/martimlobao/dotfiles.git --branch "${BRANCH}" "${DOTPATH}"

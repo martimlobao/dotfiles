@@ -18,6 +18,9 @@ lima = "formula"  # Linux virtual machines
 pnpm = "formula"  # Fast, disk space efficient package manager
 "postgresql@15" = "formula"  # Object-relational database system
 redis = "formula"  # Persistent key-value database, with built-in net interface
+supabase = "formula"  # Postgres development platform
+swift-format = "formula"  # Formatting technology for Swift source code
+swiftlint = "formula"  # Tool to enforce Swift style and conventions
 t3-code = "cask"  # Minimal GUI for AI code agents
 visual-studio-code = "cask"  # Open-source code editor
 xcodegen = "formula"  # Generate your Xcode project from a spec file and your folder structure
@@ -102,55 +105,52 @@ yubico-authenticator = "cask"  # Application for generating TOTP and HOTP codes
 
 [cli-tools]
 ack = "formula"  # Search tool like grep, but optimized for programmers
-actionlint-py = "uv"  # Static checker for GitHub Actions workflow files
-basictex = "cask"  # Compact TeX distribution as alternative to the full TeX Live / MacTeX
 bat = "formula"  # Clone of cat(1) with syntax highlighting and Git integration
-bun = "formula"  # Incredibly fast JavaScript runtime, bundler, test runner, and package manager
-checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
-defaultbrowser = "formula"  # Command-line tool for getting & setting the default browser
 domain-check = "formula"  # CLI tool for checking domain availability using RDAP and WHOIS protocols
-exiftool = "formula"  # Perl lib for reading and writing EXIF metadata
 eza = "formula"  # Modern, maintained replacement for ls
-ffmpeg = "formula"  # Play, record, convert, and stream audio and video
 gh = "formula"  # GitHub command-line tool
-ghostscript = "formula"  # Interpreter for PostScript and PDF
 git-who = "formula"  # Git blame for file trees
 httpie = "uv"  # User-friendly cURL replacement (command-line HTTP client)
-imagemagick = "formula"  # Tools and libraries to manipulate images in many formats
 jq = "formula"  # Lightweight and flexible command-line JSON processor
-latexindent = "formula"  # Add indentation to LaTeX files
-leaf-markdown-viewer = "formula"  # Terminal Markdown previewer with a GUI-like experience
-lychee = "formula"  # Fast, async, resource-friendly link checker
-mcat = "formula"  # Terminal image, video, directory, and Markdown viewer
-mole = "formula"  # Deep clean and optimize your Mac
 mq = "formula"  # Jq-like command-line tool for markdown processing
 nano = "formula"  # Free (GNU) replacement for the Pico text editor
 nnn = "formula"  # Tiny, lightning fast, feature-packed file manager
-oxipng = "formula"  # Multithreaded PNG optimizer written in Rust
-pandoc = "formula"  # Swiss-army knife of markup format conversion
-pastel = "formula"  # Command-line tool to generate, analyze, convert and manipulate colors
-pngcrush = "formula"  # Optimizer for PNG files
-prek = "uv"  # Pre-commit re-implemented in Rust
 pv = "formula"  # Monitor data's progress through a pipe
+tree = "formula"  # Display directories as trees (with optional color/HTML output)
+wget = "formula"  # Internet file retriever
+yq = "formula"  # Process YAML, JSON, XML, CSV and properties documents from the CLI
+
+[linters]
+actionlint-py = "uv"  # Static checker for GitHub Actions workflow files
+checkov = "uv"  # Prevent cloud misconfigurations during build-time for IaC tools
+lychee = "formula"  # Fast, async, resource-friendly link checker
+prek = "uv"  # Pre-commit re-implemented in Rust
 rumdl = "uv"  # Markdown Linter and Formatter written in Rust
 shellcheck-py = "uv"  # Static analysis and lint tool, for (ba)sh scripts
 shfmt-py = "uv"  # Autoformat shell script source code
 sqlfluff = "uv"  # SQL linter and auto-formatter for Humans
-supabase = "formula"  # Postgres development platform
-superseedr = "formula"  # BitTorrent Client in your Terminal
-swift-format = "formula"  # Formatting technology for Swift source code
-swiftlint = "formula"  # Tool to enforce Swift style and conventions
-tectonic = "formula"  # Modernized, complete, self-contained TeX/LaTeX engine
-telnet = "formula"  # User interface to the TELNET protocol
-testdisk = "formula"  # Powerful free data recovery utility
 tombi = "uv"  # TOML formatter, linter and language server
-tree = "formula"  # Display directories as trees (with optional color/HTML output)
 trufflehog = "formula"  # Find and verify credentials
-wget = "formula"  # Internet file retriever
-xleak = "formula"  # Terminal Excel viewer with an interactive TUI
 yamllint = "uv"  # Linter for YAML files
-yq = "formula"  # Process YAML, JSON, XML, CSV and properties documents from the CLI
+
+[media]
+exiftool = "formula"  # Perl lib for reading and writing EXIF metadata
+ffmpeg = "formula"  # Play, record, convert, and stream audio and video
+imagemagick = "formula"  # Tools and libraries to manipulate images in many formats
+mcat = "formula"  # Terminal image, video, directory, and Markdown viewer
+oxipng = "formula"  # Multithreaded PNG optimizer written in Rust
+pastel = "formula"  # Command-line tool to generate, analyze, convert and manipulate colors
+pngcrush = "formula"  # Optimizer for PNG files
 yt-dlp = "uv"  # Feature-rich command-line audio/video downloader
+
+[documents]
+basictex = "cask"  # Compact TeX distribution as alternative to the full TeX Live / MacTeX
+ghostscript = "formula"  # Interpreter for PostScript and PDF
+latexindent = "formula"  # Add indentation to LaTeX files
+leaf-markdown-viewer = "formula"  # Terminal Markdown previewer with a GUI-like experience
+pandoc = "formula"  # Swiss-army knife of markup format conversion
+tectonic = "formula"  # Modernized, complete, self-contained TeX/LaTeX engine
+xleak = "formula"  # Terminal Excel viewer with an interactive TUI
 
 [shell-tools]
 autojump = "formula"  # Shell extension to jump to frequently used directories
@@ -170,12 +170,19 @@ pylint = "uv"  # It's not just a linter that annoys you!
 ruff = "uv"  # Extremely fast Python linter, written in Rust
 ty = "uv"  # Extremely fast Python type checker, written in Rust
 
+[macos]
+defaultbrowser = "formula"  # Command-line tool for getting & setting the default browser
+mole = "formula"  # Deep clean and optimize your Mac
+telnet = "formula"  # User interface to the TELNET protocol
+
 [utilities]
 6753110395 = "mas"  # Folder Quick Look: Instant Folder & Archive Peek
 6760872758 = "mas"  # Unfold - Quick Look Previews
 markdown-preview = "cask"  # Markdown previewer with bundled Quick Look extension
 quicklook-video = "cask"  # Thumbnails, static previews, cover art and metadata for video files
+superseedr = "formula"  # BitTorrent Client in your Terminal
 syntax-highlight = "cask"  # Quicklook extension for source files
+testdisk = "formula"  # Powerful free data recovery utility
 
 [system-binaries]
 bash = "formula"  # Bourne-Again SHell, a UNIX command interpreter
@@ -184,6 +191,7 @@ grep = "formula"  # GNU grep, egrep and fgrep [command: ggrep]
 zsh = "formula"  # UNIX shell (command interpreter)
 
 [languages]
+bun = "formula"  # Incredibly fast JavaScript runtime, bundler, test runner, and package manager
 go = "formula"  # Open source programming language to build simple/reliable/efficient software
 node = "formula"  # Open-source, cross-platform JavaScript runtime environment
 rust = "formula"  # Safe, concurrent, practical language
