@@ -93,8 +93,8 @@
 
 [include]
 	# For credentials and tokens that should not be shared, and per-machine overrides (it comes
-	# last, so it wins). In ~/.gitconfig.private store with the following format or run
-	# ./local.sh to generate it.
+	# last, so it wins). On macOS, local.sh regenerates it from injectme/.gitconfig.private.tpl,
+	# so overrides there belong in the template. Elsewhere, store it with the following format.
 	# [user]
 	#	name = ...
 	#	email = ...

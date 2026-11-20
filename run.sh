@@ -111,7 +111,7 @@ if [[ ${os} == "Linux" ]]; then
 		echo -e "🌐 \033[1;33mGenerating the en_US.UTF-8 locale...\033[0m"
 		if grep -qE '^# *en_US.UTF-8 UTF-8' /etc/locale.gen; then
 			sudo sed -i -E 's/^# *(en_US.UTF-8 UTF-8)/\1/' /etc/locale.gen
-		else
+		elif ! grep -qx 'en_US.UTF-8 UTF-8' /etc/locale.gen; then
 			echo 'en_US.UTF-8 UTF-8' | sudo tee -a /etc/locale.gen >/dev/null
 		fi
 		sudo locale-gen
