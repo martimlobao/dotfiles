@@ -1478,8 +1478,10 @@ class AppManagerFacade:
             document
         )
         selected: list[tuple[str, list[AppRecord]]] = self._select_groups(grouped_records, options)
-        # Validate first, so a broken apps.toml fails before installing.
-        self._validate_declared(selected, options.enabled_sources)
+        # Validate every group first, so a broken apps.toml fails before
+        # installing, even in groups this sync skips (a typo there would
+        # otherwise leave an installed app unmanaged).
+        self._validate_declared(grouped_records, options.enabled_sources)
         with self._sudo_kept_alive(options):
             self._prime_source_caches(selected, options)
             self._install_declared(selected, options)

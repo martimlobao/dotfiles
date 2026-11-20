@@ -92,11 +92,12 @@ up to date:
 app add <app> <source> [--group <group>] [--description <text>]
 app remove <app>
 app validate
-app sync [--yes] [--no-cask] [--no-formula] [--no-uv] [--no-mas]
+app sync [--yes] [--no-cask] [--no-formula] [--no-uv] [--no-mas] [--group <group>]...
 ```
 
 By default, adding an app will also install it via the chosen source, and removing an app will
-uninstall it. Pass `--no-install` to skip those steps and only update `apps.toml`.
+uninstall it. Pass `--no-install` to skip those steps and only update `apps.toml`. `sync` installs
+every group unless given one or more `--group`, which is how Linux skips the macOS-only groups.
 
 ## Aerial Live Wallpapers
 

@@ -170,16 +170,18 @@ pylint = "uv"  # It's not just a linter that annoys you!
 ruff = "uv"  # Extremely fast Python linter, written in Rust
 ty = "uv"  # Extremely fast Python type checker, written in Rust
 
+[macos]
+defaultbrowser = "formula"  # Command-line tool for getting & setting the default browser
+mole = "formula"  # Deep clean and optimize your Mac
+telnet = "formula"  # User interface to the TELNET protocol
+
 [utilities]
 6753110395 = "mas"  # Folder Quick Look: Instant Folder & Archive Peek
 6760872758 = "mas"  # Unfold - Quick Look Previews
-defaultbrowser = "formula"  # Command-line tool for getting & setting the default browser
 markdown-preview = "cask"  # Markdown previewer with bundled Quick Look extension
-mole = "formula"  # Deep clean and optimize your Mac
 quicklook-video = "cask"  # Thumbnails, static previews, cover art and metadata for video files
 superseedr = "formula"  # BitTorrent Client in your Terminal
 syntax-highlight = "cask"  # Quicklook extension for source files
-telnet = "formula"  # User interface to the TELNET protocol
 testdisk = "formula"  # Powerful free data recovery utility
 
 [system-binaries]

@@ -1080,7 +1080,7 @@ def test_facade_sync_apps_orchestrates(tmp_path: Path) -> None:
 def test_facade_sync_apps_installs_only_selected_groups(tmp_path: Path) -> None:
     facade, _, _ = build_facade(tmp_path, content='[cli]\nfoo = "uv"\n\n[gui]\nbar = "uv"\n')
     with (
-        patch.object(facade, "_validate_declared"),
+        patch.object(facade, "_validate_declared") as validate,
         patch.object(facade, "_prime_source_caches"),
         patch.object(facade, "_install_declared") as install,
         patch.object(facade, "_sync_unmanaged") as sync_unmanaged,
@@ -1090,6 +1090,7 @@ def test_facade_sync_apps_installs_only_selected_groups(tmp_path: Path) -> None:
             app_module.SyncOptions(yes=True, enabled_sources={"uv"}, groups=frozenset({"cli"}))
         )
     assert [group for group, _ in install.call_args[0][0]] == ["cli"]
+    assert [group for group, _ in validate.call_args[0][0]] == ["cli", "gui"]
     # Unselected groups still count as managed, so their apps
     # aren't offered for uninstall.
     assert [group for group, _ in sync_unmanaged.call_args[0][0]] == ["cli", "gui"]
