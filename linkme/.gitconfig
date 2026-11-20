@@ -1,15 +1,3 @@
-[include]
-	# For credentials and tokens that should not be shared.
-	# In ~/.gitconfig.private store with the following format or run
-	# ./local.sh to generate it.
-	# [user]
-	#	name = ...
-	#	email = ...
-	#	signingKey = ...
-	# [github]
-	#	user = ...
- 	path = ~/.gitconfig.private
-
 [credential "https://github.com"]
 	# Use gh's login for GitHub over HTTPS (e.g. private Homebrew taps). The
 	# osxkeychain helper prompts for the keychain password when the github.com
@@ -102,3 +90,15 @@
 
 [pager]
 	stash = false
+
+[include]
+	# For credentials and tokens that should not be shared, and per-machine overrides (it comes
+	# last, so it wins). In ~/.gitconfig.private store with the following format or run
+	# ./local.sh to generate it.
+	# [user]
+	#	name = ...
+	#	email = ...
+	#	signingKey = ...
+	# [github]
+	#	user = ...
+	path = ~/.gitconfig.private

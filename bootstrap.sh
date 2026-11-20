@@ -57,6 +57,20 @@
 		sudo xcodebuild -license accept
 	fi
 
+	# git clones the dotfiles and Homebrew needs the rest, but minimal Debian installs like
+	# Raspberry Pi OS Lite ship without most of them
+	if [[ $(uname) == "Linux" ]] && command -v apt-get &>/dev/null; then
+		missing=()
+		for pkg in build-essential procps curl file git; do
+			dpkg -s "${pkg}" &>/dev/null || missing+=("${pkg}")
+		done
+		if ((${#missing[@]})); then
+			echo -e "📦 \033[1;33mInstalling ${missing[*]}...\033[0m"
+			sudo apt-get update
+			sudo apt-get install -y "${missing[@]}"
+		fi
+	fi
+
 	if [[ ! -d ${DOTPATH} ]]; then
 		echo -e "📑 \033[1;33mCloning dotfiles on branch ${BRANCH}...\033[0m"
 		git clone https://github.com/martimlobao/dotfiles.git --branch "${BRANCH}" "${DOTPATH}"
