@@ -116,7 +116,6 @@ mq = "formula"  # Jq-like command-line tool for markdown processing
 nano = "formula"  # Free (GNU) replacement for the Pico text editor
 nnn = "formula"  # Tiny, lightning fast, feature-packed file manager
 pv = "formula"  # Monitor data's progress through a pipe
-telnet = "formula"  # User interface to the TELNET protocol
 tree = "formula"  # Display directories as trees (with optional color/HTML output)
 wget = "formula"  # Internet file retriever
 yq = "formula"  # Process YAML, JSON, XML, CSV and properties documents from the CLI
@@ -180,6 +179,7 @@ mole = "formula"  # Deep clean and optimize your Mac
 quicklook-video = "cask"  # Thumbnails, static previews, cover art and metadata for video files
 superseedr = "formula"  # BitTorrent Client in your Terminal
 syntax-highlight = "cask"  # Quicklook extension for source files
+telnet = "formula"  # User interface to the TELNET protocol
 testdisk = "formula"  # Powerful free data recovery utility
 
 [system-binaries]

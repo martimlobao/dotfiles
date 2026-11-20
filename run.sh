@@ -152,9 +152,10 @@ if [[ ${os} == "Darwin" ]]; then
 	"${root}/scripts/app.py" sync ${1+"$1"}
 elif [[ ${os} == "Linux" ]]; then
 	# Only the command-line essentials: the rest of apps.toml is macOS apps or tools too heavy to
-	# be worth building on a small machine like a Raspberry Pi.
-	"${root}/scripts/app.py" sync --no-mas --no-cask --group core --group system-binaries \
-		--group shell-tools --group languages --group cli-tools --group linters ${1+"$1"}
+	# be worth building on a small machine like a Raspberry Pi. core is skipped too, since uv is
+	# installed above and the rest of it is macOS only.
+	"${root}/scripts/app.py" sync --no-mas --no-cask --group system-binaries --group shell-tools \
+		--group languages --group cli-tools --group linters ${1+"$1"}
 fi
 
 ###############################################################################
