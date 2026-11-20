@@ -401,3 +401,134 @@ function git-update() {
 			done
 	done
 }
+
+# Tailscale alongside a full-tunnel VPN like NordVPN, whose firewall drops every other tunnel
+# interface. tailscaled runs in userspace mode: no interface, routes or DNS, so the VPN is
+# untouched, but the OS can't route to 100.x either. ssh gets there through the `Match final`
+# block in ~/.ssh/config, Screen Sharing through the loopback ports of _ts_vnc.
+_TS_DIR="${HOME}/.local/state/ts"
+
+# Always pass the socket: without it, the CLI finds and drives Tailscale.app instead.
+function _ts() {
+	tailscale --socket="${_TS_DIR}/tailscaled.sock" "$@"
+}
+
+# True once tailscaled answers on its socket (not merely when launchd lists the job).
+function _ts_running() {
+	nc -U "${_TS_DIR}/tailscaled.sock" </dev/null >/dev/null 2>&1
+}
+
+# bootout returns while launchd still lists the job (and the old tailscaled may still answer), so
+# wait until it is really gone; otherwise an immediate `ts start` sees a dying daemon.
+function _ts_bootout() {
+	local job="gui/${UID}/com.dotfiles.ts" i=0
+	launchctl bootout "${job}" 2>/dev/null
+	while launchctl print "${job}" >/dev/null 2>&1 && ((i++ < 50)); do
+		sleep 0.1
+	done
+}
+
+# Screen Sharing ignores proxies, so every macOS peer gets a loopback port. It is derived from
+# the peer's address, so a connection saved in Screen Sharing keeps working across restarts.
+function _ts_vnc() {
+	local ip name port i=0
+	pkill -f "^socat .*${_TS_DIR}/"
+	# `up` returns once the backend runs, which can be before the first peer list arrives.
+	while ! _ts status --json | jq -e '.Peer | length > 0' >/dev/null && ((i++ < 50)); do
+		sleep 0.1
+	done
+	_ts status --self=false |
+		awk '$4 == "macOS" { split($1, o, "."); print $1, $2, 16384 + (o[3] * 256 + o[4]) % 49152 }' |
+		while read -r ip name port; do
+			# Subshell: keeps the forwarder out of the shell's job table.
+			(nohup socat "TCP-LISTEN:${port},bind=127.0.0.1,fork,reuseaddr" \
+				"EXEC:$(command -v tailscale) --socket=${_TS_DIR}/tailscaled.sock nc ${ip} 5900" >/dev/null 2>&1 &)
+			echo "vnc://localhost:${port}  ${name}"
+		done
+}
+
+function ts() {
+	# Linux needs none of this: its tailscaled is a normal system service, and NordVPN's Linux
+	# client can let it through (`nordvpn allowlist add subnet 100.64.0.0/10`, untested here).
+	if [[ ${OSTYPE} != darwin* ]]; then
+		echo "ts: macOS only; on Linux, use tailscale directly" >&2
+		return 1
+	fi
+	local cmd="${1:-status}" job="gui/${UID}/com.dotfiles.ts" id i=0
+	[[ $# -gt 0 ]] && shift
+	case "${cmd}" in
+	-h | --help | help)
+		cat <<'USAGE'
+ts: Tailscale that keeps your VPN working
+
+  ts start         connect (the first run logs in), then list vnc:// addresses
+  ts stop          disconnect and quit
+  ts switch [id]   switch tailnet, picked with fzf when no id is given
+  ts add           log in to another tailnet
+  ts [status]      show devices
+  ts <command>     anything else runs `tailscale <command>`
+
+While started, `ssh <device>` just works and Screen Sharing connects to the vnc://localhost
+address that `ts start` prints for each Mac.
+USAGE
+		return
+		;;
+	start)
+		if ! _ts_running; then
+			mkdir -p "${_TS_DIR}" && chmod 700 "${_TS_DIR}"
+			# Runs as you, not root: Homebrew's binaries are user-writable, so a root daemon would be
+			# a passwordless privilege escalation. The plist lives outside ~/Library/LaunchAgents so
+			# launchd only runs it between `ts start` and `ts stop`, never at login.
+			cat >"${_TS_DIR}/ts.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key><string>${job##*/}</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>$(command -v tailscaled)</string>
+		<string>--tun=userspace-networking</string>
+		<string>--statedir=${_TS_DIR}</string>
+		<string>--socket=${_TS_DIR}/tailscaled.sock</string>
+	</array>
+	<key>KeepAlive</key><true/>
+</dict>
+</plist>
+PLIST
+			_ts_bootout # A job left listed by a crash would fail the bootstrap.
+			launchctl bootstrap "${job%/*}" "${_TS_DIR}/ts.plist" || return 1
+			while ! _ts_running && ((i++ < 50)); do
+				sleep 0.1
+			done
+		fi
+		pgrep -xq Tailscale && echo "ts: quit Tailscale.app, it breaks DNS and routing alongside the VPN" >&2
+		;;
+	*)
+		if ! _ts_running; then
+			echo "ts: not running, run 'ts start' first" >&2
+			return 1
+		fi
+		;;
+	esac
+	case "${cmd}" in
+	start) ;;
+	stop)
+		pkill -f "^socat .*${_TS_DIR}/"
+		_ts_bootout
+		return
+		;;
+	add) _ts login --shields-up || return 1 ;;
+	switch)
+		id="${1:-$(_ts switch --list | tail -n +2 | fzf --height=~10 --prompt='tailnet> ' | awk '{print $1}')}"
+		[[ -n ${id} ]] && _ts switch "${id}" || return 1
+		;;
+	*)
+		_ts "${cmd}" "$@"
+		return
+		;;
+	esac
+	# In userspace mode, inbound tailnet connections land on this Mac's loopback-only services, so
+	# every way into a tailnet ends here, with shields up.
+	_ts up --shields-up && _ts_vnc
+}
