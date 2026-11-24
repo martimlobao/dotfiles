@@ -39,3 +39,7 @@ vault = "Private"
 [[ssh-keys]]
 item = "SSH BlueCrow Server"
 vault = "BlueCrow Capital"
+
+[[ssh-keys]]
+item = "hydrogen"
+vault = "Private"
