@@ -127,11 +127,15 @@ fi
 
 # GitHub CLI
 echo -e "\n📝 \033[1;35mSetting up GitHub CLI...\033[0m"
-if [[ -z $(gh auth status 2>/dev/null || echo '') ]]; then
-	gh auth login --git-protocol ssh --hostname github.com --skip-ssh-key --web
-	echo -e "✅ \033[1;32mGitHub CLI is authenticated.\033[0m"
+# gh gets its token from 1Password's shell plugin, which is only aliased in interactive shells, so
+# call it explicitly. `gh auth login` would store a separate plaintext token in the symlinked
+# hosts.yml instead.
+if op plugin run -- gh auth status >/dev/null 2>&1; then
+	echo -e "✅ \033[1;32mGitHub CLI is authenticated via 1Password.\033[0m"
 else
-	echo -e "✅ \033[1;32mGitHub CLI is already authenticated.\033[0m"
+	# prompts to pick the PAT item if the plugin isn't linked to one yet
+	op plugin run -- gh auth status
+	echo -e "✅ \033[1;32mGitHub CLI is authenticated via 1Password.\033[0m"
 fi
 
 # Set computer name
