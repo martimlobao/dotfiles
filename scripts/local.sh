@@ -127,12 +127,17 @@ fi
 
 # GitHub CLI
 echo -e "\n📝 \033[1;35mSetting up GitHub CLI...\033[0m"
-if [[ -z $(gh auth status 2>/dev/null || echo '') ]]; then
+# Interactive shells get gh's token from 1Password's shell plugin, but agent sessions skip the
+# plugin so they never wait on a 1Password prompt. gh's own keychain login covers them.
+if ! gh auth status >/dev/null 2>&1; then
 	gh auth login --git-protocol ssh --hostname github.com --skip-ssh-key --web
-	echo -e "✅ \033[1;32mGitHub CLI is authenticated.\033[0m"
-else
-	echo -e "✅ \033[1;32mGitHub CLI is already authenticated.\033[0m"
 fi
+# gh silently falls back to storing the token in plaintext when it can't write to the keychain
+if grep -qs oauth_token "${HOME}/.config/gh/hosts.yml"; then
+	echo -e "❌ \033[1;31mGitHub CLI stored its token in plaintext in ~/.config/gh/hosts.yml. Unlock the keychain, run 'gh auth logout' and rerun this script.\033[0m" >&2
+	exit 1
+fi
+echo -e "✅ \033[1;32mGitHub CLI is authenticated via the keychain.\033[0m"
 
 # Set computer name
 confirm_set() {
