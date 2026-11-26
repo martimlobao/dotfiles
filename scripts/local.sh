@@ -127,16 +127,17 @@ fi
 
 # GitHub CLI
 echo -e "\n📝 \033[1;35mSetting up GitHub CLI...\033[0m"
-# gh gets its token from 1Password's shell plugin, which is only aliased in interactive shells, so
-# call it explicitly. `gh auth login` would store a separate plaintext token in the symlinked
-# hosts.yml instead.
-if op plugin run -- gh auth status >/dev/null 2>&1; then
-	echo -e "✅ \033[1;32mGitHub CLI is authenticated via 1Password.\033[0m"
-else
-	# prompts to pick the PAT item if the plugin isn't linked to one yet
-	op plugin run -- gh auth status
-	echo -e "✅ \033[1;32mGitHub CLI is authenticated via 1Password.\033[0m"
+# Interactive shells get gh's token from 1Password's shell plugin, but agent sessions skip the
+# plugin so they never wait on a 1Password prompt. gh's own keychain login covers them.
+if ! gh auth status >/dev/null 2>&1; then
+	gh auth login --git-protocol ssh --hostname github.com --skip-ssh-key --web
 fi
+# gh silently falls back to storing the token in plaintext when it can't write to the keychain
+if grep -qs oauth_token "${HOME}/.config/gh/hosts.yml"; then
+	echo -e "❌ \033[1;31mGitHub CLI stored its token in plaintext in ~/.config/gh/hosts.yml. Unlock the keychain, run 'gh auth logout' and rerun this script.\033[0m" >&2
+	exit 1
+fi
+echo -e "✅ \033[1;32mGitHub CLI is authenticated via the keychain.\033[0m"
 
 # Set computer name
 confirm_set() {
