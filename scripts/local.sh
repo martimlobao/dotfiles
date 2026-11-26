@@ -129,6 +129,13 @@ fi
 echo -e "\n📝 \033[1;35mSetting up GitHub CLI...\033[0m"
 # Interactive shells get gh's token from 1Password's shell plugin, but agent sessions skip the
 # plugin so they never wait on a 1Password prompt. gh's own keychain login covers them.
+# Over SSH the macOS login keychain stays locked, so gh can't read or store its token.
+login_keychain="${HOME}/Library/Keychains/login.keychain-db"
+if [[ -n ${SSH_CONNECTION-} ]] && [[ $(uname) == "Darwin" ]] &&
+	! security show-keychain-info "${login_keychain}" >/dev/null 2>&1; then
+	echo -e "🔑 \033[1;35mUnlocking the login keychain for this SSH session...\033[0m"
+	security unlock-keychain "${login_keychain}"
+fi
 if ! gh auth status >/dev/null 2>&1; then
 	gh auth login --git-protocol ssh --hostname github.com --skip-ssh-key --web
 fi
