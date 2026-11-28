@@ -151,11 +151,13 @@ sleep 1
 if [[ ${os} == "Darwin" ]]; then
 	"${root}/scripts/app.py" sync ${1+"$1"}
 elif [[ ${os} == "Linux" ]]; then
-	# Only the command-line essentials: the rest of apps.toml is macOS apps or tools too heavy to
-	# be worth building on a small machine like a Raspberry Pi. core is skipped too, since uv is
-	# installed above and the rest of it is macOS only.
-	"${root}/scripts/app.py" sync --no-mas --no-cask --group system-binaries --group shell-tools \
-		--group languages --group cli-tools --group linters ${1+"$1"}
+	# Only the command-line essentials and coding agents: the rest of apps.toml is macOS apps or
+	# tools too heavy to be worth building on a small machine like a Raspberry Pi. core is skipped
+	# too, since uv is installed above and the rest of it is macOS only. To install an app here,
+	# move it into one of these groups. Casks are allowed because Homebrew installs the ones that
+	# ship Linux builds (like the agents) as plain binaries.
+	"${root}/scripts/app.py" sync --no-mas --group system-binaries --group shell-tools \
+		--group languages --group cli-tools --group linters --group agents ${1+"$1"}
 fi
 
 ###############################################################################
