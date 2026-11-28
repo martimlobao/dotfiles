@@ -76,7 +76,7 @@ contents to GitHub as a signing key:
 ssh-keygen -t ed25519 -C "$(hostname)" -N "" -f ~/.ssh/id_ed25519_signing
 ```
 
-Then add your `[user]` `name`, `email`, and `signingKey = ~/.ssh/id_ed25519_signing.pub` to
+Then add your `[user]` `name`, `email`, and `signingKey = ~/.ssh/id_ed25519_signing` to
 `~/.gitconfig.private` on the Pi.
 
 To drive the Pi's agents from [T3 Code](https://t3.codes), install its server, which Homebrew
