@@ -62,14 +62,32 @@ both). Use the 64-bit OS, since Homebrew doesn't support 32-bit ARM. Compared to
 
 - installs `git` and Homebrew's prerequisites with `apt` first
 - only installs the command-line groups of [`apps.toml`](apps.toml) (`system-binaries`,
-  `shell-tools`, `languages`, `cli-tools` and `linters`), skipping casks, the Mac App Store, and
-  anything macOS-only or too heavy to build on a small machine
+  `shell-tools`, `languages`, `cli-tools`, `linters` and `agents`), skipping the Mac App Store and
+  anything macOS-only or too heavy to build on a small machine. To install an app on Linux too,
+  move its line into one of these groups
 - generates the `en_US.UTF-8` locale, which macOS's ssh client asks for
 - skips the macOS settings, Dock, wallpapers, and 1Password setup in `local.sh`
 
-Without 1Password, git doesn't know who you are. Add your `[user]` `name`, `email`, and
-`signingKey` (the public key) to `~/.gitconfig.private` on the Pi, and connect with `ssh -A` so
-commits are signed by the 1Password SSH agent on your Mac.
+Without 1Password, git doesn't know who you are, and agents running on the Pi can't reach the
+1Password SSH agent to sign commits. Give the Pi its own signing key, and add the `.pub` file's
+contents to GitHub as a signing key:
+
+```bash
+ssh-keygen -t ed25519 -C "$(hostname)" -N "" -f ~/.ssh/id_ed25519_signing
+```
+
+Then add your `[user]` `name`, `email`, and `signingKey = ~/.ssh/id_ed25519_signing.pub` to
+`~/.gitconfig.private` on the Pi.
+
+To drive the Pi's agents from [T3 Code](https://t3.codes), install its server, which Homebrew
+doesn't package for headless Linux, then sign in to the agents (`claude auth login`,
+`codex login --device-auth`):
+
+```bash
+curl -fsSL https://t3.codes/install.sh | sh
+sudo loginctl enable-linger "$(id -un)"
+t3 up --lan
+```
 
 ### 1Password Requirements
 

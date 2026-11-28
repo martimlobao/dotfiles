@@ -8,8 +8,6 @@ uv = "formula"  # Extremely fast Python package installer and resolver, written 
 497799835 = "mas"  # Xcode
 charles = "cask"  # Web debugging Proxy application
 chatgpt = "cask"  # OpenAI's official ChatGPT desktop app
-"claude-code@latest" = "cask"  # Terminal-based AI coding assistant
-codex = "cask"  # OpenAI's coding agent that runs in your terminal
 "dbt-labs/dbt/dbt" = "formula"  # Build analytics the way engineers build applications
 docker-desktop = "cask"  # App to build and share containerised applications and microservices
 gcloud-cli = "cask"  # Set of tools to manage resources and applications hosted on Google Cloud
@@ -25,6 +23,10 @@ swiftlint = "formula"  # Tool to enforce Swift style and conventions
 t3-code = "cask"  # Minimal GUI for AI code agents
 visual-studio-code = "cask"  # Open-source code editor
 xcodegen = "formula"  # Generate your Xcode project from a spec file and your folder structure
+
+[agents]
+"claude-code@latest" = "cask"  # Terminal-based AI coding assistant
+codex = "cask"  # OpenAI's coding agent that runs in your terminal
 
 [work]
 aws-sso-cli = "formula"  # Securely manage AWS API credentials using AWS SSO
